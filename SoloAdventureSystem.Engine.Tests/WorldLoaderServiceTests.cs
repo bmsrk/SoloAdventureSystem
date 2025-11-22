@@ -5,7 +5,7 @@ using MudVision.WorldLoader;
 using MudVision.World.Models;
 using Xunit;
 
-namespace BlazorMud.Engine.Tests
+namespace SoloAdventureSystem.Engine.Tests
 {
     /// <summary>
     /// Tests for WorldLoaderService - validates loading of generated world ZIPs
