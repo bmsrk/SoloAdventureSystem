@@ -18,12 +18,12 @@ class Program
         Console.WriteLine("╚═══════════════════════════════════════════════════════════════════════╝");
         Console.WriteLine();
 
-        // Find worlds directory
+        // Find worlds directory - use shared content/worlds folder
         var worldsPath = FindWorldsDirectory();
         if (worldsPath == null)
         {
             Console.WriteLine("❌ ERROR: Could not find worlds directory!");
-            Console.WriteLine("   Expected: ../SoloAdventureSystem.AIWorldGenerator/content/worlds");
+            Console.WriteLine("   Expected: {solution}/content/worlds");
             Console.WriteLine();
             Console.WriteLine("   Generate some worlds first using the AI World Generator!");
             Console.WriteLine("   Press any key to exit...");
@@ -32,6 +32,19 @@ class Program
         }
 
         Console.WriteLine($"✓ Found worlds directory: {worldsPath}");
+        
+        // Check if any worlds exist
+        var worldFiles = Directory.GetFiles(worldsPath, "*.zip");
+        if (worldFiles.Length == 0)
+        {
+            Console.WriteLine("⚠ No world files found in the directory!");
+            Console.WriteLine("   Generate worlds using: SoloAdventureSystem.AIWorldGenerator");
+            Console.WriteLine("   Press any key to exit...");
+            Console.ReadKey();
+            return;
+        }
+        
+        Console.WriteLine($"✓ Found {worldFiles.Length} world(s)");
         Console.WriteLine();
 
         // World selection
@@ -85,61 +98,74 @@ class Program
     static string? FindWorldsDirectory()
     {
         var currentDir = Directory.GetCurrentDirectory();
+        Console.WriteLine($"🔍 Current directory: {currentDir}");
         
         // Try going up to solution root
         var solutionDir = currentDir;
         int levelsUp = 0;
-        while (solutionDir != null && levelsUp < 5 && !File.Exists(Path.Combine(solutionDir, "SoloAdventureSystem.sln")))
+        
+        while (solutionDir != null && levelsUp < 5)
         {
+            Console.WriteLine($"   Checking: {solutionDir}");
+            
+            // Check for both .sln and .slnx files
+            var slnFiles = Directory.GetFiles(solutionDir, "*.sln");
+            var slnxFiles = Directory.GetFiles(solutionDir, "*.slnx");
+            
+            if (slnFiles.Length > 0 || slnxFiles.Length > 0)
+            {
+                var foundFile = slnFiles.Length > 0 ? slnFiles[0] : slnxFiles[0];
+                Console.WriteLine($"   ✓ Found solution file: {Path.GetFileName(foundFile)}");
+                break;
+            }
+            
             solutionDir = Directory.GetParent(solutionDir)?.FullName;
             levelsUp++;
         }
 
-        if (solutionDir != null && File.Exists(Path.Combine(solutionDir, "SoloAdventureSystem.sln")))
+        if (solutionDir != null)
         {
-            // Priority 1: Solution-level shared content folder
+            Console.WriteLine($"✓ Found solution root: {solutionDir}");
+            
+            // Use solution-level shared content folder
             var sharedWorldsPath = Path.Combine(solutionDir, "content", "worlds");
-            if (Directory.Exists(sharedWorldsPath) && Directory.GetFiles(sharedWorldsPath, "*.zip").Length > 0)
+            Console.WriteLine($"🎯 Worlds path: {sharedWorldsPath}");
+            
+            // Create directory if it doesn't exist
+            if (!Directory.Exists(sharedWorldsPath))
             {
-                Console.WriteLine($"✓ Found worlds in shared folder: {sharedWorldsPath}");
-                return sharedWorldsPath;
+                Console.WriteLine($"📁 Creating shared worlds directory: {sharedWorldsPath}");
+                Directory.CreateDirectory(sharedWorldsPath);
             }
-
-            // Priority 2: Generator's content folder
-            var generatorWorldsPath = Path.Combine(solutionDir, "SoloAdventureSystem.AIWorldGenerator", "content", "worlds");
-            if (Directory.Exists(generatorWorldsPath) && Directory.GetFiles(generatorWorldsPath, "*.zip").Length > 0)
+            else
             {
-                Console.WriteLine($"✓ Found worlds in generator folder: {generatorWorldsPath}");
-                return generatorWorldsPath;
+                Console.WriteLine($"✓ Directory exists");
+                
+                // List files for debugging
+                var files = Directory.GetFiles(sharedWorldsPath, "*.zip");
+                if (files.Length > 0)
+                {
+                    Console.WriteLine($"📦 Files found:");
+                    foreach (var file in files)
+                    {
+                        Console.WriteLine($"   - {Path.GetFileName(file)}");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"⚠ No .zip files in directory");
+                }
             }
+            
+            return sharedWorldsPath;
         }
 
-        // Priority 3: Current directory
+        // Fallback: create local content/worlds directory
+        Console.WriteLine("⚠ Could not find solution root (no .sln or .slnx file found)");
+        Console.WriteLine("   Using local content/worlds directory");
         var localPath = Path.Combine(currentDir, "content", "worlds");
-        if (Directory.Exists(localPath) && Directory.GetFiles(localPath, "*.zip").Length > 0)
-        {
-            Console.WriteLine($"✓ Found worlds in local folder: {localPath}");
-            return localPath;
-        }
-
-        // Priority 4: Parent directory (when running from project folder)
-        var parentPath = Path.Combine(currentDir, "..", "SoloAdventureSystem.AIWorldGenerator", "content", "worlds");
-        var fullParentPath = Path.GetFullPath(parentPath);
-        if (Directory.Exists(fullParentPath) && Directory.GetFiles(fullParentPath, "*.zip").Length > 0)
-        {
-            Console.WriteLine($"✓ Found worlds in parent folder: {fullParentPath}");
-            return fullParentPath;
-        }
-
-        // Priority 5: Bin output directory (when running from bin/Debug)
-        var binWorldsPath = Path.Combine(currentDir, "worlds");
-        if (Directory.Exists(binWorldsPath) && Directory.GetFiles(binWorldsPath, "*.zip").Length > 0)
-        {
-            Console.WriteLine($"✓ Found worlds in bin folder: {binWorldsPath}");
-            return binWorldsPath;
-        }
-
-        return null;
+        Directory.CreateDirectory(localPath);
+        return localPath;
     }
 
     static async Task<WorldModel?> LoadWorld(WorldLoaderService loader, string zipPath)

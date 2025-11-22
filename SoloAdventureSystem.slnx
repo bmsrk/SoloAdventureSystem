@@ -1,7 +1,15 @@
 <Solution>
+  <Folder Name="/docs/">
+    <File Path="docs/DEVELOPER_GUIDE.md" />
+    <File Path="docs/EMBEDDED_SLM_GUIDE.md" />
+    <File Path="docs/EMBEDDED_SLM_IMPLEMENTATION.md" />
+    <File Path="docs/GAME_DESIGN_DOCUMENT.md" />
+    <File Path="docs/README.md" />
+    <File Path="docs/ROADMAP.md" />
+    <File Path="docs/UI_UPDATES_EMBEDDED.md" />
+  </Folder>
   <Project Path="SoloAdventureSystem.AIWorldGenerator/SoloAdventureSystem.AIWorldGenerator.csproj" />
   <Project Path="SoloAdventureSystem.Engine.Tests/SoloAdventureSystem.Engine.Tests.csproj" />
   <Project Path="SoloAdventureSystem.Engine/SoloAdventureSystem.Engine.csproj" />
   <Project Path="SoloAdventureSystem.TerminalGUI.UI/SoloAdventureSystem.TerminalGUI.UI.csproj" />
-  <Project Path="SolutionItems/SolutionItems.csproj" />
 </Solution>

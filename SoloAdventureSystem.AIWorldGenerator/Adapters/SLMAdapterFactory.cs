@@ -7,7 +7,7 @@ namespace SoloAdventureSystem.ContentGenerator.Adapters;
 
 /// <summary>
 /// Factory for creating SLM adapters based on configuration.
-/// Creates fresh adapters on each call to support runtime settings changes.
+/// Supports Stub (testing) and LLamaSharp (embedded AI).
 /// </summary>
 public class SLMAdapterFactory
 {
@@ -17,54 +17,27 @@ public class SLMAdapterFactory
         var loggerFactory = services.GetRequiredService<ILoggerFactory>();
         var logger = loggerFactory.CreateLogger("SLMAdapterFactory");
         
-        logger.LogInformation("Creating SLM adapter for provider: {Provider} with model: {Model}", 
-            settings.Provider, settings.Model);
+        logger.LogInformation("Creating SLM adapter for provider: {Provider}", settings.Provider);
 
-        ILocalSLMAdapter baseAdapter = settings.Provider.ToLowerInvariant() switch
+        ILocalSLMAdapter adapter = settings.Provider.ToLowerInvariant() switch
         {
             "stub" => new StubSLMAdapter(),
-            "githubmodels" or "github" => CreateGitHubAdapter(services, settings, loggerFactory),
-            "azureopenai" or "azure" => CreateGitHubAdapter(services, settings, loggerFactory), // Uses GitHub Models endpoint
-            "openai" => CreateOpenAIAdapter(services, settings, loggerFactory),
-            "groq" => CreateGroqAdapter(services, settings, loggerFactory),
-            _ => throw new InvalidOperationException($"Unknown AI provider: {settings.Provider}")
+            "llamasharp" or "llama" or "embedded" => CreateLLamaSharpAdapter(services, settings, loggerFactory),
+            _ => throw new InvalidOperationException($"Unknown AI provider: {settings.Provider}. Use 'Stub' or 'LLamaSharp'.")
         };
 
-        // Wrap with caching if enabled
-        if (settings.EnableCaching && settings.Provider.ToLowerInvariant() != "stub")
-        {
-            logger.LogInformation("Enabling caching for adapter");
-            var cachedAdapter = new CachedSLMAdapter(
-                baseAdapter,
-                services.GetRequiredService<IOptions<AISettings>>(),
-                services.GetRequiredService<ILogger<CachedSLMAdapter>>());
-            return cachedAdapter;
-        }
-
-        return baseAdapter;
+        return adapter;
     }
 
-    private static GitHubModelsAdapter CreateGitHubAdapter(IServiceProvider services, AISettings settings, ILoggerFactory loggerFactory)
+    private static LLamaSharpAdapter CreateLLamaSharpAdapter(IServiceProvider services, AISettings settings, ILoggerFactory loggerFactory)
     {
-        // Create fresh instance with current settings
-        var logger = loggerFactory.CreateLogger<GitHubModelsAdapter>();
-        var options = Options.Create(settings);
-        return new GitHubModelsAdapter(options, logger);
-    }
-
-    private static OpenAIAdapter CreateOpenAIAdapter(IServiceProvider services, AISettings settings, ILoggerFactory loggerFactory)
-    {
-        // Create fresh instance with current settings
-        var logger = loggerFactory.CreateLogger<OpenAIAdapter>();
-        var options = Options.Create(settings);
-        return new OpenAIAdapter(options, logger);
-    }
-
-    private static GroqAdapter CreateGroqAdapter(IServiceProvider services, AISettings settings, ILoggerFactory loggerFactory)
-    {
-        // Create fresh instance with current settings
-        var logger = loggerFactory.CreateLogger<GroqAdapter>();
-        var options = Options.Create(settings);
-        return new GroqAdapter(options, logger);
+        var logger = loggerFactory.CreateLogger<LLamaSharpAdapter>();
+        var adapter = new LLamaSharpAdapter(Options.Create(settings), logger);
+        
+        // Initialize asynchronously (will download model if needed)
+        logger.LogInformation("Initializing LLamaSharp adapter...");
+        adapter.InitializeAsync().GetAwaiter().GetResult();
+        
+        return adapter;
     }
 }

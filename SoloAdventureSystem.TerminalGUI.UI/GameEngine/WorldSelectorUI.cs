@@ -65,6 +65,15 @@ public class WorldSelectorUI
         };
         win.Add(header);
 
+        // Show search path for debugging
+        var pathLabel = new Label($"Searching: {_worldsPath}")
+        {
+            X = 1,
+            Y = 9,
+            ColorScheme = cyberCyan
+        };
+        win.Add(pathLabel);
+
         var infoLabel = new Label(">>> SELECT A WORLD TO EXPLORE:")
         {
             X = 1,
@@ -80,18 +89,32 @@ public class WorldSelectorUI
 
         if (worldFiles.Length == 0)
         {
-            var noWorldsLabel = new Label("No worlds found! Generate some worlds first.")
+            var debugMsg = Directory.Exists(_worldsPath)
+                ? $"Directory exists but no .zip files found in:\n{_worldsPath}"
+                : $"Directory does not exist:\n{_worldsPath}";
+
+            var noWorldsLabel = new Label(debugMsg)
             {
-                X = Pos.Center(),
+                X = 1,
                 Y = 12,
+                Width = Dim.Fill(2),
+                Height = 3,
                 ColorScheme = cyberMagenta
             };
             win.Add(noWorldsLabel);
 
+            var helpLabel = new Label("Generate worlds using: SoloAdventureSystem.AIWorldGenerator")
+            {
+                X = 1,
+                Y = 16,
+                ColorScheme = cyberCyan
+            };
+            win.Add(helpLabel);
+
             var exitButton = new Button("[ EXIT ]")
             {
                 X = Pos.Center(),
-                Y = 14,
+                Y = 18,
                 ColorScheme = cyberCyan
             };
             exitButton.Clicked += () => Application.RequestStop();
@@ -99,6 +122,14 @@ public class WorldSelectorUI
         }
         else
         {
+            var countLabel = new Label($"Found {worldFiles.Length} world(s)")
+            {
+                X = Pos.Right(infoLabel) + 2,
+                Y = 10,
+                ColorScheme = cyberMagenta
+            };
+            win.Add(countLabel);
+
             var worldList = new ListView()
             {
                 X = 1,

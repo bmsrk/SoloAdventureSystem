@@ -1,47 +1,37 @@
 # Documentation
 
-## Essential Files
+## For Players ??
 
-### For Everyone
-- **[README.md](../README.md)** - Project overview, quick start, features
-- **[CONTRIBUTING.md](../CONTRIBUTING.md)** - How to contribute
-- **[SECURITY.md](../SECURITY.md)** - Security policy
-- **[LICENSE](../LICENSE)** - MIT License
+- **[Main README](../README.md)** - Project overview & quick start
+- **[Game README](../SoloAdventureSystem.TerminalGUI.UI/README.md)** - How to play
 
-### For Developers
-- **[DEVELOPER_GUIDE.md](./DEVELOPER_GUIDE.md)** - Complete developer guide
+## For Developers ???
+
+- **[DEVELOPER_GUIDE.md](./DEVELOPER_GUIDE.md)** - Complete development guide
   - Architecture & patterns
   - Code standards
   - Common tasks
   - Testing guidelines
-  - World discovery system
-  
+
+- **[EMBEDDED_AI_GUIDE.md](./EMBEDDED_AI_GUIDE.md)** - LLamaSharp offline AI setup
+  - Model selection
+  - Download & caching
+  - Troubleshooting
+
 - **[GAME_DESIGN_DOCUMENT.md](./GAME_DESIGN_DOCUMENT.md)** - Design vision
   - Gameplay mechanics
-  - World design
-  - Narrative structure
-  - Development roadmap
   - Technical specs
-
+  
 - **[ROADMAP.md](./ROADMAP.md)** - Feature roadmap
-  - Phase 2-6 plans
-  - Priority matrix
+  - Planned features
   - Time estimates
 
-### For Players
-- **[Game README](../SoloAdventureSystem.TerminalGUI.UI/README.md)** - How to play
+## For Contributors ??
+
+- **[CONTRIBUTING.md](../CONTRIBUTING.md)** - How to contribute
+- **[SECURITY.md](../SECURITY.md)** - Security policy
+- **[LICENSE](../LICENSE)** - MIT License
 
 ---
 
-## Quick Navigation
-
-**Want to...**
-- Play the game? ? [README.md](../README.md)
-- Start developing? ? [DEVELOPER_GUIDE.md](./DEVELOPER_GUIDE.md)
-- Understand the design? ? [GAME_DESIGN_DOCUMENT.md](./GAME_DESIGN_DOCUMENT.md)
-- See what's next? ? [ROADMAP.md](./ROADMAP.md)
-- Contribute? ? [CONTRIBUTING.md](../CONTRIBUTING.md)
-
----
-
-**That's it! Simple and focused.**
+**That's it! Everything in one place.** ??

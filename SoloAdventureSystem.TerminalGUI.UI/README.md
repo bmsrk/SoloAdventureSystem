@@ -1,178 +1,43 @@
-# ?? Solo Adventure - Terminal Game
+# Solo Adventure System - Terminal UI
 
-A cyberpunk-themed text adventure game with Terminal.GUI interface that plays AI-generated worlds.
+Play AI-generated text adventure worlds.
 
-## ?? Quick Start
+## Quick Start
 
-### 1. Generate a World
-```sh
-cd SoloAdventureSystem.AIWorldGenerator
+```bash
 dotnet run
 ```
 
-- Select provider (STUB for testing, GROQ for AI-generated content)
-- Configure world settings (name, seed, theme, zones)
-- Click "GENERATE WORLD"
-- **World will be automatically copied to shared `content/worlds/` folder** ?
+## Controls
 
-### 2. Play the Game
-```sh
-cd ../SoloAdventureSystem.TerminalGUI.UI
-dotnet run
-```
+- **Arrow keys** - Navigate menus
+- **Enter** - Select/Confirm
+- **Type commands** - `go north`, `examine door`, `talk to npc`
+- **Quit** - Type `quit` or close window
 
-- **Worlds are automatically discovered** - no manual copying needed! ??
-- Select a world from the list
-- Use arrow keys and Enter to navigate
-- Type commands to interact
+## Loading Worlds
 
-### 3. Alternative: Run from Bin
-```sh
-cd SoloAdventureSystem.TerminalGUI.UI/bin/Debug/net10.0
-./SoloAdventureSystem.TerminalGUI.UI
-```
-- Worlds are automatically copied to `bin/Debug/net10.0/worlds/`
-- Double-click the .exe works too!
+Worlds loaded from: `{solution}/content/worlds/*.zip`
 
-## ?? Automatic World Management
+Generate worlds using: `SoloAdventureSystem.AIWorldGenerator`
 
-The system automatically manages worlds for you:
-
-- ? **Generate** worlds in `AIWorldGenerator/content/worlds/`
-- ? **Auto-copy** to solution `content/worlds/` (shared)
-- ? **Auto-copy** to game `bin/Debug/net10.0/worlds/` (runtime)
-- ? **Auto-discover** from multiple locations
-
-**No manual file copying required!** See [WORLDS_SETUP.md](../WORLDS_SETUP.md) for details.
-
-## ?? Game Commands
-
-| Command | Shortcut | Description |
-|---------|----------|-------------|
-| `look` | `l` | Look around current location |
-| `go <direction>` | `n`, `s`, `e`, `w` | Move north/south/east/west |
-| `talk <npc>` | - | Talk to an NPC |
-| `examine <thing>` | - | Examine an object |
-| `inventory` | `i`, `inv` | Show inventory |
-| `stats` | `status` | Show player stats |
-| `help` | `?` | Show help |
-| `quit` | `exit` | Exit game |
-
-## ?? UI Layout
+## Commands
 
 ```
-??????????????????????????????????????????????????????????
-? ? SOLO ADVENTURE ? World Name                        ?
-??????????????????????????????????????????????????????????
-? >>> HP: 100/100 | LVL: 1 | XP: 0                      ?
-? >>> LOCATION: Current Room                             ?
-??????????????????????????????????????????????????????????
-? ? LOCATION ?               ? ? EXITS ?             ?
-?                              ?  ? NORTH                ?
-? Room description...          ?  ? EAST                 ?
-?                              ???????????????????????????
-?                              ? ? NPCS ?              ?
-?                              ?  • Merchant             ?
-??????????????????????????????????????????????????????????
-? ? GAME LOG ?                                         ?
-? > look                                                 ?
-? You are at: Main Square                               ?
-??????????????????????????????????????????????????????????
-? >>> COMMAND: _                                         ?
-??????????????????????????????????????????????????????????
+Movement:    go [direction], north, south, east, west
+Interaction: examine [object], talk to [npc], take [item]
+Inventory:   inventory, use [item]
+System:      help, quit
 ```
 
-## ?? Features
+## Troubleshooting
 
-- **Cyberpunk UI**: Neon colors and retro terminal aesthetics
-- **AI-Generated Worlds**: Unique procedurally generated adventures
-- **Deterministic**: Same seed = same world
-- **NPCs**: Talk to characters and learn about factions
-- **Navigation**: Explore interconnected rooms
-- **Stats System**: Track health, level, and experience
-- **Auto-Discovery**: Worlds automatically found from multiple locations
+**No worlds found?**
+- Generate worlds first using AIWorldGenerator
+- Check `content/worlds/` folder exists
+- Ensure world files are `.zip` format
 
-## ?? Technical Details
-
-- **Framework**: .NET 10
-- **UI Library**: Terminal.Gui
-- **World Format**: ZIP archives with JSON/YAML content
-- **World Loader**: Validates and loads generated worlds
-- **Auto-Copy**: MSBuild targets automatically sync worlds
-
-## ?? World Structure
-
-Worlds are ZIP files containing:
-```
-WORLD_Name_Seed.zip
-??? world.json          # World metadata
-??? rooms/*.json        # Room definitions
-??? npcs/*.json         # NPC data
-??? factions/*.json     # Faction information
-??? story/*.yaml        # Story nodes
-??? system/             # Generation metadata
-```
-
-## ?? Example Workflow
-
-```sh
-# 1. Generate world
-cd SoloAdventureSystem.AIWorldGenerator
-dotnet run
-# > World saved to content/worlds/
-# > Auto-copied to shared content/worlds/
-
-# 2. Build game (optional - copies worlds to bin)
-cd ../SoloAdventureSystem.TerminalGUI.UI
-dotnet build
-
-# 3. Play!
-dotnet run
-# > Automatically finds worlds
-# > No manual copying!
-```
-
-## ?? Troubleshooting
-
-**"Could not find worlds directory"**
-- Make sure you've generated at least one world
-- Try rebuilding: `dotnet build` (triggers auto-copy)
-- Check console output for search paths
-
-**Worlds not showing up**
-- Rebuild both projects: `dotnet build`
-- Check `content/worlds/*.zip` exists
-- See [WORLDS_SETUP.md](../WORLDS_SETUP.md) for details
-
-**Terminal display issues**
-- Make sure your terminal supports Unicode
-- Try resizing the terminal window
-
-## ?? Example Gameplay
-
-```
-> look
-You are at: Neon Plaza
-A bustling plaza filled with holographic advertisements...
-NPCs here: Street Vendor
-Exits: north, east, south
-
-> talk vendor
-You talk to Street Vendor.
-Street Vendor: "Welcome to the plaza, need anything?"
-
-> go north
-You move north to Data Hub.
-
-> inventory
-Your inventory is empty.
-
-> stats
-?????????????????????????????????????????
-? NAME: Adventurer                      ?
-? LEVEL: 1                              ?
-? HP: 100/100                           ?
-?????????????????????????????????????????
-```
-
-Enjoy your adventure! ???
+**Can't load world?**
+- Check console for error messages
+- Verify ZIP file isn't corrupted
+- Re-generate the world

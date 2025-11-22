@@ -1,0 +1,5 @@
+# Ignore all world files (they can be large)
+worlds/*.zip
+
+# Keep the directory structure
+!worlds/.gitkeep

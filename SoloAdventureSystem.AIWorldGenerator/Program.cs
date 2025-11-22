@@ -8,6 +8,7 @@ using SoloAdventureSystem.ContentGenerator;
 using SoloAdventureSystem.ContentGenerator.Adapters;
 using SoloAdventureSystem.ContentGenerator.Configuration;
 using SoloAdventureSystem.ContentGenerator.UI;
+using SoloAdventureSystem.ContentGenerator.Utils;
 
 class Program
 {
@@ -27,8 +28,6 @@ class Program
         builder.Services.Configure<AISettings>(builder.Configuration.GetSection(AISettings.SectionName));
 
         // Register adapters
-        builder.Services.AddSingleton<GitHubModelsAdapter>();
-        builder.Services.AddSingleton<OpenAIAdapter>();
         builder.Services.AddSingleton<IImageAdapter, StubImageAdapter>();
         builder.Services.AddSingleton<ILocalSLMAdapter>(SLMAdapterFactory.Create);
 
@@ -108,10 +107,11 @@ class WorldGeneratorApp
             _logger.LogInformation("Exporting world to {TempDir}...", tempDir);
             _exporter.Export(result, options, tempDir);
 
-            var zipPath = Path.Combine("content/worlds", $"SoloAdventureWorld_{options.Name}_{options.Seed}.zip");
-            Directory.CreateDirectory("content/worlds");
+            // Use shared PathHelper to get consistent world storage location
+            var zipPath = PathHelper.GetWorldZipPath(options.Name, options.Seed);
+            var worldsDir = Path.GetDirectoryName(zipPath);
             
-            _logger.LogInformation("Creating ZIP archive...");
+            _logger.LogInformation("Creating ZIP archive at {WorldsDir}...", worldsDir);
             _exporter.Zip(tempDir, zipPath);
 
             _logger.LogInformation("✅ World ZIP generated: {ZipPath}", zipPath);

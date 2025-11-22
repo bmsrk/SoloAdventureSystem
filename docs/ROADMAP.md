@@ -1,6 +1,6 @@
-# ?? Solo Adventure System - Roadmap
+# ??? Solo Adventure System - Roadmap
 
-## ?? Current Status: MVP 1.0 Complete ?
+## ? Current Status: MVP 1.0 Complete ??
 
 ---
 
@@ -44,7 +44,7 @@
 
 ---
 
-## ?? Phase 3: Persistence & Polish (v1.2)
+## ? Phase 3: Persistence & Polish (v1.2)
 
 ### ?? Save/Load System
 - [ ] Save game state to JSON
@@ -122,7 +122,7 @@
 
 ---
 
-## ?? Phase 5: Content & Tools (v2.5)
+## ??? Phase 5: Content & Tools (v2.5)
 
 ### ??? World Editor
 - [ ] Visual world editor
@@ -147,7 +147,7 @@
 **Priority**: MEDIUM  
 **Complexity**: Medium
 
-### ??? Visual Enhancements
+### ?? Visual Enhancements
 - [ ] ASCII art for rooms
 - [ ] NPC portraits (AI-generated)
 - [ ] Item icons
@@ -255,13 +255,13 @@
 
 | Feature | Priority | Complexity | Impact | When |
 |---------|----------|------------|--------|------|
-| Combat System | ??? | Medium | High | Phase 2 |
-| Inventory | ??? | Medium | High | Phase 2 |
-| Save/Load | ??? | Medium | High | Phase 3 |
+| Combat System | ?? | Medium | High | Phase 2 |
+| Inventory | ?? | Medium | High | Phase 2 |
+| Save/Load | ?? | Medium | High | Phase 3 |
 | Quest System | ?? | High | High | Phase 2 |
 | Character Classes | ?? | High | Medium | Phase 4 |
-| World Editor | ? | Very High | Medium | Phase 5 |
-| Multiplayer | ? | Very High | Low | Phase 6 |
+| World Editor | ?? | Very High | Medium | Phase 5 |
+| Multiplayer | ?? | Very High | Low | Phase 6 |
 
 ---
 

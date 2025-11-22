@@ -14,8 +14,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Azure.AI.Inference" Version="1.0.0-beta.5" />
-    <PackageReference Include="Azure.AI.OpenAI" Version="2.5.0-beta.1" />
+    <PackageReference Include="LLamaSharp" Version="0.15.0" />
+    <PackageReference Include="LLamaSharp.Backend.Cpu" Version="0.15.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
@@ -26,9 +26,6 @@
     <None Update="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="appsettings.Development.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 
   <!-- Copy generated worlds to a shared location accessible by the game -->
@@ -36,10 +33,7 @@
     <ItemGroup>
       <WorldFiles Include="content\worlds\*.zip" />
     </ItemGroup>
-    <Copy SourceFiles="@(WorldFiles)" 
-          DestinationFolder="$(SolutionDir)content\worlds\" 
-          SkipUnchangedFiles="true"
-          Condition="Exists('content\worlds')" />
+    <Copy SourceFiles="@(WorldFiles)" DestinationFolder="$(MSBuildProjectDirectory)\..\content\worlds\" SkipUnchangedFiles="true" Condition="Exists('content\worlds') And '@(WorldFiles)' != ''" />
   </Target>
 
 </Project>

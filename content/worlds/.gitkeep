@@ -1,0 +1,2 @@
+# This file ensures the worlds directory is tracked by Git
+# World .zip files are ignored via .gitignore

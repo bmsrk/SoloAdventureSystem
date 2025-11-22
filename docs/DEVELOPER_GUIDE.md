@@ -1,4 +1,4 @@
-# Agent Instructions - Solo Adventure System
+# Developer Guide - Solo Adventure System
 
 ## Project Overview
 
@@ -46,9 +46,10 @@ SoloAdventureSystem/
 ??? content/worlds/                          # Shared worlds location
 ?
 ??? docs/                                     # Documentation
-    ??? AGENT_INSTRUCTIONS.md (this file)
+    ??? DEVELOPER_GUIDE.md (this file)
     ??? GAME_DESIGN_DOCUMENT.md
     ??? ROADMAP.md
+    ??? EMBEDDED_AI_GUIDE.md
 ```
 
 ---
@@ -306,7 +307,7 @@ var frame = new FrameView("Frame")
 ### Cyberpunk Aesthetic
 - Use ASCII symbols: >, >>, >>>, *, •, -, |
 - Cyan/Magenta/Green color scheme
-- ASCII borders: ????? ? ? ?????
+- ASCII borders: ????? ? ? ????? 
 - ALL CAPS for emphasis
 - >>> prefix for system messages
 

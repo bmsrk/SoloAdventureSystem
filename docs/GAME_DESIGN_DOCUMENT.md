@@ -620,4 +620,4 @@ Every world should tell a story. Every NPC should have purpose. Every choice sho
 
 This GDD serves as the north star for development. Refer back when making design decisions!
 
-?? **Let's make something amazing!** ?
+?? **Let's make something amazing!** ??
