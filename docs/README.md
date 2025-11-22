@@ -1,4 +1,4 @@
-# ?? Documentation
+# Documentation
 
 ## Essential Files
 
@@ -9,7 +9,7 @@
 - **[LICENSE](../LICENSE)** - MIT License
 
 ### For Developers
-- **[AGENT_INSTRUCTIONS.md](./AGENT_INSTRUCTIONS.md)** - Complete developer guide
+- **[DEVELOPER_GUIDE.md](./DEVELOPER_GUIDE.md)** - Complete developer guide
   - Architecture & patterns
   - Code standards
   - Common tasks
@@ -36,12 +36,12 @@
 ## Quick Navigation
 
 **Want to...**
-- ?? Play the game? ? [README.md](../README.md)
-- ?? Start developing? ? [AGENT_INSTRUCTIONS.md](./AGENT_INSTRUCTIONS.md)
-- ?? Understand the design? ? [GAME_DESIGN_DOCUMENT.md](./GAME_DESIGN_DOCUMENT.md)
-- ?? See what's next? ? [ROADMAP.md](./ROADMAP.md)
-- ?? Contribute? ? [CONTRIBUTING.md](../CONTRIBUTING.md)
+- Play the game? ? [README.md](../README.md)
+- Start developing? ? [DEVELOPER_GUIDE.md](./DEVELOPER_GUIDE.md)
+- Understand the design? ? [GAME_DESIGN_DOCUMENT.md](./GAME_DESIGN_DOCUMENT.md)
+- See what's next? ? [ROADMAP.md](./ROADMAP.md)
+- Contribute? ? [CONTRIBUTING.md](../CONTRIBUTING.md)
 
 ---
 
-**That's it! Simple and focused.** ?
+**That's it! Simple and focused.**
