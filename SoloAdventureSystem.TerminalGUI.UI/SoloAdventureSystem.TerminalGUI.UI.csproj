@@ -1,0 +1,46 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>SoloAdventureSystem.TerminalGUI.UI</RootNamespace>
+    <AssemblyName>SoloAdventureSystem.TerminalGUI.UI</AssemblyName>
+    <LangVersion>14.0</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Terminal.Gui" Version="1.17.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SoloAdventureSystem.Engine\SoloAdventureSystem.Engine.csproj" />
+  </ItemGroup>
+
+  <!-- Copy worlds from solution content folder to output directory -->
+  <Target Name="CopyWorldsToOutput" AfterTargets="Build">
+    <ItemGroup>
+      <!-- Copy from solution-level content folder -->
+      <SolutionWorldFiles Include="$(SolutionDir)content\worlds\*.zip" />
+      <!-- Copy from generator's content folder -->
+      <GeneratorWorldFiles Include="$(SolutionDir)SoloAdventureSystem.AIWorldGenerator\content\worlds\*.zip" />
+    </ItemGroup>
+    
+    <!-- Create worlds directory in output -->
+    <MakeDir Directories="$(OutputPath)worlds" Condition="'@(SolutionWorldFiles)' != '' OR '@(GeneratorWorldFiles)' != ''" />
+    
+    <!-- Copy from solution content -->
+    <Copy SourceFiles="@(SolutionWorldFiles)" 
+          DestinationFolder="$(OutputPath)worlds\" 
+          SkipUnchangedFiles="true"
+          Condition="'@(SolutionWorldFiles)' != ''" />
+    
+    <!-- Copy from generator content -->
+    <Copy SourceFiles="@(GeneratorWorldFiles)" 
+          DestinationFolder="$(OutputPath)worlds\" 
+          SkipUnchangedFiles="true"
+          Condition="'@(GeneratorWorldFiles)' != ''" />
+  </Target>
+
+</Project>

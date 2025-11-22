@@ -1,0 +1,118 @@
+## .NET Core / .NET 10
+bin/
+obj/
+out/
+
+## Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.userprefs
+
+## Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+
+## Test Results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.trx
+*.coverage
+*.coveragexml
+
+## NuGet Packages
+*.nupkg
+*.snupkg
+packages/
+.nuget/
+*.nuget.props
+*.nuget.targets
+
+## ReSharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+## JetBrains Rider
+.idea/
+*.sln.iml
+
+## Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+.history/
+
+## API Keys and Secrets (IMPORTANT!)
+appsettings.Development.json
+appsettings.Production.json
+appsettings.Staging.json
+appsettings.Local.json
+appsettings.*.json
+!appsettings.json
+*.key
+*.secret
+.env
+.env.local
+.env.*.local
+
+## OS Files
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+ehthumbs.db
+ehthumbs_vista.db
+desktop.ini
+$RECYCLE.BIN/
+
+## Logs
+*.log
+logs/
+*.tlog
+
+## Temporary files
+*.tmp
+*.temp
+~$*
+*.swp
+*.swo
+
+## Database files
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+## Cache
+.cache/
+*.cache
+
+## Azure Functions
+local.settings.json
+
+## Backup files
+*.backup
+*.bak
+*.old
+
+## Generated worlds (optional - uncomment to exclude from git)
+content/worlds/*.zip
+
+## Solution-specific temp files
+SoloAdventureSystem.slnx.backup
+SoloAdventureSystem.slnx.new

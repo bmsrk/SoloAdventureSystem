@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="SoloAdventureSystem.AIWorldGenerator/SoloAdventureSystem.AIWorldGenerator.csproj" />
+  <Project Path="SoloAdventureSystem.Engine.Tests/SoloAdventureSystem.Engine.Tests.csproj" />
+  <Project Path="SoloAdventureSystem.Engine/SoloAdventureSystem.Engine.csproj" />
+  <Project Path="SoloAdventureSystem.TerminalGUI.UI/SoloAdventureSystem.TerminalGUI.UI.csproj" />
+  <Project Path="SolutionItems/SolutionItems.csproj" />
+</Solution>
