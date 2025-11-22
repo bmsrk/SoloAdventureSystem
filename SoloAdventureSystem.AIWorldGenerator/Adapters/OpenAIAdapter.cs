@@ -1,4 +1,5 @@
 using SoloAdventureSystem.ContentGenerator.Configuration;
+using SoloAdventureSystem.ContentGenerator.Generation;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OpenAI.Chat;
@@ -10,6 +11,7 @@ namespace SoloAdventureSystem.ContentGenerator.Adapters;
 /// <summary>
 /// Adapter for OpenAI API (direct, not via GitHub/Azure).
 /// Supports free tier and paid accounts.
+/// Updated to use enhanced prompt templates.
 /// </summary>
 public class OpenAIAdapter : ILocalSLMAdapter
 {
@@ -40,37 +42,26 @@ public class OpenAIAdapter : ILocalSLMAdapter
 
     public string GenerateRoomDescription(string context, int seed)
     {
-        var systemPrompt = $"You are a creative game world designer. Generate a vivid room description for a text-based adventure game. Keep it concise (2-3 sentences). Seed: {seed}";
-        var userPrompt = $"Create a room description for: {context}";
-        
-        return GenerateText(systemPrompt, userPrompt, seed);
+        return GenerateText(PromptTemplates.RoomDescriptionSystem, context, seed);
     }
 
     public string GenerateNpcBio(string context, int seed)
     {
-        var systemPrompt = $"You are a creative game world designer. Generate a short NPC biography for a text-based adventure game. Keep it concise (1-2 sentences). Seed: {seed}";
-        var userPrompt = $"Create an NPC bio for: {context}";
-        
-        return GenerateText(systemPrompt, userPrompt, seed);
+        return GenerateText(PromptTemplates.NpcBioSystem, context, seed);
     }
 
     public string GenerateFactionFlavor(string context, int seed)
     {
-        var systemPrompt = $"You are a creative game world designer. Generate faction lore and flavor text for a text-based adventure game. Keep it concise (2-3 sentences). Seed: {seed}";
-        var userPrompt = $"Create faction flavor for: {context}";
-        
-        return GenerateText(systemPrompt, userPrompt, seed);
+        return GenerateText(PromptTemplates.FactionLoreSystem, context, seed);
     }
 
     public List<string> GenerateLoreEntries(string context, int seed, int count)
     {
         var entries = new List<string>();
-        var systemPrompt = $"You are a creative game world designer. Generate world lore entries for a text-based adventure game. Each entry should be 1-2 sentences. Seed: {seed}";
         
         for (int i = 0; i < count; i++)
         {
-            var userPrompt = $"Create lore entry #{i + 1} for: {context}";
-            entries.Add(GenerateText(systemPrompt, userPrompt, seed + i));
+            entries.Add(GenerateText(PromptTemplates.WorldLoreSystem, context, seed + i));
         }
         
         return entries;
@@ -93,7 +84,7 @@ public class OpenAIAdapter : ILocalSLMAdapter
                 var options = new ChatCompletionOptions
                 {
                     Temperature = (float)_settings.Temperature,
-                    MaxOutputTokenCount = 200
+                    MaxOutputTokenCount = 300  // Increased for better descriptions
 #pragma warning disable OPENAI001 // Experimental feature
                     ,Seed = seed
 #pragma warning restore OPENAI001
