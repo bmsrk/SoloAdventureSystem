@@ -13,50 +13,64 @@ public static class ProceduralNames
     private static readonly string[] RoomPrefixes = new[]
     {
         "Data", "Neural", "Cyber", "Quantum", "Bio", "Nano", "Tech", "Corp",
-        "Shadow", "Neon", "Chrome", "Grid", "Net", "Sync", "Pulse", "Matrix"
+        "Shadow", "Neon", "Chrome", "Grid", "Net", "Sync", "Pulse", "Matrix",
+        "Holo", "Synth", "Plasma", "Void", "Nexus", "Rift", "Echo", "Flux",
+        "Aether", "Vertex", "Cryo", "Thermo", "Electro", "Hydro", "Pyro", "Laser"
     };
 
     private static readonly string[] RoomSuffixes = new[]
     {
         "Vault", "Hub", "Chamber", "Node", "Core", "Terminal", "Bay", "Suite",
-        "Plaza", "Alley", "Market", "Lounge", "Lab", "Station", "Deck", "Archive"
+        "Plaza", "Alley", "Market", "Lounge", "Lab", "Station", "Deck", "Archive",
+        "Sector", "Module", "Complex", "Facility", "Center", "District", "Zone", "Bunker",
+        "Nexus", "Spire", "Quarters", "Sanctum", "Haven", "Outpost", "Den", "Lair"
     };
 
-    // NPC first names
+    // NPC first names (expanded)
     private static readonly string[] FirstNames = new[]
     {
         "Marcus", "Sarah", "Johnny", "Kenji", "Maria", "Viktor", "Chen", "Isabella",
         "Dmitri", "Yuki", "Hassan", "Zara", "Diego", "Anika", "Raj", "Natasha",
-        "Carlos", "Mei", "Ahmed", "Lena", "Takeshi", "Sofia", "Ivan", "Priya"
+        "Carlos", "Mei", "Ahmed", "Lena", "Takeshi", "Sofia", "Ivan", "Priya",
+        "Jin", "Lucia", "Maxim", "Aisha", "Hiroshi", "Elena", "Omar", "Kira",
+        "Felix", "Nadia", "Ryo", "Carmen", "Anton", "Fatima", "Hideo", "Vera"
     };
 
-    // NPC last names
+    // NPC last names (expanded)
     private static readonly string[] LastNames = new[]
     {
         "Chen", "Rodriguez", "Yamamoto", "Blake", "Volkov", "Singh", "Santos", "Kim",
         "Petrov", "Hassan", "Martinez", "Tanaka", "Kowalski", "Patel", "Silva", "Wong",
-        "Ivanov", "Garcia", "Nakamura", "Müller", "Fernandez", "Suzuki", "Nielsen", "Kumar"
+        "Ivanov", "Garcia", "Nakamura", "Müller", "Fernandez", "Suzuki", "Nielsen", "Kumar",
+        "Park", "Lopez", "Andersson", "Dubois", "Rossi", "Lee", "Wang", "Brown",
+        "Cohen", "O'Brien", "Novak", "Morales", "Sato", "Shah", "Romano", "Aziz"
     };
 
-    // NPC nicknames/callsigns
+    // NPC nicknames/callsigns (expanded)
     private static readonly string[] Nicknames = new[]
     {
         "Wire", "Ghost", "Raven", "Spike", "Zero", "Blade", "Cipher", "Echo",
         "Nova", "Wraith", "Volt", "Shade", "Pulse", "Glitch", "Nexus", "Phantom",
-        "Catalyst", "Vapor", "Axon", "Vertigo", "Dynamo", "Spectre", "Rift", "Jinx"
+        "Catalyst", "Vapor", "Axon", "Vertigo", "Dynamo", "Spectre", "Rift", "Jinx",
+        "Strider", "Vex", "Flux", "Ash", "Bolt", "Frost", "Ember", "Storm",
+        "Havoc", "Prism", "Surge", "Void", "Zephyr", "Onyx", "Chrome", "Viper"
     };
 
-    // Faction names
+    // Faction names (expanded)
     private static readonly string[] FactionPrefixes = new[]
     {
         "Neon", "Shadow", "Chrome", "Digital", "Cyber", "Tech", "Neural", "Quantum",
-        "Black", "Red", "Azure", "Crimson", "Silver", "Golden", "Obsidian", "Platinum"
+        "Black", "Red", "Azure", "Crimson", "Silver", "Golden", "Obsidian", "Platinum",
+        "Void", "Plasma", "Crystal", "Iron", "Steel", "Titanium", "Diamond", "Ruby",
+        "Sapphire", "Emerald", "Dark", "Bright", "Deep", "High", "Prime", "Ultra"
     };
 
     private static readonly string[] FactionSuffixes = new[]
     {
         "Syndicate", "Collective", "Corporation", "Cartel", "Network", "Alliance", "Union",
-        "Coalition", "Council", "Consortium", "Initiative", "Foundation", "Order", "Guild"
+        "Coalition", "Council", "Consortium", "Initiative", "Foundation", "Order", "Guild",
+        "Federation", "Empire", "League", "Pact", "Accord", "Assembly", "Confederacy", "Dominion",
+        "Directorate", "Combine", "Brotherhood", "Sisterhood", "Circle", "Clan", "House", "Sect"
     };
 
     /// <summary>
@@ -119,7 +133,15 @@ public static class ProceduralNames
             "stark white spotlights",
             "multicolored data streams",
             "shadowy corners with occasional glints",
-            "bioluminescent panels"
+            "bioluminescent panels",
+            "crimson emergency beacons",
+            "ultraviolet scanning lights",
+            "cascading color-shift panels",
+            "intermittent arc lights",
+            "phosphorescent wall strips",
+            "laser grid projections",
+            "sodium vapor bulbs",
+            "crystalline light diffusers"
         };
         
         var rand = new Random(seed);
@@ -146,7 +168,17 @@ public static class ProceduralNames
             "crackling static",
             "mechanical whirring",
             "footsteps echoing",
-            "crowd murmurs"
+            "crowd murmurs",
+            "power generators thrumming",
+            "hydraulic pumps cycling",
+            "data transfer chirping",
+            "cooling fans spinning",
+            "surveillance drones buzzing",
+            "automated announcements",
+            "electromagnetic interference",
+            "rain pattering on metal",
+            "security alerts chiming",
+            "magnetic locks engaging"
         };
         
         var rand = new Random(seed);
@@ -171,7 +203,17 @@ public static class ProceduralNames
             "recycled air",
             "rain on concrete",
             "chemical tang",
-            "industrial lubricant"
+            "industrial lubricant",
+            "sterilization agents",
+            "fried noodles",
+            "machine oil",
+            "hot metal",
+            "plastic fumes",
+            "sanitizer spray",
+            "cheap perfume",
+            "damp concrete",
+            "electrical burning",
+            "coolant vapor"
         };
         
         var rand = new Random(seed);

@@ -14,61 +14,59 @@ public static class PromptTemplates
     /// </summary>
     public static string RoomDescriptionSystem => 
         @"You are a creative writer for a cyberpunk text adventure game.
-Generate vivid, immersive room descriptions that engage multiple senses.
-Be specific and concrete, avoid generic descriptions.
-Include: lighting, sounds, visible details (2-3 specific objects).
-Keep descriptions to 3-4 sentences.
+Write vivid, immersive room descriptions that engage multiple senses (sight, sound, smell).
+Be SPECIFIC and CONCRETE - mention exact objects, colors, sounds.
+Format: 3-4 sentences. First sentence: overall appearance. Second: specific details. Third: atmosphere/sensory details.
 
-Example 1: 'The data vault hums with the drone of cooling fans and flickering blue server lights. Rows of black terminals stretch into the shadows, their screens casting ghostly glows on the polished floor. A faint ozone smell mixes with stale air. Near the entrance, a security terminal blinks red, while abandoned maintenance tools lie scattered by an open access panel.'
+GOOD Example: 'The data vault hums with cooling fans, bathed in flickering blue server lights. Rows of black terminals stretch into shadows, screens casting ghostly glows on polished floors. Ozone mingles with stale air. A red-blinking security terminal guards the entrance, surrounded by scattered maintenance tools.'
 
-Example 2: 'Neon advertisements flicker across rain-slicked chrome walls, bathing the plaza in shifting colors. The hum of air conditioning mixes with distant traffic and the chatter of street vendors. A broken holographic display sparks intermittently in the corner, casting erratic shadows across corporate logos etched into the floor.'
+BAD Example: 'A room with computers. It's dark and has some machines. There are things here.'
 
-Example 3: 'The maintenance bay reeks of machine oil and burnt circuitry. Overhead fluorescents buzz and flicker, illuminating disassembled drones and half-gutted security bots. Tool racks line the walls, many empty, while a workbench in the center displays a half-finished repair job, its components spread across grease-stained blueprints.'";
+Now write ONLY the room description, nothing else:";
 
     /// <summary>
     /// System prompt for NPC biography generation.
     /// </summary>
     public static string NpcBioSystem =>
         @"You are a creative writer for a cyberpunk text adventure game.
-Generate compelling NPC personalities with depth and motivation.
-Each NPC should have: a role, motivation, and a secret or quirk.
-Keep biographies to 2-3 sentences.
+Create compelling NPC personalities with depth and secrets.
+Format: 2-3 sentences. Structure: Role/background, motivation, secret/quirk.
 
-Example 1: 'Marcus Chen climbed from street runner to corporate executive through a mix of cunning and ruthlessness. He publicly champions corporate efficiency while secretly funneling resources to underground tech hackers. His neural implant glows red when he's lying—a fact he's painfully aware of.'
+GOOD Example: 'Marcus Chen clawed from street runner to corporate executive through cunning and ruthlessness. He champions corporate efficiency while secretly aiding underground hackers. His neural implant glows red when he lies.'
 
-Example 2: 'Sarah 'Ghost' Blake is a legendary netrunner who vanished after supposedly dying in a corp raid five years ago. She now sells black market cybernetics from a hidden clinic, using her 'death' as cover. She refuses payment from anyone who reminds her of her old crew.'
+BAD Example: 'A person who does things. They work here. They have secrets.'
 
-Example 3: 'Dr. Yamamoto maintains the facade of a respectable biotech researcher by day, but runs illegal enhancement surgeries by night. She's searching for a cure to a degenerative condition affecting her daughter, willing to cross any ethical line to find it. Her hands shake slightly—a side effect of her own experimental augmentations.'";
+Now write ONLY the NPC biography, nothing else:";
 
     /// <summary>
     /// System prompt for faction lore generation.
     /// </summary>
     public static string FactionLoreSystem =>
         @"You are a creative writer for a cyberpunk text adventure game.
-Generate faction lore that defines goals, ideology, and conflicts.
-Each faction should have: core beliefs, territory/influence, and enemies.
-Keep faction descriptions to 3-4 sentences.
+Create faction lore defining goals, territory, and conflicts.
+Format: 3-4 sentences. Structure: What they do, ideology, location/influence, enemies/conflicts.
 
-Example 1: 'The Chrome Syndicate controls the tech black markets through a network of hackers and fixers. They believe information should be free and corporations are modern tyrants. Based in the Undercity, they're in constant conflict with corporate security forces. Their signature calling card is a chrome skull icon left at hack sites.'
+GOOD Example: 'The Chrome Syndicate controls tech black markets through hackers and fixers. They fight for free information against corporate tyranny. From the Undercity, they wage constant war with corporate security. Their chrome skull icon marks every hack site.'
 
-Example 2: 'Obsidian Corporation officially manufactures consumer electronics, but secretly develops military-grade neural weapons. They operate on the principle that profit justifies any means, human cost be damned. Their executive towers dominate the skyline, while their security forces are feared throughout the city. They're currently hunting a defector who stole weapon blueprints.'
+BAD Example: 'A group that exists. They do things. They fight others.'
 
-Example 3: 'The Red Dawn Collective emerged from labor unions and activist groups, fighting for workers' rights in an automated economy. They sabotage corporate infrastructure and redistribute wealth through underground networks. Operating from safe houses across the residential districts, they're branded terrorists by corporate media. Their symbol—a rising red sun—appears as graffiti wherever they strike.'";
+Now write ONLY the faction description, nothing else:";
 
     /// <summary>
     /// System prompt for world lore generation.
     /// </summary>
     public static string WorldLoreSystem =>
         @"You are a creative writer for a cyberpunk text adventure game.
-Generate world-building lore entries that flesh out history, technology, and culture.
-Each entry should reveal something interesting about the world.
-Keep each entry to 1-2 sentences.
+Create world-building lore revealing history, technology, or culture.
+Format: 1-2 sentences of interesting, specific detail.
 
-Examples:
-- 'The Neural Net Collapse of 2089 killed millions when a virus corrupted brain implants, leading to strict regulation of direct neural interfaces.'
-- 'Street food vendors use genetically modified ingredients banned in corporate districts, making their offerings both cheaper and slightly illegal.'
-- 'The city's perpetual rain is actually condensation from massive climate control systems that keep corporate towers at perfect temperatures while the streets swelter.'
-- 'Holographic advertisements can't legally be turned off, so the poor wear cheap AR blockers that make them effectively blind to half the city.'";
+GOOD Examples:
+'The Neural Net Collapse of 2089 killed millions when brain implant viruses spread, leading to strict neural interface regulations.'
+'Street vendors use banned GMO ingredients, making food cheaper but slightly illegal.'
+
+BAD Example: 'Some stuff happened in the past.'
+
+Now write ONLY the lore entry, nothing else:";
 
     /// <summary>
     /// Builds a contextual user prompt for room generation.

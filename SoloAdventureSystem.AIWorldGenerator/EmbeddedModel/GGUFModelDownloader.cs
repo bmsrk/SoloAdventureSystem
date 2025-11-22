@@ -9,6 +9,7 @@ namespace SoloAdventureSystem.ContentGenerator.EmbeddedModel;
 /// <summary>
 /// Downloads and manages GGUF models from HuggingFace.
 /// Provides access to small, efficient models for local inference.
+/// Models are persisted in user's AppData folder and reused across sessions.
 /// </summary>
 public class GGUFModelDownloader
 {
@@ -46,7 +47,7 @@ public class GGUFModelDownloader
 
     /// <summary>
     /// Ensures the specified model is downloaded and ready to use.
-    /// Downloads if missing or corrupted.
+    /// Downloads if missing or corrupted. Models are cached and reused.
     /// </summary>
     public async Task<string> EnsureModelAvailableAsync(
         string modelKey = "phi-3-mini-q4",
@@ -59,13 +60,13 @@ public class GGUFModelDownloader
 
         var modelPath = GetModelPath(modelKey);
 
-        // Check if model already exists and is valid
+        // Check if model already exists and is valid (PERSISTED)
         if (File.Exists(modelPath))
         {
             var fileInfo = new FileInfo(modelPath);
             if (fileInfo.Length > modelInfo.ExpectedSize * 0.9) // Within 10% of expected size
             {
-                _logger?.LogInformation("Model already exists at {Path} ({SizeMB} MB)",
+                _logger?.LogInformation("? Using cached model at {Path} ({SizeMB} MB) - No download needed!",
                     modelPath, fileInfo.Length / 1024 / 1024);
                 return modelPath;
             }
@@ -76,18 +77,21 @@ public class GGUFModelDownloader
             }
         }
 
-        // Download model
+        // Download model (will be persisted for future use)
         var url = $"https://huggingface.co/{modelInfo.Repo}/resolve/main/{modelInfo.Filename}";
         _logger?.LogInformation("Downloading model {ModelKey} from {Url}...", modelKey, url);
+        _logger?.LogInformation("Model will be cached at: {Path}", modelPath);
 
         await DownloadModelAsync(url, modelPath, modelInfo.ExpectedSize, progress);
 
-        _logger?.LogInformation("Model downloaded successfully to {Path}", modelPath);
+        _logger?.LogInformation("? Model downloaded and cached successfully at {Path}", modelPath);
+        _logger?.LogInformation("Future generations will use the cached model - no re-download needed!");
         return modelPath;
     }
 
     /// <summary>
-    /// Gets the local path where the model should be stored.
+    /// Gets the local path where the model should be stored (persistent cache).
+    /// Location: %APPDATA%\SoloAdventureSystem\models\
     /// </summary>
     public static string GetModelPath(string modelKey)
     {
@@ -98,6 +102,54 @@ public class GGUFModelDownloader
 
         Directory.CreateDirectory(modelDir);
         return Path.Combine(modelDir, $"{modelKey}.gguf");
+    }
+
+    /// <summary>
+    /// Gets the directory where all models are cached.
+    /// </summary>
+    public static string GetModelCacheDirectory()
+    {
+        return Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "SoloAdventureSystem",
+            "models");
+    }
+
+    /// <summary>
+    /// Gets information about all cached models.
+    /// </summary>
+    public static Dictionary<string, CachedModelInfo> GetCachedModels()
+    {
+        var result = new Dictionary<string, CachedModelInfo>();
+        
+        foreach (var (modelKey, modelInfo) in MODELS)
+        {
+            var path = GetModelPath(modelKey);
+            if (File.Exists(path))
+            {
+                var fileInfo = new FileInfo(path);
+                result[modelKey] = new CachedModelInfo
+                {
+                    ModelKey = modelKey,
+                    Path = path,
+                    SizeBytes = fileInfo.Length,
+                    SizeMB = fileInfo.Length / 1024.0 / 1024.0,
+                    LastModified = fileInfo.LastWriteTime,
+                    IsValid = fileInfo.Length > modelInfo.ExpectedSize * 0.9
+                };
+            }
+        }
+        
+        return result;
+    }
+
+    /// <summary>
+    /// Gets total size of all cached models.
+    /// </summary>
+    public static long GetTotalCacheSize()
+    {
+        var cached = GetCachedModels();
+        return cached.Values.Sum(m => m.SizeBytes);
     }
 
     /// <summary>
@@ -216,4 +268,17 @@ public class GGUFModelDownloader
     }
 
     private record ModelInfo(string Repo, string Filename, long ExpectedSize);
+}
+
+/// <summary>
+/// Information about a cached model file.
+/// </summary>
+public class CachedModelInfo
+{
+    public string ModelKey { get; set; } = string.Empty;
+    public string Path { get; set; } = string.Empty;
+    public long SizeBytes { get; set; }
+    public double SizeMB { get; set; }
+    public DateTime LastModified { get; set; }
+    public bool IsValid { get; set; }
 }

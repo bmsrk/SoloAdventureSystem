@@ -1,12 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
+    <OutputType>Library</OutputType>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <RootNamespace>SoloAdventureSystem.AIWorldGenerator</RootNamespace>
-    <AssemblyName>SoloAdventureSystem.AIWorldGenerator</AssemblyName>
+    <RootNamespace>SoloAdventureSystem.ContentGenerator</RootNamespace>
+    <AssemblyName>SoloAdventureSystem.ContentGenerator</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,13 +19,10 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
-    <PackageReference Include="Terminal.Gui" Version="1.19.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="appsettings.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <Folder Include="UI\" />
   </ItemGroup>
 
   <!-- Copy generated worlds to a shared location accessible by the game -->

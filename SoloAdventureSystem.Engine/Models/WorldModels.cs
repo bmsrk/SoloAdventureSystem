@@ -87,17 +87,17 @@ public record class Faction(
 
 public record StoryNode
 {
-    public string Id { get; init; }
-    public string Title { get; init; }
-    public string Text { get; init; }
-    public List<StoryChoice> Choices { get; init; }
+    public string Id { get; init; } = string.Empty;
+    public string Title { get; init; } = string.Empty;
+    public string Text { get; init; } = string.Empty;
+    public List<StoryChoice> Choices { get; init; } = new();
 }
 
 public record StoryChoice
 {
-    public string Label { get; init; }
-    public string Next { get; init; }
-    public List<string> Effects { get; init; }
+    public string Label { get; init; } = string.Empty;
+    public string Next { get; init; } = string.Empty;
+    public List<string> Effects { get; init; } = new();
 }
 
 public record class Alignment(

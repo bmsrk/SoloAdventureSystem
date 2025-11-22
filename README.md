@@ -1,313 +1,330 @@
-# ? Solo Adventure System
+# ?? Solo Adventure System
 
-<div align="center">
+[![.NET 10](https://img.shields.io/badge/.NET-10.0-purple.svg)](https://dotnet.microsoft.com/download)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Tests](https://img.shields.io/badge/Tests-56%20Passed-green.svg)]()
 
-**A cyberpunk-themed AI-powered text adventure game with Terminal.GUI interface**
+**A text-based adventure game engine with AI-powered world generation**
 
-[![.NET](https://img.shields.io/badge/.NET-10.0-purple)](https://dotnet.microsoft.com/)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Build](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com)
-[![Tests](https://img.shields.io/badge/tests-30%2F30-success)](https://github.com)
-
-[Quick Start](#-quick-start) • [Features](#-features) • [Documentation](#-documentation) • [Roadmap](#-roadmap)
-
-</div>
-
----
-
-## ?? What is This?
-
-Solo Adventure System is a **complete text adventure game platform** that combines:
-
-- ?? **AI-Powered World Generation** - Create unique worlds using AI or deterministic algorithms
-- ?? **Cyberpunk Terminal UI** - Retro-futuristic interface with Terminal.Gui
-- ?? **Deterministic Worlds** - Same seed = same world, every time
-- ?? **Infinite Possibilities** - Generate endless unique adventures
-- ?? **Portable Worlds** - Share worlds as ZIP files
+Solo Adventure System is a modern .NET framework for creating and playing procedurally generated text-based adventure games. Features embedded AI models for dynamic world creation, a clean terminal UI, and an extensible game engine.
 
 ---
 
 ## ? Features
 
-### World Generator
-- ?? **5 AI Providers**: STUB (offline), GROQ (free!), OpenAI, GitHub Models, Azure
-- ?? **Deterministic Generation**: Reproducible worlds from seeds
-- ?? **Smart Caching**: Save AI API costs
-- ?? **Configurable**: Zones, NPC density, themes, and more
-- ?? **Export to ZIP**: Self-contained world packages
-- ?? **Terminal.GUI Interface**: Beautiful cyberpunk UI
+### ?? Core Capabilities
+- **AI-Powered World Generation** - Create unique game worlds using local LLM models (Phi-3, TinyLlama, Llama-3.2)
+- **Terminal-Based UI** - Clean, intuitive interface using Terminal.Gui
+- **Procedural Content** - Generate rooms, NPCs, factions, and storylines dynamically
+- **Rule Engine** - Flexible game logic system for custom mechanics
+- **World Persistence** - Save and load generated worlds as compressed archives
+- **Extensible Architecture** - Clean separation between engine, generator, and UI
 
-### Game Engine
-- ??? **Room Navigation**: Explore interconnected locations
-- ?? **NPC Interactions**: Talk to characters, learn about factions
-- ?? **Character Stats**: HP, Level, XP, Attributes (STR, DEX, INT, etc.)
-- ?? **Inventory System**: Collect and manage items (framework ready)
-- ?? **Game Log**: Track your adventure
-- ?? **Simple Commands**: `look`, `go north`, `talk`, `inventory`, `stats`
-
-### Developer Experience
-- ?? **30+ Tests**: Comprehensive test coverage
-- ?? **Complete Documentation**: Architecture, guides, and examples
-- ?? **Clean Architecture**: Modular, testable, maintainable
-- ?? **Auto-Discovery**: Worlds automatically found and copied
-- ?? **Well-Documented**: Code comments, XML docs, and guides
+### ?? AI Features
+- **Embedded Models** - Run LLMs locally with LLamaSharp
+- **Model Auto-Download** - Automatic GGUF model downloading with progress tracking
+- **Multiple Providers** - Support for Phi-3, TinyLlama, Llama-3.2, and more
+- **Optimized Prompts** - Specially crafted prompts for world generation
+- **CPU Backend** - No GPU required, runs on any modern PC
 
 ---
 
 ## ?? Quick Start
 
 ### Prerequisites
-- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
-- Terminal with Unicode support
-- (Optional) [GROQ API Key](https://groq.com/) for free AI generation
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) or later
+- Windows, Linux, or macOS
+- 8GB RAM minimum (16GB recommended for larger models)
 
-### 1. Clone the Repository
-```sh
-git clone https://github.com/yourusername/SoloAdventureSystem.git
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/bmsrk/SoloAdventureSystem.git
 cd SoloAdventureSystem
-```
 
-### 2. Generate Your First World
-```sh
-cd SoloAdventureSystem.AIWorldGenerator
+# Build the solution
+dotnet build
+
+# Run the game
+cd SoloAdventureSystem.Terminal.UI
 dotnet run
 ```
 
-**In the UI:**
-1. Select **STUB** provider (for instant generation)
-2. Name: `MyFirstWorld`
-3. Seed: `12345`
-4. Zones: `10`
-5. Click **? GENERATE WORLD ?**
+### First-Time Setup
 
-**Output:**
-```
-? GENERATED 10 ZONES
-? SPAWNED 10 ENTITIES
-? CREATED 1 FACTIONS
-? FILE: content/worlds\WORLD_MyFirstWorld_12345.zip
-```
+1. **Generate Your First World**
+   - Select "Generate New World" from the main menu
+   - Choose an AI provider (TinyLlama recommended for first-time users)
+   - Enter a world name and seed
+   - Wait for model download (one-time only) and generation
 
-### 3. Play the Game
-```sh
-cd ../SoloAdventureSystem.TerminalGUI.UI
-dotnet run
-```
-
-**In the UI:**
-1. Select your world from the list
-2. Press Enter to start
-3. Type `help` for commands
-
-**Example Gameplay:**
-```
-> look
-You are at: Central Hub
-A bustling central location with holographic displays...
-Exits: north, east, south, west
-
-> go north
-You move north to Data Vault.
-
-> talk guard
-You talk to Security Guard.
-Security Guard: "Access restricted to authorized personnel only."
-```
+2. **Play the Game**
+   - Select "Play Game" from the main menu
+   - Choose a generated world
+   - Start exploring!
 
 ---
 
-## ?? Documentation
-
-### For Players
-- **[Game Guide](./SoloAdventureSystem.TerminalGUI.UI/README.md)** - How to play
-- **[Quick Start](./docs/MVP_COMPLETE.md#-quick-start-guide)** - Get started in 5 minutes
-
-### For Developers
-- **[?? Documentation Index](./docs/INDEX.md)** - Complete documentation map
-- **[?? Agent Instructions](./docs/AGENT_INSTRUCTIONS.md)** - Architecture and patterns
-- **[?? Roadmap](./docs/ROADMAP.md)** - Future features and priorities
-- **[?? Worlds Setup](./docs/WORLDS_SETUP.md)** - Technical details
-
-### Key Documents
-| Document | Description |
-|----------|-------------|
-| [MVP Complete](./docs/MVP_COMPLETE.md) | What's working now |
-| [Agent Instructions](./docs/AGENT_INSTRUCTIONS.md) | Developer guide |
-| [Roadmap](./docs/ROADMAP.md) | Future plans |
-| [Worlds Setup](./docs/WORLDS_SETUP.md) | Auto-copy system |
-
----
-
-## ??? Project Structure
+## ?? Project Structure
 
 ```
 SoloAdventureSystem/
-??? SoloAdventureSystem.Engine/              # Core engine
-?   ??? Models/                              # World data models
-?   ??? WorldLoader/                         # ZIP world loading
-?
-??? SoloAdventureSystem.AIWorldGenerator/    # World generator
-?   ??? Adapters/                            # AI providers
-?   ??? Generation/                          # World generation
-?   ??? UI/                                  # Generator UI
-?
-??? SoloAdventureSystem.TerminalGUI.UI/      # Game player
-?   ??? GameEngine/                          # Game logic
-?   ??? Program.cs                           # Entry point
-?
-??? SoloAdventureSystem.Engine.Tests/        # Tests (30+)
-?
-??? content/worlds/                          # Shared worlds ?
-?
-??? docs/                                     # Documentation ??
-    ??? INDEX.md                             # Documentation map
-    ??? AGENT_INSTRUCTIONS.md                # Developer guide
-    ??? ROADMAP.md                           # Future features
-    ??? ...
+??? SoloAdventureSystem.Engine/          # Core game engine
+?   ??? Game/                            # Game state management
+?   ??? WorldLoader/                     # World loading/saving
+?   ??? Models/                          # Data models
+?   ??? Rules/                           # Rule engine
+??? SoloAdventureSystem.AIWorldGenerator/ # AI world generation
+?   ??? Adapters/                        # LLM provider adapters
+?   ??? EmbeddedModel/                   # Model management
+?   ??? Generation/                      # Generation logic
+?   ??? Models/                          # Generation models
+??? SoloAdventureSystem.Terminal.UI/     # Terminal UI application
+?   ??? Game/                            # Game UI components
+?   ??? WorldGenerator/                  # Generator UI
+?   ??? Themes/                          # UI themes
+??? SoloAdventureSystem.Engine.Tests/    # Unit tests
+??? content/                             # Shared content
+?   ??? worlds/                          # Generated world files
+??? docs/                                # Documentation
 ```
 
 ---
 
-## ?? Current Status: MVP 1.0 ?
+## ?? How to Play
 
-### What Works
-- ? AI World Generation (5 providers)
-- ? Deterministic world creation
-- ? Terminal.GUI game interface
-- ? Room navigation
-- ? NPC interactions
-- ? Character stats
-- ? Automatic world discovery
-- ? 30 passing tests
-- ? Complete documentation
+### Main Menu Options
 
-### Known Limitations
-- ? No combat system (Phase 2)
-- ? No item pickup/usage (Phase 2)
-- ? No quests (Phase 2)
-- ? No save/load (Phase 3)
+**1. Generate New World**
+- Create a procedurally generated game world
+- Choose from multiple AI models
+- Customize world name and random seed
+- Worlds are saved to `content/worlds/`
 
-See [Roadmap](./docs/ROADMAP.md) for upcoming features!
+**2. Play Game**
+- Browse available worlds
+- Load and explore generated content
+- (Game loop coming in v1.1)
+
+**3. Exit**
+- Close the application
+
+### AI Model Selection
+
+| Model | Size | Speed | Quality | Recommended For |
+|-------|------|-------|---------|-----------------|
+| **TinyLlama** | ~700MB | Fast | Good | Quick testing, low-end PCs |
+| **Phi-3 Mini** | ~2.3GB | Medium | Excellent | Best balance |
+| **Llama-3.2** | ~2.0GB | Medium | Excellent | Advanced users |
 
 ---
 
-## ?? Roadmap
+## ??? Architecture
 
-### Phase 2: Enhanced Gameplay (v1.1)
-- [ ] Combat system
-- [ ] Inventory & items
-- [ ] Quest system
-- [ ] Save/load
+### Technology Stack
 
-### Phase 3: Polish (v1.2)
-- [ ] Better UI
-- [ ] Configuration
-- [ ] More world themes
+- **Runtime**: .NET 10.0
+- **Language**: C# 14.0
+- **UI Framework**: Terminal.Gui 1.19.0
+- **AI Engine**: LLamaSharp 0.15.0
+- **DI Container**: Microsoft.Extensions.DependencyInjection 10.0.0
+- **Configuration**: Microsoft.Extensions.Configuration 10.0.0
+- **Serialization**: YamlDotNet 16.3.0
 
-### Phase 4+: Advanced Features
-- [ ] Character progression
-- [ ] Advanced mechanics
-- [ ] World editor
-- [ ] Multiplayer (experimental)
+### Design Patterns
 
-**[View Full Roadmap ?](./docs/ROADMAP.md)**
+- **Dependency Injection** - Services configured via DI container
+- **Adapter Pattern** - Multiple AI provider implementations
+- **Factory Pattern** - World generator and adapter creation
+- **Repository Pattern** - World loading and persistence
+- **Strategy Pattern** - Rule engine for game mechanics
+
+### Key Components
+
+#### Game Engine (`SoloAdventureSystem.Engine`)
+```csharp
+// Core game state
+public class GameState
+{
+    public WorldModel World { get; set; }
+    public Location CurrentLocation { get; set; }
+    public List<string> Inventory { get; set; }
+    public Dictionary<string, bool> Flags { get; set; }
+    public int TurnCount { get; set; }
+}
+```
+
+#### World Generator (`SoloAdventureSystem.AIWorldGenerator`)
+```csharp
+// Generate worlds with AI
+public interface IWorldGenerator
+{
+    Task<WorldGenerationResult> GenerateWorldAsync(
+        WorldGenerationOptions options,
+        IProgress<string>? progress = null,
+        CancellationToken cancellationToken = default
+    );
+}
+```
+
+#### Terminal UI (`SoloAdventureSystem.Terminal.UI`)
+- Main menu system with navigation
+- World generator UI with progress tracking
+- World selector with preview
+- Minimal theme for clean aesthetics
+
+---
+
+## ?? Configuration
+
+### `appsettings.json`
+
+```json
+{
+  "AI": {
+    "Provider": "LLamaSharp",
+    "ModelPath": "./models",
+    "DefaultModel": "phi-3-mini",
+    "MaxTokens": 2048,
+    "Temperature": 0.7,
+    "CacheModels": true
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft": "Warning"
+    }
+  }
+}
+```
+
+### Environment Variables
+
+```bash
+# Override AI settings
+AI__Provider=LLamaSharp
+AI__DefaultModel=tinyllama
+
+# Override logging
+Logging__LogLevel__Default=Debug
+```
 
 ---
 
 ## ?? Testing
 
-```sh
-# Run all tests
+### Run All Tests
+```bash
 dotnet test
-
-# Run specific tests
-dotnet test --filter "FullyQualifiedName~WorldGeneratorTests"
-
-# With coverage
-dotnet test /p:CollectCoverage=true
 ```
 
-**Test Results:** 30/30 passing ?
+### Test Coverage
+- **56 tests** passing
+- **1 test** skipped
+- Coverage: Engine core, world loading, validation
+
+### Test Projects
+- `SoloAdventureSystem.Engine.Tests` - Unit tests for engine components
 
 ---
 
-## ?? Building
+## ??? Roadmap
 
-### Development Build
-```sh
-dotnet build
-```
+### Phase 1: MVP ? (Current)
+- ? AI world generation
+- ? Terminal UI
+- ? Model management
+- ? World persistence
 
-### Release Build
-```sh
-dotnet build -c Release
-```
+### Phase 2: Enhanced Gameplay (v1.1)
+- ? Turn-based combat system
+- ? Inventory and items
+- ? Quest system
+- ? NPC interactions
 
-### Publish Standalone
-```sh
-# Windows
-dotnet publish -c Release -r win-x64 --self-contained
+### Phase 3: Persistence & Polish (v1.2)
+- ?? Save/load game state
+- ?? Enhanced UI
+- ?? Configuration settings
 
-# Linux
-dotnet publish -c Release -r linux-x64 --self-contained
+### Phase 4: Advanced Features (v2.0)
+- ?? Character progression
+- ?? Advanced mechanics (stealth, persuasion)
+- ?? Dynamic world events
 
-# MacOS
-dotnet publish -c Release -r osx-x64 --self-contained
-```
-
----
-
-## ?? Screenshots
-
-### World Generator UI
-```
-??????????????????????????????????????????????????????????????????
-?         ? ? ?  DAEMON NEURAL NET PROTOCOL  ? ? ?            ?
-??????????????????????????????????????????????????????????????????
-? ? WORLD NAME                                                   ?
-?  Neon Nexus                                                    ?
-? ? THEME                                                        ?
-?  DYSTOPIAN MEGACITY                                            ?
-? ? ZONES: 13                                                    ?
-? ? NPC DENSITY: MODERATE                                        ?
-??????????????????????????????????????????????????????????????????
-```
-
-### Game UI
-```
-?????????????????????????????????????????????????????????????????
-?       ? SOLO ADVENTURE ? NEON_NEXUS                         ?
-?????????????????????????????????????????????????????????????????
-? >>> HP: 100/100 | LVL: 1 | XP: 0                             ?
-? >>> LOCATION: Central Hub                                     ?
-?????????????????????????????????????????????????????????????????
-? ? LOCATION ?           ? ? EXITS ?                        ?
-?                          ?  ? NORTH                           ?
-? A bustling plaza...      ?  ? EAST                            ?
-?                          ??????????????????????????????????????
-?                          ? ? NPCS ?                         ?
-?                          ?  • Street Vendor                   ?
-?????????????????????????????????????????????????????????????????
-? ? GAME LOG ?                                                ?
-? > look                                                        ?
-? You are at: Central Hub                                       ?
-?????????????????????????????????????????????????????????????????
-```
+See [docs/ROADMAP.md](docs/ROADMAP.md) for complete feature list.
 
 ---
 
 ## ?? Contributing
 
-Contributions are welcome! Please:
+Contributions are welcome! Here's how to get started:
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Read [Agent Instructions](./docs/AGENT_INSTRUCTIONS.md) for coding standards
-4. Add tests for new features
-5. Update documentation
-6. Commit changes (`git commit -m 'feat: Add amazing feature'`)
-7. Push to branch (`git push origin feature/amazing-feature`)
-8. Open a Pull Request
+### Development Setup
+
+```bash
+# Clone and build
+git clone https://github.com/bmsrk/SoloAdventureSystem.git
+cd SoloAdventureSystem
+dotnet restore
+dotnet build
+
+# Run tests
+dotnet test
+
+# Run the UI
+cd SoloAdventureSystem.Terminal.UI
+dotnet run
+```
+
+### Contribution Guidelines
+
+1. **Fork** the repository
+2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
+3. **Make** your changes with clear commits
+4. **Add** tests for new functionality
+5. **Ensure** all tests pass (`dotnet test`)
+6. **Submit** a pull request
+
+### Code Style
+- Follow C# coding conventions
+- Use nullable reference types
+- Add XML documentation for public APIs
+- Keep methods focused and testable
+
+---
+
+## ?? Documentation
+
+- **[Quick Start Guide](docs/QUICK_START.md)** - Get up and running
+- **[Developer Guide](docs/DEVELOPER_GUIDE.md)** - Architecture and development
+- **[AI Guide](docs/AI_GUIDE.md)** - Working with LLM models
+- **[API Reference](docs/API_REFERENCE.md)** - Code documentation
+- **[Roadmap](docs/ROADMAP.md)** - Future features and plans
+
+---
+
+## ?? Troubleshooting
+
+### Common Issues
+
+**Model Download Fails**
+- Check internet connection
+- Verify HuggingFace is accessible
+- Try a smaller model (TinyLlama)
+
+**Out of Memory**
+- Close other applications
+- Use a smaller model
+- Increase system page file
+
+**World Generation Hangs**
+- Check CPU usage (should be 100% on one core)
+- Be patient - first generation takes 2-5 minutes
+- Try reducing world complexity
+
+For more help, see [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
 
 ---
 
@@ -315,34 +332,32 @@ Contributions are welcome! Please:
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
+```
+MIT License - Copyright (c) 2025 Solo Adventure System Contributors
+```
+
 ---
 
 ## ?? Acknowledgments
 
-- **Terminal.Gui** - Excellent terminal UI framework
-- **GROQ** - Free AI API access
-- **YamlDotNet** - YAML serialization
-- **xUnit** - Testing framework
+- **[LLamaSharp](https://github.com/SciSharp/LLamaSharp)** - LLM inference engine
+- **[Terminal.Gui](https://github.com/gui-cs/Terminal.Gui)** - Terminal UI framework
+- **[YamlDotNet](https://github.com/aaubry/YamlDotNet)** - YAML serialization
+- **HuggingFace** - Model hosting and distribution
 
 ---
 
 ## ?? Contact
 
-- GitHub Issues: [Bug reports and features](https://github.com/yourusername/SoloAdventureSystem/issues)
-- GitHub Discussions: [Questions and ideas](https://github.com/yourusername/SoloAdventureSystem/discussions)
-
----
-
-## ? Star History
-
-If you find this project useful, please give it a star! ?
+- **GitHub**: [github.com/bmsrk/SoloAdventureSystem](https://github.com/bmsrk/SoloAdventureSystem)
+- **Issues**: [github.com/bmsrk/SoloAdventureSystem/issues](https://github.com/bmsrk/SoloAdventureSystem/issues)
 
 ---
 
 <div align="center">
 
-**Made with ? and .NET 10**
+**Built with ?? using .NET 10 and AI**
 
-[Documentation](./docs/INDEX.md) • [Quick Start](#-quick-start) • [Roadmap](./docs/ROADMAP.md)
+[? Star this repo](https://github.com/bmsrk/SoloAdventureSystem) if you find it useful!
 
 </div>
