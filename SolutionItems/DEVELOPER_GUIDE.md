@@ -1,16 +1,16 @@
-# ?? Agent Instructions - Solo Adventure System
+# Agent Instructions - Solo Adventure System
 
-## ?? Project Overview
+## Project Overview
 
 **Project Name**: Solo Adventure System  
 **Type**: Terminal-based text adventure game with AI world generation  
 **Framework**: .NET 10  
 **UI**: Terminal.Gui  
-**Status**: MVP 1.0 Complete ?
+**Status**: MVP 1.0 Complete
 
 ---
 
-## ??? Architecture
+## Architecture
 
 ### Project Structure
 ```
@@ -43,18 +43,17 @@ SoloAdventureSystem/
 ?   ??? WorldGeneratorTests.cs              # 15 tests
 ?   ??? WorldLoaderServiceTests.cs          # 15 tests
 ?
-??? content/worlds/                          # Shared worlds location ?
+??? content/worlds/                          # Shared worlds location
 ?
 ??? docs/                                     # Documentation
-    ??? MVP_COMPLETE.md
-    ??? ROADMAP.md
     ??? AGENT_INSTRUCTIONS.md (this file)
-    ??? ...
+    ??? GAME_DESIGN_DOCUMENT.md
+    ??? ROADMAP.md
 ```
 
 ---
 
-## ?? Key Concepts
+## Key Concepts
 
 ### World Generation
 - **Deterministic**: Same seed = same world
@@ -87,7 +86,7 @@ Game searches in priority order:
 
 ---
 
-## ?? Common Tasks
+## Common Tasks
 
 ### Adding a New Command
 **File**: `SoloAdventureSystem.TerminalGUI.UI/GameEngine/GameUI.cs`
@@ -167,7 +166,7 @@ public class GameState
         if (!Achievements.ContainsKey(name))
         {
             Achievements[name] = true;
-            AddLog($"?? Achievement Unlocked: {name}");
+            AddLog($"[!] Achievement Unlocked: {name}");
         }
     }
 }
@@ -175,7 +174,7 @@ public class GameState
 
 ---
 
-## ?? Code Standards
+## Code Standards
 
 ### Naming Conventions
 - **Classes**: PascalCase (`GameState`, `WorldLoader`)
@@ -229,14 +228,14 @@ try
 catch (FileNotFoundException ex)
 {
     _logger.LogError(ex, "World file not found: {Path}", path);
-    Console.WriteLine($"? Error: World file not found");
+    Console.WriteLine($"[X] Error: World file not found");
     return null;
 }
 ```
 
 ---
 
-## ?? Testing Guidelines
+## Testing Guidelines
 
 ### Test Structure
 ```csharp
@@ -275,7 +274,7 @@ dotnet test /p:CollectCoverage=true
 
 ---
 
-## ?? UI/UX Guidelines
+## UI/UX Guidelines
 
 ### Terminal.GUI Patterns
 ```csharp
@@ -305,7 +304,7 @@ var frame = new FrameView("Frame")
 ```
 
 ### Cyberpunk Aesthetic
-- Use ? ? ? ? ? ? • symbols
+- Use ASCII symbols: >, >>, >>>, *, •, -, |
 - Cyan/Magenta/Green color scheme
 - ASCII borders: ????? ? ? ?????
 - ALL CAPS for emphasis
@@ -313,7 +312,7 @@ var frame = new FrameView("Frame")
 
 ---
 
-## ?? Debugging Tips
+## Debugging Tips
 
 ### Common Issues
 
@@ -349,7 +348,7 @@ dotnet run --project SoloAdventureSystem.TerminalGUI.UI
 
 ---
 
-## ?? Building & Deployment
+## Building & Deployment
 
 ### Development Build
 ```sh
@@ -375,7 +374,7 @@ dotnet publish -c Release -r osx-x64 --self-contained
 
 ---
 
-## ?? Git Workflow
+## Git Workflow
 
 ### Branch Strategy
 - `main` - Stable releases
@@ -408,26 +407,25 @@ Closes #42
 
 ---
 
-## ?? Documentation
+## Documentation
 
 ### Update When:
 - Adding new features ? Update ROADMAP.md
-- Completing milestones ? Update MVP_COMPLETE.md
+- Completing milestones ? Update README.md
 - Changing architecture ? Update this file
 - Adding new files ? Update README.md
 
 ### Documentation Files
 | File | Purpose | Update When |
 |------|---------|-------------|
-| `MVP_COMPLETE.md` | Milestone tracking | Feature complete |
+| `README.md` | User guide | User-facing changes |
 | `ROADMAP.md` | Future plans | Planning |
 | `AGENT_INSTRUCTIONS.md` | This file | Architecture changes |
-| `README.md` | User guide | User-facing changes |
-| `WORLDS_SETUP.md` | Technical setup | Build changes |
+| `GAME_DESIGN_DOCUMENT.md` | Design vision | Design changes |
 
 ---
 
-## ?? Quick Reference
+## Quick Reference
 
 ### File Locations
 | What | Where |
@@ -455,34 +453,34 @@ const int MAX_LOG_ENTRIES = 100;
 
 ---
 
-## ?? Important Notes
+## Important Notes
 
 ### DO:
-- ? Use deterministic generation (seeded Random)
-- ? Add tests for new features
-- ? Update documentation
-- ? Follow naming conventions
-- ? Handle errors gracefully
-- ? Log important actions
-- ? Use dependency injection
+- [x] Use deterministic generation (seeded Random)
+- [x] Add tests for new features
+- [x] Update documentation
+- [x] Follow naming conventions
+- [x] Handle errors gracefully
+- [x] Log important actions
+- [x] Use dependency injection
 
 ### DON'T:
-- ? Use DateTime.Now for generation
-- ? Hard-code file paths
-- ? Ignore null references
-- ? Skip tests
-- ? Leave TODO comments permanently
-- ? Break determinism
-- ? Commit secrets/API keys
+- [ ] Use DateTime.Now for generation
+- [ ] Hard-code file paths
+- [ ] Ignore null references
+- [ ] Skip tests
+- [ ] Leave TODO comments permanently
+- [ ] Break determinism
+- [ ] Commit secrets/API keys
 
 ---
 
-## ?? World Discovery System
+## World Discovery System
 
 ### Directory Structure
 ```
 SoloAdventureSystem/
-??? content/worlds/                          # Shared worlds location ?
+??? content/worlds/                          # Shared worlds location
 ??? AIWorldGenerator/content/worlds/         # Generated here first
 ??? TerminalGUI.UI/bin/Debug/net10.0/worlds/ # Copied for exe
 ```
@@ -502,7 +500,7 @@ The game searches in this order:
 
 ---
 
-## ?? Getting Help
+## Getting Help
 
 ### Resources
 - Project README files
@@ -518,8 +516,8 @@ The game searches in this order:
 
 ---
 
-**Keep this file updated as the project evolves!** ??
+**Keep this file updated as the project evolves!**
 
 Last Updated: November 22, 2025  
 Version: 1.0  
-Status: MVP Complete ?
+Status: MVP Complete

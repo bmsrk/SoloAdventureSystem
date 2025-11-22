@@ -18,7 +18,6 @@
 
   <!-- Documentation -->
   <ItemGroup Label="Documentation">
-    <None Include="..\docs\AGENT_INSTRUCTIONS.md" />
     <None Include="..\docs\GAME_DESIGN_DOCUMENT.md" />
     <None Include="..\docs\ROADMAP.md" />
   </ItemGroup>
@@ -26,6 +25,7 @@
   <!-- Project Documentation -->
   <ItemGroup Label="Project Docs">
     <None Include="..\SoloAdventureSystem.TerminalGUI.UI\README.md" />
+    <None Include="DEVELOPER_GUIDE.md" />
   </ItemGroup>
 
 </Project>
