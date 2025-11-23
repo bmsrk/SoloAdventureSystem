@@ -291,7 +291,10 @@ public class GameUI
         
         if (npc != null)
         {
-            var message = $"\"{npc.Description}\"\n\n- {npc.Name}";
+            // Handle nulls gracefully with safe defaults
+            var description = npc.Description ?? "They have nothing to say.";
+            var name = npc.Name ?? "Someone";
+            var message = $"\"{description}\"\n\n- {name}";
             MessageBox.Query("Conversation", message, "OK");
         }
     }
@@ -325,8 +328,11 @@ public class GameUI
 
     private void LookAround()
     {
-        var text = $"You look around {_gameState.CurrentLocation.Name}.\n\n";
-        text += _gameState.CurrentLocation.Description;
+        var locationName = _gameState.CurrentLocation.Name ?? "Unknown Location";
+        var description = _gameState.CurrentLocation.Description ?? "You see nothing of interest.";
+        
+        var text = $"You look around {locationName}.\n\n";
+        text += description;
         
         MessageBox.Query("Look Around", text, "OK");
     }

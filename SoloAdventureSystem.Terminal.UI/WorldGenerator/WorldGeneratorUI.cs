@@ -16,7 +16,7 @@ namespace SoloAdventureSystem.UI.WorldGenerator;
 /// <summary>
 /// Terminal UI for AI World Generator
 /// </summary>
-public class WorldGeneratorUI
+public class WorldGeneratorUI : IDisposable
 {
     private readonly IServiceProvider _services;
     private readonly WorldValidator _validator;
@@ -27,7 +27,6 @@ public class WorldGeneratorUI
     // UI Components
     private TextField _nameField = null!;
     private TextField _seedField = null!;
-    private RadioGroup _providerRadio = null!;
     private RadioGroup _modelRadio = null!;
     private TextView _logView = null!;
     private ProgressBar _progressBar = null!;
@@ -36,6 +35,7 @@ public class WorldGeneratorUI
     // Cached adapters to avoid re-downloading models
     private LLamaSharpAdapter? _cachedLlamaAdapter;
     private string? _cachedModelKey;
+    private CancellationTokenSource? _cancellationTokenSource;
 
     public WorldGeneratorUI(
         IServiceProvider services,
@@ -49,6 +49,22 @@ public class WorldGeneratorUI
         _exporter = exporter;
         _settings = settings;
         _logger = logger;
+    }
+    
+    /// <summary>
+    /// Disposes cached resources to prevent memory leaks.
+    /// </summary>
+    public void Dispose()
+    {
+        if (_cachedLlamaAdapter != null)
+        {
+            _logger?.LogInformation("Disposing cached LLamaSharp adapter to free memory...");
+            _cachedLlamaAdapter.Dispose();
+            _cachedLlamaAdapter = null;
+            _cachedModelKey = null;
+        }
+        
+        _cancellationTokenSource?.Dispose();
     }
 
     /// <summary>
@@ -94,27 +110,22 @@ public class WorldGeneratorUI
         _seedField.Y = 2;
         _seedField.Width = 30;
 
-        var providerLabel = ComponentFactory.CreateLabel("Provider:");
-        providerLabel.X = 2;
-        providerLabel.Y = 4;
-        
-        _providerRadio = ComponentFactory.CreateRadioGroup(new ustring[] { "Stub (fast)", "LLamaSharp (AI)" });
-        _providerRadio.X = 16;
-        _providerRadio.Y = 4;
-        _providerRadio.SelectedItem = 0;
-        _providerRadio.SelectedItemChanged += _ => UpdateModelList();
-
         var modelLabel = ComponentFactory.CreateLabel("Model:");
         modelLabel.X = 2;
-        modelLabel.Y = 8;
+        modelLabel.Y = 4;
         
-        _modelRadio = ComponentFactory.CreateRadioGroup(new ustring[] { "N/A" });
+        _modelRadio = ComponentFactory.CreateRadioGroup(new ustring[] 
+        { 
+            GetModelDisplayName("phi-3-mini-q4", "Phi-3-mini Q4 (2GB)"),
+            GetModelDisplayName("tinyllama-q4", "TinyLlama Q4 (600MB)"),
+            GetModelDisplayName("llama-3.2-1b-q4", "Llama-3.2-1B Q4 (800MB)")
+        });
         _modelRadio.X = 16;
-        _modelRadio.Y = 8;
+        _modelRadio.Y = 4;
         _modelRadio.SelectedItem = 0;
 
         configFrame.Add(nameLabel, _nameField, seedLabel, _seedField);
-        configFrame.Add(providerLabel, _providerRadio, modelLabel, _modelRadio);
+        configFrame.Add(modelLabel, _modelRadio);
 
         // Progress Frame
         var progressFrame = ComponentFactory.CreateFrame("[ Progress ]");
@@ -152,7 +163,8 @@ public class WorldGeneratorUI
         generateBtn.Y = Pos.AnchorEnd(1);
         generateBtn.Clicked += () => Task.Run(async () => 
         {
-            generatedWorldPath = await GenerateWorldAsync();
+            _cancellationTokenSource = new CancellationTokenSource();
+            generatedWorldPath = await GenerateWorldAsync(_cancellationTokenSource.Token);
             if (generatedWorldPath != null)
             {
                 Application.RequestStop();
@@ -162,38 +174,25 @@ public class WorldGeneratorUI
         var cancelBtn = ComponentFactory.CreateButton("[ < ] Cancel");
         cancelBtn.X = Pos.Right(generateBtn) + 2;
         cancelBtn.Y = Pos.AnchorEnd(1);
-        cancelBtn.Clicked += () => Application.RequestStop();
+        cancelBtn.Clicked += () => 
+        {
+            // Cancel ongoing generation if in progress
+            if (_cancellationTokenSource != null && !_cancellationTokenSource.IsCancellationRequested)
+            {
+                _cancellationTokenSource.Cancel();
+                Log("Generation cancelled by user");
+                UpdateStatus("Cancelled", 0);
+            }
+            Application.RequestStop();
+        };
 
         win.Add(title, configFrame, progressFrame, generateBtn, cancelBtn);
         
-        UpdateModelList();
-        Log("Ready. Select options and click Generate.");
+        Log("Ready. Select model and click Generate.");
         
         Application.Run(win);
         
         return generatedWorldPath;
-    }
-
-    private void UpdateModelList()
-    {
-        var models = _providerRadio.SelectedItem switch
-        {
-            0 => new ustring[] { "Stub (deterministic)" },
-            1 => new ustring[] 
-            { 
-                GetModelDisplayName("phi-3-mini-q4", "Phi-3-mini Q4 (2GB)"),
-                GetModelDisplayName("tinyllama-q4", "TinyLlama Q4 (600MB)"),
-                GetModelDisplayName("llama-3.2-1b-q4", "Llama-3.2-1B Q4 (800MB)")
-            },
-            _ => new ustring[] { "N/A" }
-        };
-
-        Application.MainLoop.Invoke(() =>
-        {
-            _modelRadio.RadioLabels = models;
-            _modelRadio.SelectedItem = 0;
-            _modelRadio.SetNeedsDisplay();
-        });
     }
 
     /// <summary>
@@ -205,97 +204,94 @@ public class WorldGeneratorUI
         return isCached ? $"{baseName} ? Cached" : baseName;
     }
 
-    private async Task<string?> GenerateWorldAsync()
+    private async Task<string?> GenerateWorldAsync(CancellationToken cancellationToken = default)
     {
         try
         {
+            // Check for cancellation at the start
+            cancellationToken.ThrowIfCancellationRequested();
+            
             Log("Starting generation...");
             UpdateStatus("Initializing", 0);
 
-            var provider = _providerRadio.SelectedItem == 0 ? "Stub" : "LLamaSharp";
-            var model = _providerRadio.SelectedItem switch
+            var model = _modelRadio.SelectedItem switch
             {
-                0 => "stub",
-                1 => _modelRadio.SelectedItem switch
-                {
-                    0 => "phi-3-mini-q4",
-                    1 => "tinyllama-q4",
-                    2 => "llama-3.2-1B Q4 (800MB)",
-                    _ => "phi-3-mini-q4"
-                },
-                _ => "stub"
+                0 => "phi-3-mini-q4",
+                1 => "tinyllama-q4",
+                2 => "llama-3.2-1b-q4",
+                _ => "phi-3-mini-q4"
             };
 
-            _settings.Value.Provider = provider;
+            _settings.Value.Provider = "LLamaSharp";
             _settings.Value.Model = model;
-            if (provider == "LLamaSharp")
-                _settings.Value.LLamaModelKey = model;
+            _settings.Value.LLamaModelKey = model;
 
-            Log($"Provider: {provider}, Model: {model}");
+            Log($"Provider: LLamaSharp, Model: {model}");
 
-            // Initialize adapter (with caching for LLamaSharp)
+            // Initialize LLamaSharp adapter (with caching)
             ILocalSLMAdapter slmAdapter;
-            if (provider == "LLamaSharp")
+            try
             {
-                try
+                // Check for cancellation before loading model
+                cancellationToken.ThrowIfCancellationRequested();
+                
+                // Check if we can reuse cached adapter
+                if (_cachedLlamaAdapter != null && _cachedModelKey == model)
                 {
-                    // Check if we can reuse cached adapter
-                    if (_cachedLlamaAdapter != null && _cachedModelKey == model)
-                    {
-                        Log("Using cached LLamaSharp adapter...");
-                        slmAdapter = _cachedLlamaAdapter;
-                    }
-                    else
-                    {
-                        // Dispose old adapter if exists
-                        if (_cachedLlamaAdapter != null)
-                        {
-                            Log("Model changed, disposing old adapter...");
-                            _cachedLlamaAdapter.Dispose();
-                            _cachedLlamaAdapter = null;
-                        }
-
-                        UpdateStatus("Checking model...", 5);
-                        Log("Initializing LLamaSharp adapter...");
-                        
-                        var llamaAdapter = new LLamaSharpAdapter(_settings, _logger as ILogger<LLamaSharpAdapter>);
-                        
-                        var progress = new Progress<DownloadProgress>(p =>
-                        {
-                            var pct = p.PercentComplete;
-                            var speedMB = p.SpeedBytesPerSecond / 1024.0 / 1024.0;
-                            var downloadedMB = p.DownloadedBytes / 1024.0 / 1024.0;
-                            var totalMB = p.TotalBytes / 1024.0 / 1024.0;
-                            
-                            UpdateStatus($"Downloading: {downloadedMB:F0}/{totalMB:F0} MB ({speedMB:F1} MB/s)", 5 + (pct * 0.4f));
-                            Log($"Download progress: {pct}% - {speedMB:F1} MB/s");
-                        });
-
-                        Log("Downloading/loading model (this may take a while)...");
-                        await llamaAdapter.InitializeAsync(progress);
-                        Log("Model loaded successfully!");
-                        
-                        // Cache the adapter
-                        _cachedLlamaAdapter = llamaAdapter;
-                        _cachedModelKey = model;
-                        slmAdapter = llamaAdapter;
-                    }
+                    Log("Using cached LLamaSharp adapter...");
+                    slmAdapter = _cachedLlamaAdapter;
                 }
-                catch (Exception llamaEx)
+                else
                 {
-                    Log($"LLamaSharp initialization failed: {llamaEx.Message}");
-                    Log("Falling back to Stub adapter...");
-                    _logger.LogWarning(llamaEx, "LLamaSharp failed, using Stub");
+                    // Dispose old adapter if exists
+                    if (_cachedLlamaAdapter != null)
+                    {
+                        Log("Model changed, disposing old adapter...");
+                        _cachedLlamaAdapter.Dispose();
+                        _cachedLlamaAdapter = null;
+                    }
+
+                    UpdateStatus("Checking model...", 5);
+                    Log("Initializing LLamaSharp adapter...");
+                    _logger?.LogInformation("?? Creating new LLamaSharp adapter for model: {Model}", model);
                     
-                    // Fall back to Stub
-                    _settings.Value.Provider = "Stub";
-                    slmAdapter = SLMAdapterFactory.Create(_services);
+                    var llamaAdapter = new LLamaSharpAdapter(_settings, _logger as ILogger<LLamaSharpAdapter>);
+                    
+                    var progress = new Progress<DownloadProgress>(p =>
+                    {
+                        var pct = p.PercentComplete;
+                        var speedMB = p.SpeedBytesPerSecond / 1024.0 / 1024.0;
+                        var downloadedMB = p.DownloadedBytes / 1024.0 / 1024.0;
+                        var totalMB = p.TotalBytes / 1024.0 / 1024.0;
+                        
+                        UpdateStatus($"Downloading: {downloadedMB:F0}/{totalMB:F0} MB ({speedMB:F1} MB/s)", 5 + (pct * 0.4f));
+                        Log($"Download progress: {pct}% - {speedMB:F1} MB/s - ETA: {p.FormattedETA}");
+                    });
+
+                    Log("Downloading/loading model (this may take a while)...");
+                    _logger?.LogInformation("?? Model download/load starting...");
+                    
+                    await llamaAdapter.InitializeAsync(progress);
+                    
+                    Log("Model loaded successfully!");
+                    _logger?.LogInformation("? Model initialization complete");
+                    
+                    // Cache the adapter
+                    _cachedLlamaAdapter = llamaAdapter;
+                    _cachedModelKey = model;
+                    _logger?.LogInformation("?? Adapter cached for reuse (model: {Model})", model);
+                    slmAdapter = llamaAdapter;
                 }
             }
-            else
+            catch (Exception llamaEx)
             {
-                slmAdapter = SLMAdapterFactory.Create(_services);
+                Log($"LLamaSharp initialization failed: {llamaEx.Message}");
+                _logger.LogError(llamaEx, "LLamaSharp initialization failed");
+                throw;
             }
+
+            // Check for cancellation before starting generation
+            cancellationToken.ThrowIfCancellationRequested();
 
             var imageAdapter = _services.GetRequiredService<IImageAdapter>();
             var logger = _services.GetRequiredService<ILogger<SeededWorldGenerator>>();
@@ -312,11 +308,64 @@ public class WorldGeneratorUI
             };
 
             Log($"Generating '{options.Name}' (seed: {options.Seed})...");
+            
+            // Check for cancellation before generation
+            cancellationToken.ThrowIfCancellationRequested();
+            
             var result = generator.Generate(options);
 
-            UpdateStatus("Validating", 70);
+            // Basic structural validation
+            UpdateStatus("Validating structure", 70);
             _validator.Validate(result);
             Log($"Generated: {result.Rooms.Count} rooms, {result.Npcs.Count} NPCs");
+
+            // LLM-based quality validation
+            UpdateStatus("Validating quality (LLM)", 75);
+            Log("Running LLM-based quality checks...");
+            
+            // Create a validator with the SLM adapter for quality checks
+            var qualityValidator = new WorldValidator(slmAdapter, _logger as ILogger<WorldValidator>);
+            var qualityResult = qualityValidator.ValidateQuality(result, options.Theme);
+            
+            Log($"Quality Scores: Rooms={qualityResult.Metrics.RoomQualityScore}, NPCs={qualityResult.Metrics.NpcQualityScore}, " +
+                $"Factions={qualityResult.Metrics.FactionQualityScore}, Overall={qualityResult.Metrics.OverallScore}/100");
+            
+            if (qualityResult.Warnings.Any())
+            {
+                Log($"Quality Warnings ({qualityResult.Warnings.Count}):");
+                foreach (var warning in qualityResult.Warnings)
+                {
+                    Log($"  ?? {warning}");
+                }
+            }
+            
+            if (!qualityResult.IsValid)
+            {
+                Log("? Quality validation failed!");
+                foreach (var error in qualityResult.Errors)
+                {
+                    Log($"  ? {error}");
+                }
+                
+                Application.MainLoop.Invoke(() =>
+                {
+                    var retry = MessageBox.Query("Quality Issues Detected", 
+                        $"The generated world has quality issues:\n\n" +
+                        $"Overall Score: {qualityResult.Metrics.OverallScore}/100\n" +
+                        $"Warnings: {qualityResult.Warnings.Count}\n\n" +
+                        $"Continue saving anyway?", 
+                        "Save Anyway", "Cancel");
+                    
+                    if (retry == 1) // Cancel
+                    {
+                        throw new OperationCanceledException("User cancelled due to quality issues");
+                    }
+                });
+            }
+            else
+            {
+                Log("? Quality validation passed!");
+            }
 
             UpdateStatus("Exporting", 80);
             var tempDir = Path.Combine(Path.GetTempPath(), $"World_{options.Name}_{options.Seed}");
@@ -345,6 +394,12 @@ public class WorldGeneratorUI
             
             return zipPath;
         }
+        catch (OperationCanceledException)
+        {
+            Log("Generation cancelled by user");
+            UpdateStatus("Cancelled", 0);
+            return null;
+        }
         catch (Exception ex)
         {
             Log($"ERROR: {ex.Message}");
@@ -363,20 +418,44 @@ public class WorldGeneratorUI
 
     private void Log(string message)
     {
-        Application.MainLoop.Invoke(() =>
+        try
         {
-            _logView.Text += $"{DateTime.Now:HH:mm:ss} {message}\n";
-            _logView.MoveEnd();
-        });
-        _logger.LogInformation(message);
+            // Thread-safe UI update with null checks
+            if (Application.MainLoop != null && _logView != null)
+            {
+                Application.MainLoop.Invoke(() =>
+                {
+                    _logView.Text += $"{DateTime.Now:HH:mm:ss} {message}\n";
+                    _logView.MoveEnd();
+                });
+            }
+            _logger?.LogInformation(message);
+        }
+        catch (Exception ex)
+        {
+            // Gracefully handle UI update failures
+            _logger?.LogWarning(ex, "Failed to update UI log: {Message}", message);
+        }
     }
 
     private void UpdateStatus(string status, float progress)
     {
-        Application.MainLoop.Invoke(() =>
+        try
         {
-            _statusLabel.Text = status;
-            _progressBar.Fraction = progress / 100f;
-        });
+            // Thread-safe UI update with null checks
+            if (Application.MainLoop != null && _statusLabel != null && _progressBar != null)
+            {
+                Application.MainLoop.Invoke(() =>
+                {
+                    _statusLabel.Text = status;
+                    _progressBar.Fraction = progress / 100f;
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            // Gracefully handle UI update failures
+            _logger?.LogWarning(ex, "Failed to update UI status: {Status}", status);
+        }
     }
 }

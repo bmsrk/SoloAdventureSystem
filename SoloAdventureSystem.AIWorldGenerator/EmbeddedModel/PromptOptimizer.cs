@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Logging;
 
 namespace SoloAdventureSystem.ContentGenerator.EmbeddedModel;
 
@@ -10,39 +11,56 @@ namespace SoloAdventureSystem.ContentGenerator.EmbeddedModel;
 /// </summary>
 public class PromptOptimizer
 {
+    private readonly ILogger<PromptOptimizer>? _logger;
+    
+    public PromptOptimizer(ILogger<PromptOptimizer>? logger = null)
+    {
+        _logger = logger;
+    }
+    
     /// <summary>
     /// Optimizes a system prompt for smaller models.
-    /// Removes examples if too long, condenses instructions.
+    /// Modern small models (Phi-3-mini: 4K context, TinyLlama: 2K context) can handle reasonable prompt sizes.
+    /// We preserve examples as they're critical for output quality.
     /// </summary>
     public string OptimizeSystemPrompt(string systemPrompt)
     {
         if (string.IsNullOrWhiteSpace(systemPrompt))
             return string.Empty;
         
-        // For small models, we need to be more concise
-        // Keep only the core instructions, remove verbose examples
+        // Condense multiple spaces and newlines, but preserve structure
+        var result = Regex.Replace(systemPrompt, @"[ \t]+", " "); // Condense spaces/tabs
+        result = Regex.Replace(result, @"\n\s*\n", "\n"); // Remove blank lines
+        result = result.Trim();
         
-        var lines = systemPrompt.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-        var optimizedLines = lines
-            .Where(line => !line.TrimStart().StartsWith("Example")) // Remove example lines
-            .Select(line => line.Trim())
-            .Where(line => !string.IsNullOrWhiteSpace(line))
-            .ToList();
+        // Phi-3-mini has 4K context, TinyLlama has 2K
+        // Increased from 1500 to 3000 to preserve examples and quality
+        // Examples are CRITICAL for small models to understand desired output format
+        const int MaxPromptLength = 3000;
         
-        // If we removed examples, make sure we still have the core instruction
-        var result = string.Join(" ", optimizedLines);
-        
-        // Condense multiple spaces
-        result = Regex.Replace(result, @"\s+", " ");
-        
-        // Limit to reasonable length (small models have limited context)
-        if (result.Length > 500)
+        if (result.Length > MaxPromptLength)
         {
-            // Keep first 500 chars (usually contains the core instruction)
-            result = result.Substring(0, 500) + "...";
+            _logger?.LogWarning("?? System prompt is {Length} chars, truncating to {Max} chars", 
+                result.Length, MaxPromptLength);
+            
+            // Try to cut at sentence boundary for better coherence
+            var cutPoint = result.LastIndexOf('.', MaxPromptLength);
+            if (cutPoint > MaxPromptLength / 2)
+            {
+                result = result.Substring(0, cutPoint + 1);
+            }
+            else
+            {
+                result = result.Substring(0, MaxPromptLength);
+                // Add ellipsis only if we actually truncated mid-sentence
+                if (!result.EndsWith('.'))
+                    result += "...";
+            }
+            
+            _logger?.LogWarning("?? Truncated system prompt to {Length} chars", result.Length);
         }
         
-        return result.Trim();
+        return result;
     }
     
     /// <summary>

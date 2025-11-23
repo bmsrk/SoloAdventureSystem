@@ -65,10 +65,69 @@ public static class PathHelper
 
     /// <summary>
     /// Gets the full path for a world zip file in the shared worlds directory.
+    /// Sanitizes world name to prevent path traversal and handle invalid characters.
     /// </summary>
+    /// <param name="worldName">The name of the world</param>
+    /// <param name="seed">The world generation seed</param>
+    /// <returns>Full path to the world ZIP file</returns>
     public static string GetWorldZipPath(string worldName, int seed)
     {
+        // Sanitize world name - remove invalid path characters
+        var invalidChars = Path.GetInvalidFileNameChars();
+        var sanitizedName = string.Join("_", worldName.Split(invalidChars, StringSplitOptions.RemoveEmptyEntries));
+        
+        // Handle empty name after sanitization
+        if (string.IsNullOrWhiteSpace(sanitizedName))
+        {
+            sanitizedName = "Untitled";
+        }
+        
+        // Limit length to prevent "path too long" errors (Windows MAX_PATH = 260)
+        const int MaxNameLength = 50;
+        if (sanitizedName.Length > MaxNameLength)
+        {
+            sanitizedName = sanitizedName.Substring(0, MaxNameLength);
+        }
+        
+        // Remove leading/trailing whitespace and dots (invalid in Windows)
+        sanitizedName = sanitizedName.Trim().Trim('.');
+        
         var worldsDir = GetSharedWorldsDirectory();
-        return Path.Combine(worldsDir, $"World_{worldName}_{seed}.zip");
+        return Path.Combine(worldsDir, $"World_{sanitizedName}_{seed}.zip");
+    }
+    
+    /// <summary>
+    /// Validates that a path is safe and doesn't attempt path traversal.
+    /// </summary>
+    /// <param name="path">Path to validate</param>
+    /// <returns>True if path is safe</returns>
+    public static bool IsPathSafe(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+            return false;
+
+        // Check for path traversal attempts
+        if (path.Contains(".."))
+            return false;
+
+        return true;
+    }
+
+    /// <summary>
+    /// Formats file size in human-readable format.
+    /// </summary>
+    public static string FormatFileSize(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB", "TB" };
+        double len = bytes;
+        int order = 0;
+        
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            len /= 1024;
+        }
+
+        return $"{len:0.##} {sizes[order]}";
     }
 }

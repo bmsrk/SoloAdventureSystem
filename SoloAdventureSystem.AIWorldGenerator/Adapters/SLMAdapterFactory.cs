@@ -7,7 +7,7 @@ namespace SoloAdventureSystem.ContentGenerator.Adapters;
 
 /// <summary>
 /// Factory for creating SLM adapters based on configuration.
-/// Supports Stub (testing) and LLamaSharp (embedded AI).
+/// Supports LLamaSharp (embedded AI).
 /// </summary>
 public class SLMAdapterFactory
 {
@@ -21,9 +21,8 @@ public class SLMAdapterFactory
 
         ILocalSLMAdapter adapter = settings.Provider.ToLowerInvariant() switch
         {
-            "stub" => new StubSLMAdapter(),
             "llamasharp" or "llama" or "embedded" => CreateLLamaSharpAdapter(services, settings, loggerFactory),
-            _ => throw new InvalidOperationException($"Unknown AI provider: {settings.Provider}. Use 'Stub' or 'LLamaSharp'.")
+            _ => throw new InvalidOperationException($"Unknown AI provider: {settings.Provider}. Use 'LLamaSharp'.")
         };
 
         return adapter;

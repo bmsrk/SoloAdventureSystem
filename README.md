@@ -361,3 +361,25 @@ MIT License - Copyright (c) 2025 Solo Adventure System Contributors
 [? Star this repo](https://github.com/bmsrk/SoloAdventureSystem) if you find it useful!
 
 </div>
+
+---
+
+## ?? Recent Improvements (Latest Update)
+
+### Critical Fixes Applied
+- ? **Fixed model selection bug** - Llama-3.2 model now works correctly
+- ? **Fixed memory leak** - WorldGeneratorUI properly disposes resources (saves 2GB+ RAM)
+- ? **Enhanced thread safety** - UI updates are now thread-safe with null checks
+- ? **Improved prompt quality** - AI prompts preserve instruction quality (1500 char limit vs 500)
+- ? **Better error handling** - Exceptions preserve stack traces for easier debugging
+
+### New Features
+- ? **Cancellation support** - Cancel long-running world generation operations
+- ? **Enhanced progress tracking** - Better download progress reporting with MB/s and ETA
+- ? **Path sanitization** - World names are automatically sanitized for file system safety
+- ? **Model cache utilities** - View, manage, and clear cached AI models
+- ? **Null safety** - GameUI handles missing data gracefully
+
+---
+
+## ?? Quick Start

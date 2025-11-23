@@ -48,7 +48,7 @@ class Program
         services.AddSingleton<IWorldState, WorldState>();
         
         // Add world generator services
-        services.AddSingleton<IImageAdapter, StubImageAdapter>();
+        services.AddSingleton<IImageAdapter, SimpleImageAdapter>();
         services.AddSingleton<WorldValidator>();
         services.AddSingleton<WorldExporter>();
         
@@ -100,7 +100,8 @@ class Program
     {
         try
         {
-            var worldGeneratorUI = serviceProvider.GetRequiredService<WorldGeneratorUI>();
+            // Use 'using' to ensure proper disposal of WorldGeneratorUI and prevent memory leaks
+            using var worldGeneratorUI = serviceProvider.GetRequiredService<WorldGeneratorUI>();
             var worldPath = worldGeneratorUI.GenerateWorld();
             
             if (worldPath != null)
