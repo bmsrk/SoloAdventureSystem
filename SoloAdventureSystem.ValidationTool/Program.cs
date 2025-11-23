@@ -117,21 +117,94 @@ class Program
             Console.WriteLine("? Step 4: Testing Text Generation                        ?");
             Console.WriteLine("???????????????????????????????????????????????????????????");
             
+            // Test 1: Room Description
+            Console.WriteLine("Test 1: Room Description");
             Console.WriteLine("Prompt: \"Describe a cyberpunk room in 2 sentences.\"");
             Console.WriteLine();
             
             startTime = DateTime.UtcNow;
-            var result = adapter.GenerateRoomDescription(
+            var roomDesc = adapter.GenerateRoomDescription(
                 "Describe a cyberpunk room in 2 sentences.", 
                 42);
-            var genTime = DateTime.UtcNow - startTime;
+            var genTime1 = DateTime.UtcNow - startTime;
             
             Console.WriteLine("Generated text:");
             Console.WriteLine("???????????????????????????????????????????????????????????");
-            Console.WriteLine(result);
+            Console.WriteLine(roomDesc);
             Console.WriteLine("???????????????????????????????????????????????????????????");
-            Console.WriteLine($"? Generated in {genTime.TotalSeconds:F1}s");
+            Console.WriteLine($"? Generated in {genTime1.TotalSeconds:F1}s");
+            
+            // Validate response quality
+            if (string.IsNullOrWhiteSpace(roomDesc))
+            {
+                throw new InvalidOperationException("? Room description is empty!");
+            }
+            if (roomDesc.Length < 20)
+            {
+                throw new InvalidOperationException($"? Room description too short: {roomDesc.Length} chars");
+            }
+            Console.WriteLine($"? Response quality: {roomDesc.Length} characters");
             Console.WriteLine();
+            
+            // Test 2: NPC Bio
+            Console.WriteLine("Test 2: NPC Biography");
+            Console.WriteLine("Prompt: \"Create a short bio for a cyberpunk hacker named Raven.\"");
+            Console.WriteLine();
+            
+            startTime = DateTime.UtcNow;
+            var npcBio = adapter.GenerateNpcBio(
+                "Create a short bio for a cyberpunk hacker named Raven.", 
+                123);
+            var genTime2 = DateTime.UtcNow - startTime;
+            
+            Console.WriteLine("Generated text:");
+            Console.WriteLine("???????????????????????????????????????????????????????????");
+            Console.WriteLine(npcBio);
+            Console.WriteLine("???????????????????????????????????????????????????????????");
+            Console.WriteLine($"? Generated in {genTime2.TotalSeconds:F1}s");
+            
+            // Validate response
+            if (string.IsNullOrWhiteSpace(npcBio))
+            {
+                throw new InvalidOperationException("? NPC bio is empty!");
+            }
+            if (npcBio.Length < 20)
+            {
+                throw new InvalidOperationException($"? NPC bio too short: {npcBio.Length} chars");
+            }
+            Console.WriteLine($"? Response quality: {npcBio.Length} characters");
+            Console.WriteLine();
+            
+            // Test 3: Faction Description
+            Console.WriteLine("Test 3: Faction Description");
+            Console.WriteLine("Prompt: \"Describe a cyberpunk faction called 'The Neon Syndicate'.\"");
+            Console.WriteLine();
+            
+            startTime = DateTime.UtcNow;
+            var factionDesc = adapter.GenerateFactionFlavor(
+                "Describe a cyberpunk faction called 'The Neon Syndicate'.", 
+                456);
+            var genTime3 = DateTime.UtcNow - startTime;
+            
+            Console.WriteLine("Generated text:");
+            Console.WriteLine("???????????????????????????????????????????????????????????");
+            Console.WriteLine(factionDesc);
+            Console.WriteLine("???????????????????????????????????????????????????????????");
+            Console.WriteLine($"? Generated in {genTime3.TotalSeconds:F1}s");
+            
+            // Validate response
+            if (string.IsNullOrWhiteSpace(factionDesc))
+            {
+                throw new InvalidOperationException("? Faction description is empty!");
+            }
+            if (factionDesc.Length < 20)
+            {
+                throw new InvalidOperationException($"? Faction description too short: {factionDesc.Length} chars");
+            }
+            Console.WriteLine($"? Response quality: {factionDesc.Length} characters");
+            Console.WriteLine();
+            
+            var totalGenTime = genTime1 + genTime2 + genTime3;
 
             // Step 5: Summary
             Console.WriteLine("???????????????????????????????????????????????????????????");
@@ -142,8 +215,14 @@ class Program
             Console.WriteLine($"  Model: {modelKey}");
             Console.WriteLine($"  Download/Verify: {downloadTime.TotalSeconds:F1}s");
             Console.WriteLine($"  Initialization: {initTime.TotalSeconds:F1}s");
-            Console.WriteLine($"  Text Generation: {genTime.TotalSeconds:F1}s");
-            Console.WriteLine($"  Total Time: {(downloadTime + initTime + genTime).TotalSeconds:F1}s");
+            Console.WriteLine($"  Text Generation:");
+            Console.WriteLine($"    - Room Description: {genTime1.TotalSeconds:F1}s ({roomDesc.Length} chars)");
+            Console.WriteLine($"    - NPC Biography: {genTime2.TotalSeconds:F1}s ({npcBio.Length} chars)");
+            Console.WriteLine($"    - Faction Description: {genTime3.TotalSeconds:F1}s ({factionDesc.Length} chars)");
+            Console.WriteLine($"  Total Generation Time: {totalGenTime.TotalSeconds:F1}s");
+            Console.WriteLine($"  Overall Total: {(downloadTime + initTime + totalGenTime).TotalSeconds:F1}s");
+            Console.WriteLine();
+            Console.WriteLine("? All 3 generation types working correctly!");
             Console.WriteLine();
 
             return 0;
