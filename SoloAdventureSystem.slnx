@@ -4,4 +4,5 @@
   <Project Path="SoloAdventureSystem.Engine.Tests/SoloAdventureSystem.Engine.Tests.csproj" />
   <Project Path="SoloAdventureSystem.Engine/SoloAdventureSystem.Engine.csproj" />
   <Project Path="SoloAdventureSystem.Terminal.UI/SoloAdventureSystem.Terminal.UI.csproj" />
+  <Project Path="SoloAdventureSystem.ValidationTool/SoloAdventureSystem.ValidationTool.csproj" />
 </Solution>
