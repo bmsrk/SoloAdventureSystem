@@ -1,0 +1,30 @@
+<Project>
+  <PropertyGroup>
+    <!-- Code Analysis Settings for All Projects -->
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    
+    <!-- Only suppress warnings that truly don't apply to this application -->
+    <!-- Globalization: This is not a localized application -->
+    <NoWarn>$(NoWarn);CA1303;CA1304;CA1305;CA1307;CA1310;CA1311</NoWarn>
+    
+    <!-- Security: Random is used for game seeds, not cryptography -->
+    <NoWarn>$(NoWarn);CA5394</NoWarn>
+    
+    <!-- Performance: LoggerMessage delegates add too much complexity for this app -->
+    <NoWarn>$(NoWarn);CA1848;CA1849</NoWarn>
+    
+    <!-- Design: These are appropriate for data models -->
+    <NoWarn>$(NoWarn);CA1002;CA2227</NoWarn>
+    
+    <!-- Async: ConfigureAwait not needed in application code -->
+    <NoWarn>$(NoWarn);CA2007</NoWarn>
+    
+    <!-- Design: Top-level exception handlers need to catch all -->
+    <NoWarn>$(NoWarn);CA1031</NoWarn>
+    
+    <!-- Design: Null validation covered by nullable reference types -->
+    <NoWarn>$(NoWarn);CA1062</NoWarn>
+  </PropertyGroup>
+</Project>

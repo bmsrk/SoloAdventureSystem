@@ -32,8 +32,8 @@ namespace SoloAdventureSystem.Engine.WorldLoader
 
             var roomFiles = files.Keys.Where(f => f.StartsWith("rooms/") && f.EndsWith(".json")).ToList();
             var factionFiles = files.Keys.Where(f => f.StartsWith("factions/") && f.EndsWith(".json")).ToList();
-            if (!roomFiles.Any()) throw new InvalidDataException("At least one room is required.");
-            if (!factionFiles.Any()) throw new InvalidDataException("At least one faction is required.");
+            if (roomFiles.Count == 0) throw new InvalidDataException("At least one room is required.");
+            if (factionFiles.Count == 0) throw new InvalidDataException("At least one faction is required.");
 
             var worldModel = new WorldModel();
             using var worldStream = files["world.json"].Open();

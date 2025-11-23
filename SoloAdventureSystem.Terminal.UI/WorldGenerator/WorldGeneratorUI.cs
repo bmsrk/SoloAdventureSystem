@@ -70,6 +70,7 @@ public class WorldGeneratorUI : IDisposable
         }
         
         _cancellationTokenSource?.Dispose();
+        GC.SuppressFinalize(this);
     }
 
     /// <summary>
@@ -406,7 +407,7 @@ public class WorldGeneratorUI : IDisposable
             Log($"Quality Scores: Rooms={qualityResult.Metrics.RoomQualityScore}, NPCs={qualityResult.Metrics.NpcQualityScore}, " +
                 $"Factions={qualityResult.Metrics.FactionQualityScore}, Overall={qualityResult.Metrics.OverallScore}/100");
             
-            if (qualityResult.Warnings.Any())
+            if (qualityResult.Warnings.Count > 0)
             {
                 Log($"Quality Warnings ({qualityResult.Warnings.Count}):");
                 foreach (var warning in qualityResult.Warnings)

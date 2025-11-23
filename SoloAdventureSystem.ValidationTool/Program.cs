@@ -312,9 +312,9 @@ class Program
         Console.WriteLine($"   Sentences: ~{sentences} {(sentences >= targetSentences - 1 && sentences <= targetSentences + 1 ? "?" : "??")} (target: ~{targetSentences})");
         
         // Check for vague words
-        var vague = output.ToLower().Contains("some ") || 
-                    output.ToLower().Contains("maybe ") || 
-                    output.ToLower().Contains("things ");
+        var vague = output.Contains("some ", StringComparison.OrdinalIgnoreCase) || 
+                    output.Contains("maybe ", StringComparison.OrdinalIgnoreCase) || 
+                    output.Contains("things ", StringComparison.OrdinalIgnoreCase);
         Console.WriteLine($"   Specificity: {(!vague ? "?" : "??")} {(!vague ? "No vague language" : "Contains vague words")}");
         
         // Check for emptiness

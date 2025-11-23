@@ -1,10 +1,12 @@
 @page "/worlds/{seed}"
+@rendermode InteractiveServer
 @using System.IO
 @using System.IO.Compression
 @using System.Text.Json
 @inject NavigationManager Navigation
+@inject IJSRuntime JS
 
-<PageTitle>World Details</PageTitle>
+<PageTitle>World Details - @(world?.World?.Name ?? "Loading...")</PageTitle>
 
 <div style="padding: 2rem; max-width: 1400px; margin: 0 auto;">
     @if (isLoading)
@@ -40,17 +42,20 @@
                     <a href="/worlds" style="color: var(--color-text-muted); text-decoration: none; font-size: var(--font-size-sm);">
                         &larr; Back to Worlds
                     </a>
-                    <h1 style="color: var(--color-text-primary); margin: 0.5rem 0;">@world.WorldDefinition.Name</h1>
+                    <h1 style="color: var(--color-text-primary); margin: 0.5rem 0;">@world.World.Name</h1>
                     <p style="color: var(--color-text-secondary); margin: 0;">
-                        Created @world.WorldDefinition.CreatedAt.ToString("MMMM dd, yyyy 'at' HH:mm")
+                        Created @world.World.CreatedAt.ToString("MMMM dd, yyyy 'at' HH:mm")
+                    </p>
+                    <p style="color: var(--color-text-muted); margin: 0.5rem 0; font-size: var(--font-size-sm);">
+                        @world.World.Description
                     </p>
                 </div>
                 <div style="display: flex; gap: 0.5rem;">
-                    <Button Appearance="neutral" OnClick="ExportWorld">
-                        Export
+                    <Button Appearance="neutral" OnClick="CopyRawJson">
+                        Copy JSON
                     </Button>
-                    <Button Appearance="accent" OnClick="PlayWorld">
-                        Play
+                    <Button Appearance="neutral" OnClick="DownloadWorld">
+                        Download
                     </Button>
                 </div>
             </div>
@@ -60,75 +65,189 @@
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
             <Card>
                 <div style="text-align: center; padding: 1.5rem;">
-                    <div class="stat-icon-large">R</div>
+                    <div class="stat-icon-large">???</div>
                     <div class="stat-value">@world.Rooms.Count</div>
                     <div class="text-muted">Rooms</div>
                 </div>
             </Card>
             <Card>
                 <div style="text-align: center; padding: 1.5rem;">
-                    <div class="stat-icon-large">N</div>
+                    <div class="stat-icon-large">??</div>
                     <div class="stat-value">@world.Npcs.Count</div>
                     <div class="text-muted">NPCs</div>
                 </div>
             </Card>
             <Card>
                 <div style="text-align: center; padding: 1.5rem;">
-                    <div class="stat-icon-large">F</div>
+                    <div class="stat-icon-large">??</div>
                     <div class="stat-value">@world.Factions.Count</div>
                     <div class="text-muted">Factions</div>
                 </div>
             </Card>
             <Card>
                 <div style="text-align: center; padding: 1.5rem;">
-                    <div class="stat-icon-large">L</div>
+                    <div class="stat-icon-large">??</div>
                     <div class="stat-value">@world.LoreEntries.Count</div>
                     <div class="text-muted">Lore Entries</div>
                 </div>
             </Card>
         </div>
 
+        <!-- Search/Filter Bar -->
+        <Card Style="margin-bottom: 1.5rem;">
+            <div style="display: flex; gap: 1rem; align-items: center;">
+                <input type="text" 
+                       @bind="searchQuery" 
+                       @bind:event="oninput"
+                       placeholder="Search content..." 
+                       class="search-input"
+                       style="flex: 1;" />
+                <select @bind="filterType" class="custom-select">
+                    <option value="all">All Content</option>
+                    <option value="rooms">Rooms Only</option>
+                    <option value="npcs">NPCs Only</option>
+                    <option value="factions">Factions Only</option>
+                    <option value="lore">Lore Only</option>
+                </select>
+            </div>
+        </Card>
+
         <!-- Tabs -->
         <div class="tabs" style="margin-bottom: 1rem;">
+            <button class="tab @(activeTab == "overview" ? "active" : "")" @onclick='() => activeTab = "overview"'>
+                ?? Overview
+            </button>
             <button class="tab @(activeTab == "rooms" ? "active" : "")" @onclick='() => activeTab = "rooms"'>
-                Rooms (@world.Rooms.Count)
+                ??? Rooms (@world.Rooms.Count)
             </button>
             <button class="tab @(activeTab == "npcs" ? "active" : "")" @onclick='() => activeTab = "npcs"'>
-                NPCs (@world.Npcs.Count)
+                ?? NPCs (@world.Npcs.Count)
             </button>
             <button class="tab @(activeTab == "factions" ? "active" : "")" @onclick='() => activeTab = "factions"'>
-                Factions (@world.Factions.Count)
+                ?? Factions (@world.Factions.Count)
             </button>
             <button class="tab @(activeTab == "lore" ? "active" : "")" @onclick='() => activeTab = "lore"'>
-                Lore (@world.LoreEntries.Count)
+                ?? Lore (@world.LoreEntries.Count)
+            </button>
+            <button class="tab @(activeTab == "analysis" ? "active" : "")" @onclick='() => activeTab = "analysis"'>
+                ?? Analysis
             </button>
         </div>
 
         <!-- Tab Content -->
-        @if (activeTab == "rooms")
+        @if (activeTab == "overview")
+        {
+            <div style="display: grid; gap: 1.5rem;">
+                <Card>
+                    <h3 style="color: var(--color-accent-primary); margin-bottom: 1rem;">World Information</h3>
+                    <div style="display: grid; gap: 0.5rem;">
+                        <div class="info-row">
+                            <span class="info-label">Name:</span>
+                            <span class="info-value">@world.World.Name</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Version:</span>
+                            <span class="info-value">@world.World.Version</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Author:</span>
+                            <span class="info-value">@world.World.Author</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Start Location:</span>
+                            <span class="info-value">@world.World.StartLocationId</span>
+                        </div>
+                    </div>
+                </Card>
+
+                <Card>
+                    <h3 style="color: var(--color-accent-primary); margin-bottom: 1rem;">Description</h3>
+                    <p style="color: var(--color-text-secondary); line-height: 1.6;">@world.World.Description</p>
+                </Card>
+
+                <Card>
+                    <h3 style="color: var(--color-accent-primary); margin-bottom: 1rem;">Content Summary</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
+                        <div class="summary-item">
+                            <div class="summary-label">Total Locations</div>
+                            <div class="summary-value">@world.Rooms.Count</div>
+                            <div class="summary-detail">Average: @GetAverageRoomLength() chars/room</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-label">Total NPCs</div>
+                            <div class="summary-value">@world.Npcs.Count</div>
+                            <div class="summary-detail">Average: @GetAverageNpcLength() chars/bio</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-label">Room Connections</div>
+                            <div class="summary-value">@GetTotalConnections()</div>
+                            <div class="summary-detail">Average: @GetAverageConnectionsPerRoom() connections per room</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-label">Total Lore</div>
+                            <div class="summary-value">@world.LoreEntries.Count</div>
+                            <div class="summary-detail">Average: @GetAverageLoreLength() chars/entry</div>
+                        </div>
+                    </div>
+                </Card>
+            </div>
+        }
+        else if (activeTab == "rooms")
         {
             <div style="display: grid; gap: 1rem;">
-                @foreach (var room in world.Rooms.Take(displayLimit))
+                @foreach (var room in GetFilteredRooms())
                 {
                     <Card Class="expandable-card">
-                        <h4 style="color: var(--color-accent-primary); margin-bottom: 0.5rem;">@room.Title</h4>
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+                            <h4 style="color: var(--color-accent-primary); margin: 0;">@room.Title</h4>
+                            <Badge Appearance="neutral">@room.BaseDescription.Length chars</Badge>
+                        </div>
                         <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
                             <Badge Appearance="neutral">ID: @room.Id</Badge>
-                            @if (room.Id == world.WorldDefinition.StartLocationId)
+                            @if (room.Id == world.World.StartLocationId)
                             {
-                                <Badge Appearance="success">Start Location</Badge>
+                                <Badge Appearance="success">? Start Location</Badge>
+                            }
+                            @if (room.Npcs?.Any() == true)
+                            {
+                                <Badge Appearance="accent">?? @room.Npcs.Count NPC(s)</Badge>
+                            }
+                            @if (room.Exits?.Any() == true)
+                            {
+                                <Badge Appearance="neutral">?? @room.Exits.Count Exit(s)</Badge>
                             }
                         </div>
-                        <p style="color: var(--color-text-secondary); line-height: 1.6;">@room.BaseDescription</p>
+                        <p style="color: var(--color-text-secondary); line-height: 1.6; white-space: pre-wrap;">@room.BaseDescription</p>
                         
-                        @if (room.Connections?.Any() == true)
+                        @if (room.Exits?.Any() == true)
                         {
                             <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--color-border-default);">
-                                <div style="color: var(--color-text-muted); font-size: var(--font-size-sm); margin-bottom: 0.5rem;">Connections:</div>
+                                <div style="color: var(--color-text-muted); font-size: var(--font-size-sm); margin-bottom: 0.5rem;">?? Connections:</div>
                                 <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
-                                    @foreach (var conn in room.Connections)
+                                    @foreach (var exit in room.Exits)
                                     {
-                                        <span class="connection-badge">@conn.Key &rarr; @conn.Value</span>
+                                        <span class="connection-badge" @onclick="() => NavigateToRoom(exit.Value)">
+                                            @exit.Key ? @GetRoomTitle(exit.Value)
+                                        </span>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        @if (room.Npcs?.Any() == true)
+                        {
+                            <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--color-border-default);">
+                                <div style="color: var(--color-text-muted); font-size: var(--font-size-sm); margin-bottom: 0.5rem;">?? NPCs in this room:</div>
+                                <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                                    @foreach (var npcId in room.Npcs)
+                                    {
+                                        var npc = world.Npcs.FirstOrDefault(n => n.Id == npcId);
+                                        if (npc != null)
+                                        {
+                                            <span class="npc-badge" @onclick="() => NavigateToNpc(npcId)">
+                                                @npc.Name
+                                            </span>
+                                        }
                                     }
                                 </div>
                             </div>
@@ -136,107 +255,264 @@
                     </Card>
                 }
                 
-                @if (world.Rooms.Count > displayLimit)
+                @if (GetFilteredRooms().Count() == 0)
                 {
-                    <div style="text-align: center; padding: 1rem;">
-                        <Button Appearance="neutral" OnClick="LoadMore">
-                            Show More (@(world.Rooms.Count - displayLimit) remaining)
-                        </Button>
-                    </div>
+                    <Card>
+                        <p style="text-align: center; color: var(--color-text-muted); padding: 2rem;">No rooms match your search</p>
+                    </Card>
                 }
             </div>
         }
         else if (activeTab == "npcs")
         {
             <div style="display: grid; gap: 1rem;">
-                @foreach (var npc in world.Npcs.Take(displayLimit))
+                @foreach (var npc in GetFilteredNpcs())
                 {
-                    <Card Class="expandable-card">
+                    var npcAnchorId = $"npc-{npc.Id}";
+                    <Card Class="expandable-card" id="@npcAnchorId">
                         <div style="display: flex; justify-content: space-between; align-items: start;">
-                            <div>
-                                <h4 style="color: var(--color-accent-primary); margin-bottom: 0.5rem;">@npc.Name</h4>
-                                <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
-                                    <Badge Appearance="neutral">@npc.FactionId</Badge>
+                            <div style="flex: 1;">
+                                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem;">
+                                    <h4 style="color: var(--color-accent-primary); margin: 0;">@npc.Name</h4>
+                                    <Badge Appearance="neutral">@npc.Description.Length chars</Badge>
                                 </div>
+                                <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                                    <Badge Appearance="neutral">ID: @npc.Id</Badge>
+                                    <Badge Appearance="accent">?? @npc.FactionId</Badge>
+                                    <Badge Appearance="@GetHostilityBadge(npc.Hostility)">@npc.Hostility</Badge>
+                                    <Badge Appearance="neutral">@npc.Behavior</Badge>
+                                </div>
+                                <p style="color: var(--color-text-secondary); line-height: 1.6; white-space: pre-wrap;">@npc.Description</p>
+                                
+                                @{
+                                    var npcLocation = world.Rooms.FirstOrDefault(r => r.Npcs?.Contains(npc.Id) == true);
+                                }
+                                @if (npcLocation != null)
+                                {
+                                    <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--color-border-default);">
+                                        <span style="color: var(--color-text-muted); font-size: var(--font-size-sm);">?? Location:</span>
+                                        <span class="connection-badge" @onclick="() => NavigateToRoom(npcLocation.Id)" style="margin-left: 0.5rem;">
+                                            @npcLocation.Title
+                                        </span>
+                                    </div>
+                                }
                             </div>
-                            <div class="npc-icon">N</div>
+                            <div class="npc-icon">??</div>
                         </div>
-                        <p style="color: var(--color-text-secondary); line-height: 1.6;">@npc.Description</p>
                     </Card>
                 }
                 
-                @if (world.Npcs.Count > displayLimit)
+                @if (GetFilteredNpcs().Count() == 0)
                 {
-                    <div style="text-align: center; padding: 1rem;">
-                        <Button Appearance="neutral" OnClick="LoadMore">
-                            Show More (@(world.Npcs.Count - displayLimit) remaining)
-                        </Button>
-                    </div>
+                    <Card>
+                        <p style="text-align: center; color: var(--color-text-muted); padding: 2rem;">No NPCs match your search</p>
+                    </Card>
                 }
             </div>
         }
         else if (activeTab == "factions")
         {
             <div style="display: grid; gap: 1rem;">
-                @foreach (var faction in world.Factions.Take(displayLimit))
+                @foreach (var faction in GetFilteredFactions())
                 {
                     <Card Class="expandable-card">
                         <div style="display: flex; justify-content: space-between; align-items: start;">
                             <div style="flex: 1;">
-                                <h4 style="color: var(--color-accent-primary); margin-bottom: 0.5rem;">@faction.Name</h4>
-                                <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
-                                    <Badge Appearance="neutral">@faction.Id</Badge>
+                                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem;">
+                                    <h4 style="color: var(--color-accent-primary); margin: 0;">@faction.Name</h4>
+                                    <Badge Appearance="neutral">@faction.Description.Length chars</Badge>
                                 </div>
-                                <p style="color: var(--color-text-secondary); line-height: 1.6; margin-bottom: 1rem;">@faction.Description</p>
+                                <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                                    <Badge Appearance="neutral">ID: @faction.Id</Badge>
+                                    @{
+                                        var memberCount = world.Npcs.Count(n => n.FactionId == faction.Id);
+                                    }
+                                    <Badge Appearance="accent">?? @memberCount member(s)</Badge>
+                                </div>
+                                <p style="color: var(--color-text-secondary); line-height: 1.6; white-space: pre-wrap; margin-bottom: 1rem;">@faction.Description</p>
                                 
                                 @if (!string.IsNullOrEmpty(faction.Ideology))
                                 {
                                     <div style="padding: 1rem; background: var(--color-bg-primary); border-radius: var(--radius-md); margin-bottom: 1rem;">
-                                        <div style="color: var(--color-text-muted); font-size: var(--font-size-sm); margin-bottom: 0.5rem;">Ideology:</div>
+                                        <div style="color: var(--color-text-muted); font-size: var(--font-size-sm); margin-bottom: 0.5rem;">?? Ideology:</div>
                                         <div style="color: var(--color-text-secondary);">@faction.Ideology</div>
                                     </div>
                                 }
+
+                                @{
+                                    var factionMembers = world.Npcs.Where(n => n.FactionId == faction.Id).ToList();
+                                }
+                                @if (factionMembers.Any())
+                                {
+                                    <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--color-border-default);">
+                                        <div style="color: var(--color-text-muted); font-size: var(--font-size-sm); margin-bottom: 0.5rem;">?? Members:</div>
+                                        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                                            @foreach (var member in factionMembers)
+                                            {
+                                                <span class="npc-badge" @onclick="() => NavigateToNpc(member.Id)">
+                                                    @member.Name
+                                                </span>
+                                            }
+                                        </div>
+                                    </div>
+                                }
                             </div>
-                            <div class="faction-icon">F</div>
+                            <div class="faction-icon">??</div>
                         </div>
                     </Card>
                 }
                 
-                @if (world.Factions.Count > displayLimit)
+                @if (GetFilteredFactions().Count() == 0)
                 {
-                    <div style="text-align: center; padding: 1rem;">
-                        <Button Appearance="neutral" OnClick="LoadMore">
-                            Show More (@(world.Factions.Count - displayLimit) remaining)
-                        </Button>
-                    </div>
+                    <Card>
+                        <p style="text-align: center; color: var(--color-text-muted); padding: 2rem;">No factions match your search</p>
+                    </Card>
                 }
             </div>
         }
         else if (activeTab == "lore")
         {
             <div style="display: grid; gap: 1rem;">
-                @foreach (var lore in world.LoreEntries.Take(displayLimit))
+                @for (int i = 0; i < GetFilteredLore().Count(); i++)
                 {
+                    var lore = GetFilteredLore().ElementAt(i);
+                    var index = i;
                     <Card Class="expandable-card">
-                        <div style="display: flex; gap: 1rem;">
-                            <div class="lore-icon">L</div>
-                            <p style="color: var(--color-text-secondary); line-height: 1.6; flex: 1;">@lore</p>
+                        <div style="display: flex; gap: 1rem; align-items: start;">
+                            <div class="lore-number">@(index + 1)</div>
+                            <div style="flex: 1;">
+                                <Badge Appearance="neutral" Style="margin-bottom: 0.5rem;">@lore.Length chars</Badge>
+                                <p style="color: var(--color-text-secondary); line-height: 1.6; white-space: pre-wrap; margin: 0;">@lore</p>
+                            </div>
                         </div>
                     </Card>
                 }
                 
-                @if (world.LoreEntries.Count > displayLimit)
+                @if (GetFilteredLore().Count() == 0)
                 {
-                    <div style="text-align: center; padding: 1rem;">
-                        <Button Appearance="neutral" OnClick="LoadMore">
-                            Show More (@(world.LoreEntries.Count - displayLimit) remaining)
-                        </Button>
-                    </div>
+                    <Card>
+                        <p style="text-align: center; color: var(--color-text-muted); padding: 2rem;">No lore entries match your search</p>
+                    </Card>
                 }
+            </div>
+        }
+        else if (activeTab == "analysis")
+        {
+            <div style="display: grid; gap: 1.5rem;">
+                <Card>
+                    <h3 style="color: var(--color-accent-primary); margin-bottom: 1rem;">?? Content Quality Analysis</h3>
+                    <div style="display: grid; gap: 1rem;">
+                        <div class="analysis-metric">
+                            <div class="metric-header">
+                                <span class="metric-label">Room Description Quality</span>
+                                <span class="metric-value">@GetQualityScore(GetAverageRoomLength())</span>
+                            </div>
+                            <div class="metric-bar">
+                                <div class="metric-fill" style="width: @(GetQualityPercentage(GetAverageRoomLength()))%"></div>
+                            </div>
+                            <div class="metric-detail">Average: @GetAverageRoomLength() chars (Target: 200-400)</div>
+                        </div>
+
+                        <div class="analysis-metric">
+                            <div class="metric-header">
+                                <span class="metric-label">NPC Biography Quality</span>
+                                <span class="metric-value">@GetQualityScore(GetAverageNpcLength())</span>
+                            </div>
+                            <div class="metric-bar">
+                                <div class="metric-fill" style="width: @(GetQualityPercentage(GetAverageNpcLength()))%"></div>
+                            </div>
+                            <div class="metric-detail">Average: @GetAverageNpcLength() chars (Target: 150-300)</div>
+                        </div>
+
+                        <div class="analysis-metric">
+                            <div class="metric-header">
+                                <span class="metric-label">Lore Entry Quality</span>
+                                <span class="metric-value">@GetQualityScore(GetAverageLoreLength())</span>
+                            </div>
+                            <div class="metric-bar">
+                                <div class="metric-fill" style="width: @(GetQualityPercentage(GetAverageLoreLength()))%"></div>
+                            </div>
+                            <div class="metric-detail">Average: @GetAverageLoreLength() chars (Target: 150-350)</div>
+                        </div>
+
+                        <div class="analysis-metric">
+                            <div class="metric-header">
+                                <span class="metric-label">World Connectivity</span>
+                                <span class="metric-value">@GetConnectivityScore()</span>
+                            </div>
+                            <div class="metric-bar">
+                                <div class="metric-fill" style="width: @(GetConnectivityPercentage())%"></div>
+                            </div>
+                            <div class="metric-detail">@GetAverageConnectionsPerRoom() connections per room (Target: 2-4)</div>
+                        </div>
+                    </div>
+                </Card>
+
+                <Card>
+                    <h3 style="color: var(--color-accent-primary); margin-bottom: 1rem;">?? Content Issues</h3>
+                    <div style="display: grid; gap: 0.5rem;">
+                        @if (GetShortRooms().Any())
+                        {
+                            <div class="issue-item warning">
+                                <span class="issue-icon">??</span>
+                                <span>@GetShortRooms().Count() room(s) with short descriptions (&lt;150 chars)</span>
+                            </div>
+                        }
+                        @if (GetShortNpcs().Any())
+                        {
+                            <div class="issue-item warning">
+                                <span class="issue-icon">??</span>
+                                <span>@GetShortNpcs().Count() NPC(s) with short biographies (&lt;100 chars)</span>
+                            </div>
+                        }
+                        @if (GetIsolatedRooms().Any())
+                        {
+                            <div class="issue-item error">
+                                <span class="issue-icon">?</span>
+                                <span>@GetIsolatedRooms().Count() isolated room(s) (no connections)</span>
+                            </div>
+                        }
+                        @if (GetRoomsWithoutNpcs().Any())
+                        {
+                            <div class="issue-item info">
+                                <span class="issue-icon">??</span>
+                                <span>@GetRoomsWithoutNpcs().Count() room(s) without NPCs</span>
+                            </div>
+                        }
+                        @if (!GetShortRooms().Any() && !GetShortNpcs().Any() && !GetIsolatedRooms().Any())
+                        {
+                            <div class="issue-item success">
+                                <span class="issue-icon">?</span>
+                                <span>No major content issues detected</span>
+                            </div>
+                        }
+                    </div>
+                </Card>
+
+                <Card>
+                    <h3 style="color: var(--color-accent-primary); margin-bottom: 1rem;">?? Recommendations</h3>
+                    <div style="display: grid; gap: 0.75rem;">
+                        @foreach (var recommendation in GetRecommendations())
+                        {
+                            <div class="recommendation">
+                                <div class="recommendation-header">@recommendation.Title</div>
+                                <div class="recommendation-body">@recommendation.Description</div>
+                            </div>
+                        }
+                    </div>
+                </Card>
             </div>
         }
     }
 </div>
+
+<!-- Success Message -->
+@if (!string.IsNullOrEmpty(successMessage))
+{
+    <div class="toast toast-success">
+        @successMessage
+    </div>
+}
 
 <style>
 .spinner {
@@ -333,13 +609,208 @@
     transform: translateX(4px);
 }
 
-.connection-badge {
+.connection-badge, .npc-badge {
     padding: 0.25rem 0.75rem;
     background: var(--color-bg-primary);
     border-radius: var(--radius-sm);
     color: var(--color-text-secondary);
     font-size: var(--font-size-sm);
     font-family: monospace;
+    cursor: pointer;
+    transition: all var(--transition-base);
+}
+
+.connection-badge:hover, .npc-badge:hover {
+    background: var(--color-accent-primary);
+    color: white;
+    transform: translateY(-2px);
+}
+
+.lore-number {
+    width: 40px;
+    height: 40px;
+    background: var(--color-accent-primary);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: var(--font-weight-bold);
+    flex-shrink: 0;
+}
+
+.analysis-metric {
+    padding: 1rem;
+    background: var(--color-bg-primary);
+    border-radius: var(--radius-md);
+}
+
+.metric-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.metric-label {
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-medium);
+}
+
+.metric-value {
+    color: var(--color-accent-primary);
+    font-weight: var(--font-weight-bold);
+}
+
+.metric-bar {
+    height: 8px;
+    background: var(--color-bg-elevated);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.metric-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--color-success), var(--color-accent-primary));
+    transition: width var(--transition-base);
+}
+
+.metric-detail {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+}
+
+.info-row {
+    display: grid;
+    grid-template-columns: 150px 1fr;
+    gap: 1rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--color-border-default);
+}
+
+.info-label {
+    color: var(--color-text-muted);
+    font-weight: var(--font-weight-medium);
+}
+
+.info-value {
+    color: var(--color-text-primary);
+}
+
+.summary-item {
+    padding: 1rem;
+    background: var(--color-bg-primary);
+    border-radius: var(--radius-md);
+}
+
+.summary-label {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    margin-bottom: 0.5rem;
+}
+
+.summary-value {
+    color: var(--color-accent-primary);
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-bold);
+}
+
+.summary-detail {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-xs);
+    margin-top: 0.25rem;
+}
+
+.search-input {
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-base);
+    transition: border-color var(--transition-base);
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--color-border-focus);
+}
+
+.custom-select {
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+}
+
+.issue-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+}
+
+.issue-item.error {
+    background: rgba(255, 59, 48, 0.1);
+    color: var(--color-error);
+}
+
+.issue-item.warning {
+    background: rgba(255, 149, 0, 0.1);
+    color: var(--color-warning);
+}
+
+.issue-item.info {
+    background: rgba(0, 122, 255, 0.1);
+    color: var(--color-info);
+}
+
+.issue-item.success {
+    background: rgba(52, 199, 89, 0.1);
+    color: var(--color-success);
+}
+
+.issue-icon {
+    font-size: 1.2rem;
+}
+
+.recommendation {
+    padding: 1rem;
+    background: var(--color-bg-primary);
+    border-left: 3px solid var(--color-accent-primary);
+    border-radius: var(--radius-md);
+}
+
+.recommendation-header {
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-medium);
+    margin-bottom: 0.25rem;
+}
+
+.recommendation-body {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+}
+
+.toast {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    padding: 1rem 1.5rem;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    z-index: 1001;
+    animation: slideIn 0.3s ease;
+}
+
+.toast-success {
+    background: var(--color-success);
+    color: white;
 }
 </style>
 
@@ -349,8 +820,11 @@
     
     private WorldData? world;
     private bool isLoading = true;
-    private string activeTab = "rooms";
-    private int displayLimit = 10;
+    private string activeTab = "overview";
+    private string searchQuery = "";
+    private string filterType = "all";
+    private string successMessage = "";
+    private string rawJson = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -377,9 +851,9 @@
                 {
                     using var stream = worldEntry.Open();
                     using var reader = new StreamReader(stream);
-                    var json = await reader.ReadToEndAsync();
+                    rawJson = await reader.ReadToEndAsync();
                     
-                    world = JsonSerializer.Deserialize<WorldData>(json, new JsonSerializerOptions
+                    world = JsonSerializer.Deserialize<WorldData>(rawJson, new JsonSerializerOptions
                     {
                         PropertyNameCaseInsensitive = true
                     });
@@ -396,20 +870,262 @@
         }
     }
 
-    private void LoadMore()
+    // Filtering methods
+    private IEnumerable<RoomModel> GetFilteredRooms()
     {
-        displayLimit += 10;
+        var rooms = world?.Rooms ?? new List<RoomModel>();
+        if (filterType != "all" && filterType != "rooms") return Enumerable.Empty<RoomModel>();
+        if (string.IsNullOrWhiteSpace(searchQuery)) return rooms;
+        
+        return rooms.Where(r => 
+            r.Title.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+            r.BaseDescription.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+            r.Id.Contains(searchQuery, StringComparison.OrdinalIgnoreCase));
     }
 
-    private void ExportWorld()
+    private IEnumerable<NpcModel> GetFilteredNpcs()
     {
-        // TODO: Implement export functionality
+        var npcs = world?.Npcs ?? new List<NpcModel>();
+        if (filterType != "all" && filterType != "npcs") return Enumerable.Empty<NpcModel>();
+        if (string.IsNullOrWhiteSpace(searchQuery)) return npcs;
+        
+        return npcs.Where(n => 
+            n.Name.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+            n.Description.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+            n.Id.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+            n.FactionId.Contains(searchQuery, StringComparison.OrdinalIgnoreCase));
     }
 
-    private void PlayWorld()
+    private IEnumerable<FactionModel> GetFilteredFactions()
     {
-        // TODO: Implement play functionality
-        Navigation.NavigateTo($"/play/{Seed}");
+        var factions = world?.Factions ?? new List<FactionModel>();
+        if (filterType != "all" && filterType != "factions") return Enumerable.Empty<FactionModel>();
+        if (string.IsNullOrWhiteSpace(searchQuery)) return factions;
+        
+        return factions.Where(f => 
+            f.Name.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+            f.Description.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+            f.Ideology.Contains(searchQuery, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private IEnumerable<string> GetFilteredLore()
+    {
+        var lore = world?.LoreEntries ?? new List<string>();
+        if (filterType != "all" && filterType != "lore") return Enumerable.Empty<string>();
+        if (string.IsNullOrWhiteSpace(searchQuery)) return lore;
+        
+        return lore.Where(l => l.Contains(searchQuery, StringComparison.OrdinalIgnoreCase));
+    }
+
+    // Navigation methods
+    private void NavigateToRoom(string roomId)
+    {
+        activeTab = "rooms";
+        searchQuery = roomId;
+        StateHasChanged();
+    }
+
+    private void NavigateToNpc(string npcId)
+    {
+        activeTab = "npcs";
+        searchQuery = npcId;
+        StateHasChanged();
+    }
+
+    // Analysis methods
+    private int GetAverageRoomLength()
+    {
+        if (world?.Rooms == null || !world.Rooms.Any()) return 0;
+        return (int)world.Rooms.Average(r => r.BaseDescription.Length);
+    }
+
+    private int GetAverageNpcLength()
+    {
+        if (world?.Npcs == null || !world.Npcs.Any()) return 0;
+        return (int)world.Npcs.Average(n => n.Description.Length);
+    }
+
+    private int GetAverageLoreLength()
+    {
+        if (world?.LoreEntries == null || !world.LoreEntries.Any()) return 0;
+        return (int)world.LoreEntries.Average(l => l.Length);
+    }
+
+    private int GetTotalConnections()
+    {
+        if (world?.Rooms == null) return 0;
+        return world.Rooms.Sum(r => r.Exits?.Count ?? 0);
+    }
+
+    private string GetQualityScore(int avgLength)
+    {
+        if (avgLength >= 200 && avgLength <= 400) return "Excellent";
+        if (avgLength >= 150 && avgLength < 200) return "Good";
+        if (avgLength >= 100 && avgLength < 150) return "Fair";
+        return "Poor";
+    }
+
+    private int GetQualityPercentage(int avgLength)
+    {
+        if (avgLength >= 400) return 100;
+        if (avgLength <= 0) return 0;
+        return Math.Min(100, (avgLength * 100) / 400);
+    }
+
+    private string GetConnectivityScore()
+    {
+        if (world?.Rooms == null || !world.Rooms.Any()) return "N/A";
+        var avgConnections = GetTotalConnections() / (float)world.Rooms.Count;
+        
+        if (avgConnections >= 2.5) return "Excellent";
+        if (avgConnections >= 2.0) return "Good";
+        if (avgConnections >= 1.5) return "Fair";
+        return "Poor";
+    }
+
+    private int GetConnectivityPercentage()
+    {
+        if (world?.Rooms == null || !world.Rooms.Any()) return 0;
+        var avgConnections = GetTotalConnections() / (float)world.Rooms.Count;
+        return Math.Min(100, (int)((avgConnections / 4.0f) * 100));
+    }
+
+    private List<RoomModel> GetShortRooms()
+    {
+        return world?.Rooms?.Where(r => r.BaseDescription.Length < 150).ToList() ?? new List<RoomModel>();
+    }
+
+    private List<NpcModel> GetShortNpcs()
+    {
+        return world?.Npcs?.Where(n => n.Description.Length < 100).ToList() ?? new List<NpcModel>();
+    }
+
+    private List<RoomModel> GetIsolatedRooms()
+    {
+        return world?.Rooms?.Where(r => r.Exits == null || !r.Exits.Any()).ToList() ?? new List<RoomModel>();
+    }
+
+    private List<RoomModel> GetRoomsWithoutNpcs()
+    {
+        return world?.Rooms?.Where(r => r.Npcs == null || !r.Npcs.Any()).ToList() ?? new List<RoomModel>();
+    }
+
+    private List<Recommendation> GetRecommendations()
+    {
+        var recommendations = new List<Recommendation>();
+
+        if (GetShortRooms().Any())
+        {
+            recommendations.Add(new Recommendation
+            {
+                Title = "Improve Room Descriptions",
+                Description = $"{GetShortRooms().Count} room(s) have short descriptions. Consider increasing the context size or adjusting prompts to generate richer descriptions (target: 200-400 chars)."
+            });
+        }
+
+        if (GetShortNpcs().Any())
+        {
+            recommendations.Add(new Recommendation
+            {
+                Title = "Enhance NPC Biographies",
+                Description = $"{GetShortNpcs().Count} NPC(s) have minimal biographies. Try using more detailed NPC prompts or increase temperature for more creative outputs."
+            });
+        }
+
+        if (GetIsolatedRooms().Any())
+        {
+            recommendations.Add(new Recommendation
+            {
+                Title = "Fix Isolated Rooms",
+                Description = $"{GetIsolatedRooms().Count} room(s) have no connections. This makes them unreachable. Review the world generation logic to ensure proper connectivity."
+            });
+        }
+
+        var avgConnections = world?.Rooms?.Any() == true ? GetTotalConnections() / (float)world.Rooms.Count : 0;
+        if (avgConnections < 2.0)
+        {
+            recommendations.Add(new Recommendation
+            {
+                Title = "Increase World Connectivity",
+                Description = $"Average connections per room is {avgConnections:F1}. Consider adding more exits to create a richer, more interconnected world (target: 2-4 per room)."
+            });
+        }
+
+        if (world?.LoreEntries?.Count < 3)
+        {
+            recommendations.Add(new Recommendation
+            {
+                Title = "Add More Lore",
+                Description = "Consider generating more lore entries to enrich the world's background and make it more immersive."
+            });
+        }
+
+        if (!recommendations.Any())
+        {
+            recommendations.Add(new Recommendation
+            {
+                Title = "World Quality Looks Great!",
+                Description = "This world meets quality standards. You can still experiment with different themes, flavors, or parameters to generate varied content."
+            });
+        }
+
+        return recommendations;
+    }
+
+    // Helper methods
+    private string GetRoomTitle(string roomId)
+    {
+        return world?.Rooms?.FirstOrDefault(r => r.Id == roomId)?.Title ?? roomId;
+    }
+
+    private string GetAverageConnectionsPerRoom()
+    {
+        if (world?.Rooms == null || !world.Rooms.Any()) return "0.0";
+        var avg = GetTotalConnections() / (float)world.Rooms.Count;
+        return avg.ToString("F1");
+    }
+
+    private string GetHostilityBadge(string hostility)
+    {
+        return hostility?.ToLower() switch
+        {
+            "hostile" => "error",
+            "neutral" => "neutral",
+            "passive" => "success",
+            _ => "neutral"
+        };
+    }
+
+    private async Task CopyRawJson()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", rawJson);
+            ShowSuccess("JSON copied to clipboard!");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error copying JSON: {ex.Message}");
+        }
+    }
+
+    private void DownloadWorld()
+    {
+        var worldsPath = GetWorldsDirectory();
+        var files = Directory.GetFiles(worldsPath, $"*_{Seed}.zip");
+        if (files.Length > 0)
+        {
+            Navigation.NavigateTo($"/download/{Seed}", true);
+        }
+    }
+
+    private async void ShowSuccess(string message)
+    {
+        successMessage = message;
+        StateHasChanged();
+        await Task.Delay(3000);
+        successMessage = "";
+        StateHasChanged();
     }
 
     private string GetWorldsDirectory()
@@ -419,43 +1135,64 @@
             "source", "repos", "SoloAdventureSystem", "content", "worlds");
     }
 
+    // Data models
     private class WorldData
     {
-        public WorldDefinition WorldDefinition { get; set; } = new();
-        public List<Room> Rooms { get; set; } = new();
-        public List<NPC> Npcs { get; set; } = new();
-        public List<Faction> Factions { get; set; } = new();
+        public WorldJsonModel World { get; set; } = new();
+        public List<RoomModel> Rooms { get; set; } = new();
+        public List<NpcModel> Npcs { get; set; } = new();
+        public List<FactionModel> Factions { get; set; } = new();
         public List<string> LoreEntries { get; set; } = new();
     }
 
-    private class WorldDefinition
+    private class WorldJsonModel
     {
         public string Name { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string Version { get; set; } = "";
+        public string Author { get; set; } = "";
         public DateTime CreatedAt { get; set; }
         public string StartLocationId { get; set; } = "";
+        public List<string> LocationIds { get; set; } = new();
+        public List<string> NpcIds { get; set; } = new();
+        public List<string> ItemIds { get; set; } = new();
+        public List<string> FactionIds { get; set; } = new();
+        public List<string> StoryNodeIds { get; set; } = new();
     }
 
-    private class Room
+    private class RoomModel
     {
         public string Id { get; set; } = "";
         public string Title { get; set; } = "";
         public string BaseDescription { get; set; } = "";
-        public Dictionary<string, string>? Connections { get; set; }
+        public Dictionary<string, string>? Exits { get; set; }
+        public List<string>? Npcs { get; set; }
+        public List<string>? Items { get; set; }
     }
 
-    private class NPC
+    private class NpcModel
     {
         public string Id { get; set; } = "";
         public string Name { get; set; } = "";
         public string Description { get; set; } = "";
         public string FactionId { get; set; } = "";
+        public string Hostility { get; set; } = "Neutral";
+        public string Behavior { get; set; } = "Static";
+        public List<string> Inventory { get; set; } = new();
     }
 
-    private class Faction
+    private class FactionModel
     {
         public string Id { get; set; } = "";
         public string Name { get; set; } = "";
         public string Description { get; set; } = "";
         public string Ideology { get; set; } = "";
+        public Dictionary<string, int> Relations { get; set; } = new();
+    }
+
+    private class Recommendation
+    {
+        public string Title { get; set; } = "";
+        public string Description { get; set; } = "";
     }
 }

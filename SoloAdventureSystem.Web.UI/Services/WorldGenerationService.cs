@@ -122,5 +122,6 @@ public class WorldGenerationService : IDisposable
     {
         _adapter?.Dispose();
         _initLock?.Dispose();
+        GC.SuppressFinalize(this);
     }
 }

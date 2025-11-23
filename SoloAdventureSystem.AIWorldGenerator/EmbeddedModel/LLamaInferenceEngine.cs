@@ -42,7 +42,10 @@ public class LLamaInferenceEngine : IDisposable
         {
             if (_isLoaded && _loadedModelPath == modelPath)
             {
-                _logger?.LogDebug("? Model already loaded in memory, skipping reload");
+                if (_logger?.IsEnabled(LogLevel.Trace) == true)
+                {
+                    _logger.LogTrace("Model already loaded in memory, skipping reload");
+                }
                 return;
             }
 
@@ -55,18 +58,17 @@ public class LLamaInferenceEngine : IDisposable
             
             try
             {
-                _logger?.LogDebug("?? Acquiring model file mutex: {MutexName}", mutexName);
+                if (_logger?.IsEnabled(LogLevel.Trace) == true)
+                {
+                    _logger.LogTrace("Acquiring model file mutex: {MutexName}", mutexName);
+                }
                 
                 // Try to open existing mutex or create new one
                 fileMutex = new Mutex(false, mutexName, out createdNew);
                 
-                if (createdNew)
+                if (_logger?.IsEnabled(LogLevel.Trace) == true)
                 {
-                    _logger?.LogDebug("?? Created new file mutex");
-                }
-                else
-                {
-                    _logger?.LogDebug("?? Opened existing file mutex");
+                    _logger.LogTrace(createdNew ? "Created new file mutex" : "Opened existing file mutex");
                 }
                 
                 // Wait up to 2 minutes for the mutex
@@ -74,24 +76,36 @@ public class LLamaInferenceEngine : IDisposable
                 
                 if (!mutexAcquired)
                 {
-                    _logger?.LogWarning("?? Could not acquire model file mutex within timeout");
+                    _logger?.LogWarning("Could not acquire model file mutex within timeout");
                     throw new TimeoutException($"Could not acquire lock for model file {modelPath}. Another process may be loading the model.");
                 }
                 
-                _logger?.LogDebug("? Model file mutex acquired");
-                _logger?.LogInformation("?? Loading GGUF model from {Path}...", modelPath);
+                if (_logger?.IsEnabled(LogLevel.Trace) == true)
+                {
+                    _logger.LogTrace("Model file mutex acquired");
+                }
+                
+                _logger?.LogInformation("Loading GGUF model from {Path}...", modelPath);
                 
                 // Verify file exists before attempting to load
                 if (!File.Exists(modelPath))
                 {
-                    _logger?.LogError("? Model file not found at {Path}", modelPath);
+                    _logger?.LogError("Model file not found at {Path}", modelPath);
                     throw new FileNotFoundException($"Model file not found: {modelPath}", modelPath);
                 }
                 
                 var fileInfo = new FileInfo(modelPath);
-                _logger?.LogInformation("?? Model file size: {SizeMB:F1} MB", fileInfo.Length / 1024.0 / 1024.0);
-                _logger?.LogInformation("?? Model parameters: ContextSize={Context}, GpuLayers={Gpu}, Threads={Threads}, Seed={Seed}",
-                    contextSize, gpuLayers, threads, seed ?? 1337u);
+                
+                if (_logger?.IsEnabled(LogLevel.Debug) == true)
+                {
+                    _logger.LogDebug("Model file size: {SizeMB:F1} MB", fileInfo.Length / 1024.0 / 1024.0);
+                }
+                
+                if (_logger?.IsEnabled(LogLevel.Trace) == true)
+                {
+                    _logger.LogTrace("Model parameters: ContextSize={Context}, GpuLayers={Gpu}, Threads={Threads}, Seed={Seed}",
+                        contextSize, gpuLayers, threads, seed ?? 1337u);
+                }
                 
                 var startTime = DateTime.UtcNow;
 
@@ -104,33 +118,42 @@ public class LLamaInferenceEngine : IDisposable
                     SplitMode = LLama.Native.GPUSplitMode.None
                 };
 
-                _logger?.LogDebug("?? Loading model weights...");
+                if (_logger?.IsEnabled(LogLevel.Trace) == true)
+                {
+                    _logger.LogTrace("Loading model weights...");
+                }
                 _weights = LLamaWeights.LoadFromFile(parameters);
-                _logger?.LogDebug("? Model weights loaded");
                 
-                _logger?.LogDebug("?? Creating model context...");
+                if (_logger?.IsEnabled(LogLevel.Trace) == true)
+                {
+                    _logger.LogTrace("Creating model context...");
+                }
                 _context = _weights.CreateContext(parameters);
-                _logger?.LogDebug("? Model context created");
                 
-                _logger?.LogDebug("? Initializing executor...");
+                if (_logger?.IsEnabled(LogLevel.Trace) == true)
+                {
+                    _logger.LogTrace("Initializing executor...");
+                }
                 _executor = new InteractiveExecutor(_context);
-                _logger?.LogDebug("? Executor initialized");
 
                 var loadTime = DateTime.UtcNow - startTime;
-                _logger?.LogInformation("? Model loaded successfully in {Time:F1}s", loadTime.TotalSeconds);
-                _logger?.LogInformation("?? Model ready for inference (context size: {Context} tokens)", contextSize);
+                _logger?.LogInformation("Model loaded successfully in {Time:F1}s", loadTime.TotalSeconds);
 
                 _isLoaded = true;
                 _loadedModelPath = modelPath;
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "? Failed to load model from {Path}", modelPath);
-                _logger?.LogError("?? Troubleshooting tips:");
-                _logger?.LogError("   1. Verify the model file exists and is not corrupted");
-                _logger?.LogError("   2. Ensure you have enough RAM (model size + context buffer)");
-                _logger?.LogError("   3. Check file permissions on the model directory");
-                _logger?.LogError("   4. Try deleting the model and re-downloading it");
+                _logger?.LogError(ex, "Failed to load model from {Path}", modelPath);
+                
+                if (_logger?.IsEnabled(LogLevel.Debug) == true)
+                {
+                    _logger.LogDebug("Troubleshooting tips:");
+                    _logger.LogDebug("   1. Verify the model file exists and is not corrupted");
+                    _logger.LogDebug("   2. Ensure you have enough RAM (model size + context buffer)");
+                    _logger.LogDebug("   3. Check file permissions on the model directory");
+                    _logger.LogDebug("   4. Try deleting the model and re-downloading it");
+                }
                 
                 throw new InvalidOperationException(
                     $"Failed to load AI model from {modelPath}. The model file may be corrupted or incompatible. " +
@@ -142,12 +165,15 @@ public class LLamaInferenceEngine : IDisposable
                 {
                     try
                     {
-                        _logger?.LogDebug("?? Releasing model file mutex");
+                        if (_logger?.IsEnabled(LogLevel.Trace) == true)
+                        {
+                            _logger.LogTrace("Releasing model file mutex");
+                        }
                         fileMutex.ReleaseMutex();
                     }
                     catch (ApplicationException ex)
                     {
-                        _logger?.LogWarning(ex, "?? Failed to release file mutex (may have been abandoned)");
+                        _logger?.LogWarning(ex, "Failed to release file mutex (may have been abandoned)");
                     }
                 }
                 
@@ -169,7 +195,7 @@ public class LLamaInferenceEngine : IDisposable
     {
         if (!_isLoaded || _executor == null || _context == null)
         {
-            _logger?.LogError("? Cannot generate: Model not loaded");
+            _logger?.LogError("Cannot generate: Model not loaded");
             throw new InvalidOperationException("Model not loaded. Call LoadModel() first.");
         }
 
@@ -177,14 +203,20 @@ public class LLamaInferenceEngine : IDisposable
 
         try
         {
-            var promptPreview = prompt.Length > 100 ? prompt.Substring(0, 100) + "..." : prompt;
-            _logger?.LogDebug("?? Generating text - MaxTokens: {MaxTokens}, Temp: {Temp}, Timeout: {Timeout}, Prompt: \"{Preview}\"", 
-                maxTokens, temperature, actualTimeout, promptPreview);
+            if (_logger?.IsEnabled(LogLevel.Trace) == true)
+            {
+                var promptPreview = prompt.Length > 100 ? prompt.Substring(0, 100) + "..." : prompt;
+                _logger.LogTrace("Generating text - MaxTokens: {MaxTokens}, Temp: {Temp}, Timeout: {Timeout}, Prompt: \"{Preview}\"", 
+                    maxTokens, temperature, actualTimeout, promptPreview);
+            }
 
             var startTime = DateTime.UtcNow;
 
             // Clear context before each generation to prevent KV cache overflow
-            _logger?.LogDebug("?? Clearing context to prevent KV cache overflow...");
+            if (_logger?.IsEnabled(LogLevel.Trace) == true)
+            {
+                _logger.LogTrace("Clearing context to prevent KV cache overflow...");
+            }
             _context.NativeHandle.KvCacheClear();
             
             var inferenceParams = new InferenceParams
@@ -220,21 +252,24 @@ public class LLamaInferenceEngine : IDisposable
                     // Check timeout during generation
                     if ((DateTime.UtcNow - startTime) > actualTimeout)
                     {
-                        _logger?.LogWarning("?? Generation timeout after {Timeout}", actualTimeout);
+                        _logger?.LogWarning("Generation timeout after {Timeout}", actualTimeout);
                         break;
                     }
                     
                     tokens.Add(output);
                     
-                    // Log progress every 5 seconds for long generations
-                    var now = DateTime.UtcNow;
-                    if ((now - lastLogTime).TotalSeconds >= 5)
+                    // Log progress every 10 seconds for long generations (reduced frequency)
+                    if (_logger?.IsEnabled(LogLevel.Debug) == true)
                     {
-                        lastLogTime = now;
-                        var elapsed = now - startTime;
-                        var tokensPerSecond = tokens.Count / Math.Max(elapsed.TotalSeconds, 0.001);
-                        _logger?.LogDebug("? Generation in progress: {Tokens}/{MaxTokens} tokens ({TPS:F1} tok/s)",
-                            tokens.Count, maxTokens, tokensPerSecond);
+                        var now = DateTime.UtcNow;
+                        if ((now - lastLogTime).TotalSeconds >= 10)
+                        {
+                            lastLogTime = now;
+                            var elapsed = now - startTime;
+                            var tokensPerSecond = tokens.Count / Math.Max(elapsed.TotalSeconds, 0.001);
+                            _logger.LogDebug("Generation in progress: {Tokens}/{MaxTokens} tokens ({TPS:F1} tok/s)",
+                                tokens.Count, maxTokens, tokensPerSecond);
+                        }
                     }
                     
                     if (tokens.Count >= maxTokens)
@@ -245,17 +280,20 @@ public class LLamaInferenceEngine : IDisposable
             // Wait with timeout
             if (!task.Wait(actualTimeout))
             {
-                _logger?.LogError("? Generation timed out after {Timeout}", actualTimeout);
+                _logger?.LogError("Generation timed out after {Timeout}", actualTimeout);
                 
                 // Clear context after timeout to ensure clean state
                 try
                 {
                     _context.NativeHandle.KvCacheClear();
-                    _logger?.LogDebug("? Context cleared after timeout");
+                    if (_logger?.IsEnabled(LogLevel.Trace) == true)
+                    {
+                        _logger.LogTrace("Context cleared after timeout");
+                    }
                 }
                 catch (Exception clearEx)
                 {
-                    _logger?.LogWarning(clearEx, "?? Failed to clear context after timeout");
+                    _logger?.LogWarning(clearEx, "Failed to clear context after timeout");
                 }
                 
                 throw new TimeoutException($"Text generation timed out after {actualTimeout}");
@@ -263,14 +301,20 @@ public class LLamaInferenceEngine : IDisposable
 
             var result = string.Join("", tokens).Trim();
 
-            var generationTime = DateTime.UtcNow - startTime;
-            var tokensPerSecond = tokens.Count / Math.Max(generationTime.TotalSeconds, 0.001);
+            if (_logger?.IsEnabled(LogLevel.Debug) == true)
+            {
+                var generationTime = DateTime.UtcNow - startTime;
+                var tokensPerSecond = tokens.Count / Math.Max(generationTime.TotalSeconds, 0.001);
 
-            _logger?.LogInformation("? Generated {Tokens} tokens in {Time:F1}s ({TPS:F1} tok/s)",
-                tokens.Count, generationTime.TotalSeconds, tokensPerSecond);
-                
-            var resultPreview = result.Length > 100 ? result.Substring(0, 100) + "..." : result;
-            _logger?.LogDebug("?? Result preview: \"{Preview}\"", resultPreview);
+                _logger.LogDebug("Generated {Tokens} tokens in {Time:F1}s ({TPS:F1} tok/s)",
+                    tokens.Count, generationTime.TotalSeconds, tokensPerSecond);
+            }
+            
+            if (_logger?.IsEnabled(LogLevel.Trace) == true)
+            {
+                var resultPreview = result.Length > 100 ? result.Substring(0, 100) + "..." : result;
+                _logger.LogTrace("Result preview: \"{Preview}\"", resultPreview);
+            }
 
             return result;
         }
@@ -280,12 +324,16 @@ public class LLamaInferenceEngine : IDisposable
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "? Failed to generate text");
-            _logger?.LogError("?? This may indicate:");
-            _logger?.LogError("   1. The model encountered an internal error");
-            _logger?.LogError("   2. The prompt may be too long or malformed");
-            _logger?.LogError("   3. System resources (RAM/CPU) may be exhausted");
-            _logger?.LogError("   4. KV cache overflow - try reducing context size or max tokens");
+            _logger?.LogError(ex, "Failed to generate text");
+            
+            if (_logger?.IsEnabled(LogLevel.Debug) == true)
+            {
+                _logger.LogDebug("This may indicate:");
+                _logger.LogDebug("   1. The model encountered an internal error");
+                _logger.LogDebug("   2. The prompt may be too long or malformed");
+                _logger.LogDebug("   3. System resources (RAM/CPU) may be exhausted");
+                _logger.LogDebug("   4. KV cache overflow - try reducing context size or max tokens");
+            }
             
             // Try to clear context for recovery
             try
@@ -293,12 +341,15 @@ public class LLamaInferenceEngine : IDisposable
                 if (_context != null)
                 {
                     _context.NativeHandle.KvCacheClear();
-                    _logger?.LogDebug("? Context cleared for error recovery");
+                    if (_logger?.IsEnabled(LogLevel.Trace) == true)
+                    {
+                        _logger.LogTrace("Context cleared for error recovery");
+                    }
                 }
             }
             catch (Exception clearEx)
             {
-                _logger?.LogWarning(clearEx, "?? Failed to clear context during error recovery");
+                _logger?.LogWarning(clearEx, "Failed to clear context during error recovery");
             }
             
             throw new InvalidOperationException(
@@ -316,38 +367,40 @@ public class LLamaInferenceEngine : IDisposable
         {
             if (!_isLoaded)
             {
-                _logger?.LogDebug("?? Model not loaded, nothing to unload");
+                if (_logger?.IsEnabled(LogLevel.Trace) == true)
+                {
+                    _logger.LogTrace("Model not loaded, nothing to unload");
+                }
                 return;
             }
 
-            _logger?.LogInformation("?? Unloading model from memory...");
+            _logger?.LogInformation("Unloading model from memory...");
 
             _executor = null;
-            _logger?.LogDebug("? Executor disposed");
-            
             _context?.Dispose();
-            _logger?.LogDebug("? Context disposed");
-            
             _weights?.Dispose();
-            _logger?.LogDebug("? Weights disposed");
 
             _context = null;
             _weights = null;
             _isLoaded = false;
             _loadedModelPath = null;
 
-            _logger?.LogDebug("??? Forcing garbage collection...");
+            if (_logger?.IsEnabled(LogLevel.Trace) == true)
+            {
+                _logger.LogTrace("Forcing garbage collection...");
+            }
             GC.Collect();
             GC.WaitForPendingFinalizers();
             GC.Collect();
             
-            _logger?.LogInformation("? Model unloaded successfully, memory freed");
+            _logger?.LogInformation("Model unloaded successfully");
         }
     }
 
     public void Dispose()
     {
         UnloadModel();
+        GC.SuppressFinalize(this);
     }
 
     /// <summary>

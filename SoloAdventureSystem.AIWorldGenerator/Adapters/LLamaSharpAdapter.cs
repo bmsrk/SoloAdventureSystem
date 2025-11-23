@@ -346,5 +346,6 @@ public class LLamaSharpAdapter : ILocalSLMAdapter, IDisposable
         _logger?.LogInformation("??? Disposing LLamaSharpAdapter...");
         _engine?.Dispose();
         _logger?.LogDebug("? LLamaSharpAdapter disposed");
+        GC.SuppressFinalize(this);
     }
 }

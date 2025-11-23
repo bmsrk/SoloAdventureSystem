@@ -242,8 +242,8 @@ namespace SoloAdventureSystem.ContentGenerator.Generation
             int score = 100;
 
             // Check room connectivity
-            var disconnectedRooms = result.Rooms.Where(r => r.Exits == null || !r.Exits.Any()).ToList();
-            if (disconnectedRooms.Any())
+            var disconnectedRooms = result.Rooms.Where(r => r.Exits == null || r.Exits.Count == 0).ToList();
+            if (disconnectedRooms.Count > 0)
             {
                 score -= 20;
                 result2.Warnings.Add($"Found {disconnectedRooms.Count} disconnected rooms");
@@ -253,7 +253,7 @@ namespace SoloAdventureSystem.ContentGenerator.Generation
             // Check NPC-faction references
             var invalidNpcs = result.Npcs.Where(n => 
                 !result.Factions.Any(f => f.Id == n.FactionId)).ToList();
-            if (invalidNpcs.Any())
+            if (invalidNpcs.Count > 0)
             {
                 score -= 15;
                 result2.Warnings.Add($"Found {invalidNpcs.Count} NPCs with invalid faction references");
@@ -265,7 +265,7 @@ namespace SoloAdventureSystem.ContentGenerator.Generation
             {
                 var missingNpcs = room.Npcs.Where(npcId => 
                     !result.Npcs.Any(n => n.Id == npcId)).ToList();
-                if (missingNpcs.Any())
+                if (missingNpcs.Count > 0)
                 {
                     score -= 10;
                     result2.Warnings.Add($"Room '{room.Title}' references {missingNpcs.Count} missing NPCs");

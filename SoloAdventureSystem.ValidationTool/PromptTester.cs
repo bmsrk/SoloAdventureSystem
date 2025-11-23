@@ -237,6 +237,7 @@ public class PromptTester : IDisposable
     public void Dispose()
     {
         _adapter?.Dispose();
+        GC.SuppressFinalize(this);
     }
 }
 

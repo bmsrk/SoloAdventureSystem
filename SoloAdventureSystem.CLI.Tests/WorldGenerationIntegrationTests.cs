@@ -100,7 +100,7 @@ public class WorldGenerationIntegrationTests : IDisposable
         _output.WriteLine($"   Consistency:     {qualityResult.Metrics.ConsistencyScore}/100");
         _output.WriteLine($"   Overall Score:   {qualityResult.Metrics.OverallScore}/100");
 
-        if (qualityResult.Warnings.Any())
+        if (qualityResult.Warnings.Count > 0)
         {
             _output.WriteLine($"Warnings ({qualityResult.Warnings.Count}):");
             foreach (var warning in qualityResult.Warnings)
@@ -225,6 +225,7 @@ public class WorldGenerationIntegrationTests : IDisposable
         {
             _output.WriteLine($"Warning: Could not cleanup test directory: {ex.Message}");
         }
+        GC.SuppressFinalize(this);
     }
 }
 
@@ -304,6 +305,7 @@ public class IntegrationTestFixture : IDisposable
         Adapter?.Dispose();
         (ServiceProvider as IDisposable)?.Dispose();
         Console.WriteLine("? Cleanup complete");
+        GC.SuppressFinalize(this);
     }
 }
 
@@ -332,7 +334,10 @@ public class XunitLoggerProvider : ILoggerProvider
         return new XunitLogger(_output, categoryName);
     }
 
-    public void Dispose() { }
+    public void Dispose() 
+    {
+        GC.SuppressFinalize(this);
+    }
 }
 
 /// <summary>

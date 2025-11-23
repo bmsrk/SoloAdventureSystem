@@ -180,22 +180,31 @@ public class WorldQualityAnalyzer
         quality.Checks["SentenceCount"] = sentences >= 2 && sentences <= 5;
 
         // Check for vague language
-        var vague = desc.ToLower().Contains("some ") || 
-                    desc.ToLower().Contains("maybe ") || 
-                    desc.ToLower().Contains("things ") ||
-                    desc.ToLower().Contains("stuff ");
+        var vague = desc.Contains("some ", StringComparison.OrdinalIgnoreCase) || 
+                    desc.Contains("maybe ", StringComparison.OrdinalIgnoreCase) || 
+                    desc.Contains("things ", StringComparison.OrdinalIgnoreCase) ||
+                    desc.Contains("stuff ", StringComparison.OrdinalIgnoreCase);
         quality.Checks["NoVague"] = !vague;
 
         // Check for specific details (colors, materials)
-        var hasColors = desc.Contains("blue") || desc.Contains("red") || desc.Contains("neon") || 
-                       desc.Contains("green") || desc.Contains("white") || desc.Contains("black") ||
-                       desc.Contains("silver") || desc.Contains("gold") || desc.Contains("amber");
+        var hasColors = desc.Contains("blue", StringComparison.OrdinalIgnoreCase) || 
+                       desc.Contains("red", StringComparison.OrdinalIgnoreCase) || 
+                       desc.Contains("neon", StringComparison.OrdinalIgnoreCase) || 
+                       desc.Contains("green", StringComparison.OrdinalIgnoreCase) || 
+                       desc.Contains("white", StringComparison.OrdinalIgnoreCase) || 
+                       desc.Contains("black", StringComparison.OrdinalIgnoreCase) ||
+                       desc.Contains("silver", StringComparison.OrdinalIgnoreCase) || 
+                       desc.Contains("gold", StringComparison.OrdinalIgnoreCase) || 
+                       desc.Contains("amber", StringComparison.OrdinalIgnoreCase);
         quality.Checks["HasColors"] = hasColors;
 
         // Check for sensory details
-        var hasSensory = desc.ToLower().Contains("smell") || desc.ToLower().Contains("taste") ||
-                        desc.ToLower().Contains("sound") || desc.ToLower().Contains("hum") ||
-                        desc.ToLower().Contains("flicker") || desc.ToLower().Contains("glow");
+        var hasSensory = desc.Contains("smell", StringComparison.OrdinalIgnoreCase) || 
+                        desc.Contains("taste", StringComparison.OrdinalIgnoreCase) ||
+                        desc.Contains("sound", StringComparison.OrdinalIgnoreCase) || 
+                        desc.Contains("hum", StringComparison.OrdinalIgnoreCase) ||
+                        desc.Contains("flicker", StringComparison.OrdinalIgnoreCase) || 
+                        desc.Contains("glow", StringComparison.OrdinalIgnoreCase);
         quality.Checks["HasSensory"] = hasSensory;
 
         // Not empty
@@ -226,15 +235,19 @@ public class WorldQualityAnalyzer
         quality.Checks["SentenceCount"] = sentences >= 1 && sentences <= 4;
 
         // Check for vague language
-        var vague = desc.ToLower().Contains("some ") || 
-                    desc.ToLower().Contains("maybe ") || 
-                    desc.ToLower().Contains("things ");
+        var vague = desc.Contains("some ", StringComparison.OrdinalIgnoreCase) || 
+                    desc.Contains("maybe ", StringComparison.OrdinalIgnoreCase) || 
+                    desc.Contains("things ", StringComparison.OrdinalIgnoreCase);
         quality.Checks["NoVague"] = !vague;
 
         // Check for character trait/quirk indicators
-        var hasTrait = desc.ToLower().Contains("secret") || desc.ToLower().Contains("trait") ||
-                      desc.ToLower().Contains("quirk") || desc.Contains("implant") ||
-                      desc.Contains("scar") || desc.Contains("eye") || desc.Contains("tattoo");
+        var hasTrait = desc.Contains("secret", StringComparison.OrdinalIgnoreCase) || 
+                      desc.Contains("trait", StringComparison.OrdinalIgnoreCase) ||
+                      desc.Contains("quirk", StringComparison.OrdinalIgnoreCase) || 
+                      desc.Contains("implant", StringComparison.OrdinalIgnoreCase) ||
+                      desc.Contains("scar", StringComparison.OrdinalIgnoreCase) || 
+                      desc.Contains("eye", StringComparison.OrdinalIgnoreCase) || 
+                      desc.Contains("tattoo", StringComparison.OrdinalIgnoreCase);
         quality.Checks["HasTrait"] = hasTrait;
 
         // Check for role/background
@@ -269,21 +282,27 @@ public class WorldQualityAnalyzer
         quality.Checks["SentenceCount"] = sentences >= 2 && sentences <= 5;
 
         // Check for vague language
-        var vague = desc.ToLower().Contains("some ") || 
-                    desc.ToLower().Contains("maybe ") || 
-                    desc.ToLower().Contains("things ");
+        var vague = desc.Contains("some ", StringComparison.OrdinalIgnoreCase) || 
+                    desc.Contains("maybe ", StringComparison.OrdinalIgnoreCase) || 
+                    desc.Contains("things ", StringComparison.OrdinalIgnoreCase);
         quality.Checks["NoVague"] = !vague;
 
         // Check for goals/ideology
-        var hasGoals = desc.ToLower().Contains("fight") || desc.ToLower().Contains("control") ||
-                      desc.ToLower().Contains("rule") || desc.ToLower().Contains("free") ||
-                      desc.ToLower().Contains("protect") || desc.ToLower().Contains("champion");
+        var hasGoals = desc.Contains("fight", StringComparison.OrdinalIgnoreCase) || 
+                      desc.Contains("control", StringComparison.OrdinalIgnoreCase) ||
+                      desc.Contains("rule", StringComparison.OrdinalIgnoreCase) || 
+                      desc.Contains("free", StringComparison.OrdinalIgnoreCase) ||
+                      desc.Contains("protect", StringComparison.OrdinalIgnoreCase) || 
+                      desc.Contains("champion", StringComparison.OrdinalIgnoreCase);
         quality.Checks["HasGoals"] = hasGoals;
 
         // Check for conflict/enemies
-        var hasConflict = desc.ToLower().Contains("enemy") || desc.ToLower().Contains("fight") ||
-                         desc.ToLower().Contains("war") || desc.ToLower().Contains("against") ||
-                         desc.ToLower().Contains("hunt") || desc.ToLower().Contains("battle");
+        var hasConflict = desc.Contains("enemy", StringComparison.OrdinalIgnoreCase) || 
+                         desc.Contains("fight", StringComparison.OrdinalIgnoreCase) ||
+                         desc.Contains("war", StringComparison.OrdinalIgnoreCase) || 
+                         desc.Contains("against", StringComparison.OrdinalIgnoreCase) ||
+                         desc.Contains("hunt", StringComparison.OrdinalIgnoreCase) || 
+                         desc.Contains("battle", StringComparison.OrdinalIgnoreCase);
         quality.Checks["HasConflict"] = hasConflict;
 
         // Not empty

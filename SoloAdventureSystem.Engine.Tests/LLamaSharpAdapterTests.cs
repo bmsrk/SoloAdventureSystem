@@ -321,6 +321,7 @@ public class LLamaSharpFixture : IDisposable
         Console.WriteLine("Disposing shared LLamaSharp adapter...");
         Adapter?.Dispose();
         Console.WriteLine("? Cleanup complete");
+        GC.SuppressFinalize(this);
     }
 }
 
