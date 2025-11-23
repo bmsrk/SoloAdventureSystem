@@ -133,12 +133,20 @@ public class LLamaSharpAdapter : ILocalSLMAdapter, IDisposable
 
             var output = _engine.Generate(
                 fullPrompt,
-                maxTokens: 150,
-                temperature: 0.6f,  // Reduced from 0.7f for more consistent formatting
+                maxTokens: 250,  // Increased from 150
+                temperature: 0.7f,  // Increased for more creative bios
                 seed: seed,
-                timeout: TimeSpan.FromMinutes(3));  // Add timeout
+                timeout: TimeSpan.FromMinutes(3));
 
             var cleaned = CleanOutput(output);
+            
+            // If output is too short, it likely hit a stop token too early - return what we have
+            if (string.IsNullOrWhiteSpace(cleaned) || cleaned.Length < 10)
+            {
+                _logger?.LogWarning("?? NPC bio generation produced short/empty output, using raw output");
+                cleaned = output.Trim();
+            }
+            
             _logger?.LogDebug("? NPC bio generated ({Length} chars)", cleaned.Length);
             
             return cleaned;
@@ -164,12 +172,20 @@ public class LLamaSharpAdapter : ILocalSLMAdapter, IDisposable
 
             var output = _engine.Generate(
                 fullPrompt,
-                maxTokens: 200,
-                temperature: 0.6f,  // Reduced from 0.7f for more consistent formatting
+                maxTokens: 250,  // Increased from 200
+                temperature: 0.7f,  // Increased for more creative descriptions
                 seed: seed,
-                timeout: TimeSpan.FromMinutes(3));  // Add timeout
+                timeout: TimeSpan.FromMinutes(3));
 
             var cleaned = CleanOutput(output);
+            
+            // If output is too short, it likely hit a stop token too early - return what we have
+            if (string.IsNullOrWhiteSpace(cleaned) || cleaned.Length < 10)
+            {
+                _logger?.LogWarning("?? Faction flavor generation produced short/empty output, using raw output");
+                cleaned = output.Trim();
+            }
+            
             _logger?.LogDebug("? Faction flavor generated ({Length} chars)", cleaned.Length);
             
             return cleaned;
