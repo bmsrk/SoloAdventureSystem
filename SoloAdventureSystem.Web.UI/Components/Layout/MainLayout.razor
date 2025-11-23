@@ -1,0 +1,74 @@
+@inherits LayoutComponentBase
+
+<div style="display: flex; min-height: 100vh; background: var(--color-bg-primary);">
+    <!-- Navigation Sidebar -->
+    <nav class="nav-menu">
+        <div style="padding: var(--spacing-lg); border-bottom: 1px solid var(--color-border-default);">
+            <h3 style="margin: 0; font-weight: 600; color: var(--color-text-primary);">SoloAdventureSystem</h3>
+            <a href="https://github.com/bmsrk/SoloAdventureSystem" target="_blank" style="color: var(--color-border-hover); font-size: var(--font-size-sm); text-decoration: none;">
+                GitHub &rarr;
+            </a>
+        </div>
+        
+        <div style="padding: var(--spacing-sm);">
+            <a href="/" class="nav-link @(IsActive("/") ? "active" : "")">
+                <span class="nav-icon">H</span>
+                Home
+            </a>
+            <a href="/generate" class="nav-link @(IsActive("/generate") ? "active" : "")">
+                <span class="nav-icon">G</span>
+                World Generator
+            </a>
+            <a href="/worlds" class="nav-link @(IsActive("/worlds") ? "active" : "")">
+                <span class="nav-icon">W</span>
+                Manage Worlds
+            </a>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main style="flex: 1; overflow-y: auto; background: var(--color-bg-primary); color: var(--color-text-primary);">
+        @Body
+    </main>
+</div>
+
+<div id="blazor-error-ui" data-nosnippet>
+    An unhandled error has occurred.
+    <a href="." class="reload">Reload</a>
+    <span class="dismiss">X</span>
+</div>
+
+<style>
+.nav-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    margin-right: var(--spacing-sm);
+    background: var(--color-bg-elevated);
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: var(--font-weight-bold);
+    color: var(--color-accent-primary);
+}
+
+.nav-link.active .nav-icon {
+    background: var(--color-text-primary);
+    color: var(--color-accent-primary);
+}
+</style>
+
+@code {
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+    
+    private bool IsActive(string href)
+    {
+        var currentPath = new Uri(Navigation.Uri).AbsolutePath;
+        if (href == "/")
+        {
+            return currentPath == "/";
+        }
+        return currentPath.StartsWith(href, StringComparison.OrdinalIgnoreCase);
+    }
+}

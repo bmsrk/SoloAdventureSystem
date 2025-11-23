@@ -1,9 +1,9 @@
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.IO;
-using MudVision.World.Models;
+using SoloAdventureSystem.Engine.Models;
 
-namespace MudVision.WorldLoader
+namespace SoloAdventureSystem.Engine.WorldLoader
 {
     public interface IWorldLoader
     {

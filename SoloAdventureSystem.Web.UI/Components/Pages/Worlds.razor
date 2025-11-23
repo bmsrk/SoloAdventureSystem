@@ -1,0 +1,541 @@
+@page "/worlds"
+@rendermode InteractiveServer
+@using System.IO
+@using System.IO.Compression
+@using System.Text.Json
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<PageTitle>Manage Worlds</PageTitle>
+
+<div style="padding: 2rem; max-width: 1400px; margin: 0 auto;">
+    <div style="margin-bottom: 2rem;">
+        <h1 style="color: var(--color-text-primary); margin-bottom: 0.5rem;">Manage Worlds</h1>
+        <p style="color: var(--color-text-secondary);">Browse and manage your generated game worlds</p>
+    </div>
+
+    @if (isLoading)
+    {
+        <Card>
+            <div style="text-align: center; padding: 3rem;">
+                <div class="spinner" style="margin: 0 auto 1rem;"></div>
+                <p style="color: var(--color-text-muted);">Loading worlds...</p>
+            </div>
+        </Card>
+    }
+    else if (worlds.Count == 0)
+    {
+        <Card>
+            <div style="text-align: center; padding: 3rem;">
+                <div style="font-size: 4rem; margin-bottom: 1rem;">??</div>
+                <h3 style="color: var(--color-text-primary); margin-bottom: 1rem;">No Worlds Yet</h3>
+                <p style="color: var(--color-text-secondary); margin-bottom: 2rem;">
+                    You haven't generated any worlds yet. Get started by creating your first world!
+                </p>
+                <a href="/generate" class="custom-button btn-accent" style="text-decoration: none;">
+                    Generate World
+                </a>
+            </div>
+        </Card>
+    }
+    else
+    {
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <div>
+                <Badge Appearance="accent">@worlds.Count World@(worlds.Count == 1 ? "" : "s")</Badge>
+                <span style="color: var(--color-text-muted); margin-left: 1rem;">
+                    Total Size: @FormatBytes(totalSize)
+                </span>
+            </div>
+            <div>
+                <select @onchange="OnSortChanged" class="custom-select" value="@sortBy">
+                    <option value="date-desc">Newest First</option>
+                    <option value="date-asc">Oldest First</option>
+                    <option value="name-asc">Name (A-Z)</option>
+                    <option value="name-desc">Name (Z-A)</option>
+                    <option value="size-desc">Largest First</option>
+                    <option value="size-asc">Smallest First</option>
+                </select>
+            </div>
+        </div>
+
+        <div style="display: grid; gap: 1rem;">
+            @foreach (var world in GetSortedWorlds())
+            {
+                <Card Class="world-card" Style="transition: all var(--transition-base);">
+                    <div style="display: grid; grid-template-columns: auto 1fr auto; gap: 1.5rem; align-items: start;">
+                        <!-- Icon -->
+                        <div class="world-icon">W</div>
+                        
+                        <!-- Info -->
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem;">
+                                <h3 style="color: var(--color-text-primary); margin: 0;">@world.Name</h3>
+                                @if (world.IsValid)
+                                {
+                                    <Badge Appearance="success">Valid</Badge>
+                                }
+                                else
+                                {
+                                    <Badge Appearance="error">Invalid</Badge>
+                                }
+                            </div>
+                            
+                            <div style="display: flex; gap: 2rem; margin-bottom: 0.75rem;">
+                                <div>
+                                    <span style="color: var(--color-text-muted); font-size: var(--font-size-sm);">Seed:</span>
+                                    <span style="color: var(--color-text-secondary); margin-left: 0.5rem;">@world.Seed</span>
+                                </div>
+                                <div>
+                                    <span style="color: var(--color-text-muted); font-size: var(--font-size-sm);">Created:</span>
+                                    <span style="color: var(--color-text-secondary); margin-left: 0.5rem;">@world.CreatedDate.ToString("MMM dd, yyyy")</span>
+                                </div>
+                                <div>
+                                    <span style="color: var(--color-text-muted); font-size: var(--font-size-sm);">Size:</span>
+                                    <span style="color: var(--color-text-secondary); margin-left: 0.5rem;">@FormatBytes(world.FileSize)</span>
+                                </div>
+                            </div>
+
+                            @if (world.Stats != null)
+                            {
+                                <div style="display: flex; gap: 1.5rem;">
+                                    <div class="stat-badge">
+                                        <span class="stat-icon">R</span>
+                                        <span class="stat-value">@world.Stats.Rooms</span>
+                                        <span class="stat-label">Rooms</span>
+                                    </div>
+                                    <div class="stat-badge">
+                                        <span class="stat-icon">N</span>
+                                        <span class="stat-value">@world.Stats.NPCs</span>
+                                        <span class="stat-label">NPCs</span>
+                                    </div>
+                                    <div class="stat-badge">
+                                        <span class="stat-icon">F</span>
+                                        <span class="stat-value">@world.Stats.Factions</span>
+                                        <span class="stat-label">Factions</span>
+                                    </div>
+                                    <div class="stat-badge">
+                                        <span class="stat-icon">L</span>
+                                        <span class="stat-value">@world.Stats.Lore</span>
+                                        <span class="stat-label">Lore</span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                        
+                        <!-- Actions -->
+                        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                            <Button Appearance="accent" OnClick="@(() => ViewWorld(world))" Style="white-space: nowrap;">
+                                View Details
+                            </Button>
+                            <Button Appearance="neutral" OnClick="@(() => CopyPath(world))" Style="white-space: nowrap;">
+                                Copy Path
+                            </Button>
+                            <Button Appearance="danger" OnClick="@(() => ConfirmDelete(world))" Style="white-space: nowrap;">
+                                Delete
+                            </Button>
+                        </div>
+                    </div>
+                </Card>
+            }
+        </div>
+    }
+</div>
+
+<!-- Delete Confirmation Dialog -->
+@if (showDeleteDialog && worldToDelete != null)
+{
+    <div class="dialog-overlay" @onclick="CancelDelete">
+        <div class="dialog-content" @onclick:stopPropagation="true">
+            <h3 style="color: var(--color-text-primary); margin-bottom: 1rem;">Confirm Delete</h3>
+            <p style="color: var(--color-text-secondary); margin-bottom: 1.5rem;">
+                Are you sure you want to delete <strong style="color: var(--color-text-primary);">@worldToDelete.Name</strong>?
+                <br/>
+                This action cannot be undone.
+            </p>
+            <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                <Button Appearance="neutral" OnClick="CancelDelete">
+                    Cancel
+                </Button>
+                <Button Appearance="danger" OnClick="ConfirmDeleteWorld">
+                    Delete World
+                </Button>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Success Message -->
+@if (!string.IsNullOrEmpty(successMessage))
+{
+    <div class="toast toast-success">
+        @successMessage
+    </div>
+}
+
+<style>
+.world-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.world-icon {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, var(--color-accent-primary), var(--color-border-hover));
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: var(--font-weight-bold);
+    color: white;
+}
+
+.custom-select {
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+    transition: border-color var(--transition-base);
+}
+
+.custom-select:hover {
+    border-color: var(--color-border-hover);
+}
+
+.custom-select:focus {
+    outline: none;
+    border-color: var(--color-border-focus);
+}
+
+.stat-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--color-bg-primary);
+    border-radius: var(--radius-md);
+}
+
+.stat-icon {
+    width: 24px;
+    height: 24px;
+    background: var(--color-bg-elevated);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: var(--font-weight-bold);
+    color: var(--color-accent-primary);
+}
+
+.stat-value {
+    color: var(--color-accent-primary);
+    font-weight: var(--font-weight-bold);
+    font-size: var(--font-size-lg);
+}
+
+.stat-label {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid var(--color-bg-elevated);
+    border-top: 4px solid var(--color-accent-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.dialog-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.dialog-content {
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    max-width: 500px;
+    box-shadow: var(--shadow-lg);
+}
+
+.toast {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    padding: 1rem 1.5rem;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    z-index: 1001;
+    animation: slideIn 0.3s ease;
+}
+
+.toast-success {
+    background: var(--color-success);
+    color: white;
+}
+
+@@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+</style>
+
+@code {
+    private List<WorldInfo> worlds = new();
+    private bool isLoading = true;
+    private long totalSize = 0;
+    private string sortBy = "date-desc";
+    private bool showDeleteDialog = false;
+    private WorldInfo? worldToDelete = null;
+    private string successMessage = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadWorlds();
+    }
+
+    private async Task LoadWorlds()
+    {
+        isLoading = true;
+        worlds.Clear();
+        totalSize = 0;
+        
+        try
+        {
+            var worldsPath = GetWorldsDirectory();
+            
+            if (Directory.Exists(worldsPath))
+            {
+                var files = Directory.GetFiles(worldsPath, "*.zip");
+                
+                foreach (var file in files)
+                {
+                    var worldInfo = await LoadWorldInfo(file);
+                    if (worldInfo != null)
+                    {
+                        worlds.Add(worldInfo);
+                        totalSize += worldInfo.FileSize;
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading worlds: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task<WorldInfo?> LoadWorldInfo(string filePath)
+    {
+        try
+        {
+            var fileInfo = new FileInfo(filePath);
+            var fileName = Path.GetFileNameWithoutExtension(filePath);
+            
+            // Parse filename: World_Name_Seed.zip
+            var parts = fileName.Split('_');
+            var name = parts.Length > 1 ? string.Join("_", parts[1..^1]) : fileName;
+            var seed = parts.Length > 1 ? parts[^1] : "0";
+
+            // Try to read world.json from zip
+            WorldStats? stats = null;
+            bool isValid = true;
+            
+            try
+            {
+                using var zip = ZipFile.OpenRead(filePath);
+                var worldEntry = zip.GetEntry("world.json");
+                
+                if (worldEntry != null)
+                {
+                    using var stream = worldEntry.Open();
+                    using var reader = new StreamReader(stream);
+                    var json = await reader.ReadToEndAsync();
+                    
+                    var doc = JsonDocument.Parse(json);
+                    var root = doc.RootElement;
+                    
+                    stats = new WorldStats
+                    {
+                        Rooms = root.TryGetProperty("rooms", out var rooms) ? rooms.GetArrayLength() : 0,
+                        NPCs = root.TryGetProperty("npcs", out var npcs) ? npcs.GetArrayLength() : 0,
+                        Factions = root.TryGetProperty("factions", out var factions) ? factions.GetArrayLength() : 0,
+                        Lore = root.TryGetProperty("loreEntries", out var lore) ? lore.GetArrayLength() : 0
+                    };
+                }
+            }
+            catch
+            {
+                isValid = false;
+            }
+            
+            return new WorldInfo
+            {
+                Name = name,
+                Seed = seed,
+                FilePath = filePath,
+                FileName = fileInfo.Name,
+                FileSize = fileInfo.Length,
+                CreatedDate = fileInfo.CreationTime,
+                ModifiedDate = fileInfo.LastWriteTime,
+                Stats = stats,
+                IsValid = isValid
+            };
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading world info for {filePath}: {ex.Message}");
+            return null;
+        }
+    }
+
+    private IEnumerable<WorldInfo> GetSortedWorlds()
+    {
+        return sortBy switch
+        {
+            "date-desc" => worlds.OrderByDescending(w => w.CreatedDate),
+            "date-asc" => worlds.OrderBy(w => w.CreatedDate),
+            "name-asc" => worlds.OrderBy(w => w.Name),
+            "name-desc" => worlds.OrderByDescending(w => w.Name),
+            "size-desc" => worlds.OrderByDescending(w => w.FileSize),
+            "size-asc" => worlds.OrderBy(w => w.FileSize),
+            _ => worlds.OrderByDescending(w => w.CreatedDate)
+        };
+    }
+
+    private void OnSortChanged(ChangeEventArgs e)
+    {
+        sortBy = e.Value?.ToString() ?? "date-desc";
+    }
+
+    private void ViewWorld(WorldInfo world)
+    {
+        Navigation.NavigateTo($"/worlds/{Uri.EscapeDataString(world.Seed)}");
+    }
+
+    private async Task CopyPath(WorldInfo world)
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", world.FilePath);
+            ShowSuccess("Path copied to clipboard!");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error copying path: {ex.Message}");
+        }
+    }
+
+    private void ConfirmDelete(WorldInfo world)
+    {
+        worldToDelete = world;
+        showDeleteDialog = true;
+    }
+
+    private void CancelDelete()
+    {
+        worldToDelete = null;
+        showDeleteDialog = false;
+    }
+
+    private async Task ConfirmDeleteWorld()
+    {
+        if (worldToDelete == null) return;
+        
+        try
+        {
+            File.Delete(worldToDelete.FilePath);
+            ShowSuccess($"Deleted {worldToDelete.Name}");
+            showDeleteDialog = false;
+            worldToDelete = null;
+            await LoadWorlds();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error deleting world: {ex.Message}");
+        }
+    }
+
+    private async void ShowSuccess(string message)
+    {
+        successMessage = message;
+        StateHasChanged();
+        await Task.Delay(3000);
+        successMessage = "";
+        StateHasChanged();
+    }
+
+    private string GetWorldsDirectory()
+    {
+        return Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            "source", "repos", "SoloAdventureSystem", "content", "worlds");
+    }
+
+    private string FormatBytes(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB" };
+        double len = bytes;
+        int order = 0;
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            len /= 1024;
+        }
+        return $"{len:0.##} {sizes[order]}";
+    }
+
+    private class WorldInfo
+    {
+        public string Name { get; set; } = "";
+        public string Seed { get; set; } = "";
+        public string FilePath { get; set; } = "";
+        public string FileName { get; set; } = "";
+        public long FileSize { get; set; }
+        public DateTime CreatedDate { get; set; }
+        public DateTime ModifiedDate { get; set; }
+        public WorldStats? Stats { get; set; }
+        public bool IsValid { get; set; }
+    }
+
+    private class WorldStats
+    {
+        public int Rooms { get; set; }
+        public int NPCs { get; set; }
+        public int Factions { get; set; }
+        public int Lore { get; set; }
+    }
+}

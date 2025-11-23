@@ -1,4 +1,4 @@
-namespace MudVision.World.Models;
+namespace SoloAdventureSystem.Engine.Models;
 
 public record class WorldDefinition(
     string Name,

@@ -1,0 +1,21 @@
+@* Custom ProgressBar Component - replacement for FluentProgress *@
+
+<div class="custom-progress @Class" style="@Style">
+    <div class="progress-bar" style="width: @ProgressPercentage%"></div>
+</div>
+
+@code {
+    [Parameter]
+    public float Value { get; set; }
+    
+    [Parameter]
+    public float Max { get; set; } = 100;
+    
+    [Parameter]
+    public string Class { get; set; } = "";
+    
+    [Parameter]
+    public string Style { get; set; } = "";
+    
+    private float ProgressPercentage => Max > 0 ? (Value / Max) * 100 : 0;
+}

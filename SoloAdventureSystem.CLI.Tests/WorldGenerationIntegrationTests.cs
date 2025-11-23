@@ -1,15 +1,17 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using SoloAdventureSystem.ContentGenerator;
 using SoloAdventureSystem.ContentGenerator.Adapters;
 using SoloAdventureSystem.ContentGenerator.Configuration;
 using SoloAdventureSystem.ContentGenerator.Generation;
+using SoloAdventureSystem.ContentGenerator.Models;
 using SoloAdventureSystem.ContentGenerator.Utils;
 using SoloAdventureSystem.ContentGenerator.EmbeddedModel;
 using Xunit;
@@ -19,88 +21,40 @@ namespace SoloAdventureSystem.CLI.Tests;
 
 /// <summary>
 /// Integration tests for CLI-style world generation and validation.
-/// These tests simulate the full world generation workflow as used by the CLI.
+/// Uses a shared fixture to avoid re-downloading the model.
 /// </summary>
+[Collection("Integration Test Collection")]
 public class WorldGenerationIntegrationTests : IDisposable
 {
     private readonly ITestOutputHelper _output;
-    private readonly IServiceProvider _serviceProvider;
+    private readonly IntegrationTestFixture _fixture;
     private readonly string _testOutputDir;
 
-    public WorldGenerationIntegrationTests(ITestOutputHelper output)
+    public WorldGenerationIntegrationTests(ITestOutputHelper output, IntegrationTestFixture fixture)
     {
         _output = output;
+        _fixture = fixture;
         _testOutputDir = Path.Combine(Path.GetTempPath(), $"CLITests_{Guid.NewGuid():N}");
         Directory.CreateDirectory(_testOutputDir);
-
-        // Build configuration
-        var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["AI:Provider"] = "LLamaSharp",
-                ["AI:Model"] = "phi-3-mini-q4",
-                ["AI:LLamaModelKey"] = "phi-3-mini-q4",
-                ["AI:ContextSize"] = "2048",
-                ["AI:UseGPU"] = "false",
-                ["AI:MaxInferenceThreads"] = "4"
-            })
-            .Build();
-
-        // Build service container
-        var services = new ServiceCollection();
-
-        // Add logging that outputs to xUnit
-        services.AddLogging(builder =>
-        {
-            builder.AddProvider(new XunitLoggerProvider(output));
-            builder.SetMinimumLevel(LogLevel.Information);
-        });
-
-        // Add configuration
-        services.AddSingleton<IConfiguration>(configuration);
-        services.Configure<AISettings>(configuration.GetSection("AI"));
-
-        // Add services
-        services.AddSingleton<IImageAdapter, SimpleImageAdapter>();
-        services.AddSingleton<WorldValidator>();
-        services.AddSingleton<WorldExporter>();
-
-        _serviceProvider = services.BuildServiceProvider();
     }
 
-    [Fact(Skip = "Long-running test - requires model download and generation (2-5 minutes)")]
-    public async Task GenerateWorld_WithLLamaSharp_CreatesValidWorld()
+    [Fact]
+    public void GenerateWorld_WithLLamaSharp_CreatesValidWorld()
     {
         // Arrange
         var worldName = "CLITestWorld";
         var seed = 42069;
-        var theme = "Cyberpunk";
         var regions = 5;
 
         _output.WriteLine($"Starting world generation test: {worldName} (seed: {seed})");
         _output.WriteLine($"Output directory: {_testOutputDir}");
+        _output.WriteLine($"Using shared adapter (Llama-3.2-1B)");
 
-        // Initialize LLamaSharp adapter
-        var settings = _serviceProvider.GetRequiredService<IOptions<AISettings>>();
-        var logger = _serviceProvider.GetRequiredService<ILogger<LLamaSharpAdapter>>();
-        var slmAdapter = new LLamaSharpAdapter(settings, logger);
-
-        _output.WriteLine("Initializing LLamaSharp adapter (this may download the model)...");
-        var progress = new Progress<DownloadProgress>(p =>
-        {
-            if (p.PercentComplete % 25 == 0 || p.PercentComplete == 100)
-            {
-                _output.WriteLine($"Download progress: {p.PercentComplete}% - {p.FormattedETA} remaining");
-            }
-        });
-
-        await slmAdapter.InitializeAsync(progress);
-        _output.WriteLine("? Model initialized successfully");
-
-        // Create generator
-        var imageAdapter = _serviceProvider.GetRequiredService<IImageAdapter>();
-        var generatorLogger = _serviceProvider.GetRequiredService<ILogger<SeededWorldGenerator>>();
-        var generator = new SeededWorldGenerator(slmAdapter, imageAdapter, generatorLogger);
+        // Create generator with shared adapter
+        var generator = new SeededWorldGenerator(
+            _fixture.Adapter,
+            _fixture.ServiceProvider.GetRequiredService<IImageAdapter>(),
+            _fixture.ServiceProvider.GetRequiredService<ILogger<SeededWorldGenerator>>());
 
         // Act - Generate world
         _output.WriteLine($"Generating world with {regions} regions...");
@@ -108,9 +62,14 @@ public class WorldGenerationIntegrationTests : IDisposable
         {
             Name = worldName,
             Seed = seed,
-            Theme = theme,
+            Theme = "Cyberpunk",
             Regions = regions,
-            NpcDensity = "medium"
+            NpcDensity = "medium",
+            Flavor = "Dark and gritty",
+            Description = "A cyberpunk megacity",
+            MainPlotPoint = "Uncover the conspiracy",
+            TimePeriod = "2089",
+            PowerStructure = "Corporations vs. Hackers"
         };
 
         var startTime = DateTime.UtcNow;
@@ -125,15 +84,14 @@ public class WorldGenerationIntegrationTests : IDisposable
 
         // Assert - Validate structure
         _output.WriteLine("Validating world structure...");
-        var validator = _serviceProvider.GetRequiredService<WorldValidator>();
+        var validator = _fixture.ServiceProvider.GetRequiredService<WorldValidator>();
         
-        // This will throw if validation fails
         validator.Validate(result);
         _output.WriteLine("? Structural validation passed");
 
         // Assert - Validate quality
         _output.WriteLine("Validating world quality...");
-        var qualityResult = validator.ValidateQuality(result, theme);
+        var qualityResult = validator.ValidateQuality(result, options.Theme);
         
         _output.WriteLine($"Quality Metrics:");
         _output.WriteLine($"   Room Quality:    {qualityResult.Metrics.RoomQualityScore}/100");
@@ -151,13 +109,14 @@ public class WorldGenerationIntegrationTests : IDisposable
             }
         }
 
-        // Quality validation should pass or have acceptable warnings
-        Assert.True(qualityResult.IsValid || qualityResult.Warnings.Count < 5, 
-            $"Quality validation failed with {qualityResult.Errors.Count} errors");
+        // Quality should be good with Llama-3.2
+        Assert.True(qualityResult.IsValid, "Quality validation should pass");
+        Assert.True(qualityResult.Metrics.OverallScore >= 60, 
+            $"Overall score should be >= 60, got {qualityResult.Metrics.OverallScore}");
 
         // Assert - Export and verify
         _output.WriteLine("Exporting world...");
-        var exporter = _serviceProvider.GetRequiredService<WorldExporter>();
+        var exporter = _fixture.ServiceProvider.GetRequiredService<WorldExporter>();
         var tempDir = Path.Combine(_testOutputDir, $"World_{worldName}_{seed}");
         Directory.CreateDirectory(tempDir);
 
@@ -188,44 +147,37 @@ public class WorldGenerationIntegrationTests : IDisposable
             _output.WriteLine($"? ZIP contains {zip.Entries.Count} files");
         }
 
-        // Dispose adapter
-        slmAdapter.Dispose();
         _output.WriteLine("? All tests passed!");
     }
 
     [Fact]
-    public async Task GenerateWorld_WithLLamaSharp_CreatesReproducibleWorld()
+    public void GenerateWorld_WithLLamaSharp_CreatesReproducibleWorld()
     {
-        // This is a faster test that verifies the same seed produces the same world structure
-        // without doing full LLM validation
-        
         // Arrange
         var worldName = "ReproducibilityTest";
         var seed = 12345;
-        var theme = "Cyberpunk";
-        var regions = 3; // Smaller for faster test
+        var regions = 3;
 
         _output.WriteLine($"Testing reproducibility with seed: {seed}");
+        _output.WriteLine("Using shared adapter (Llama-3.2-1B)");
 
-        // Initialize adapter
-        var settings = _serviceProvider.GetRequiredService<IOptions<AISettings>>();
-        var logger = _serviceProvider.GetRequiredService<ILogger<LLamaSharpAdapter>>();
-        var slmAdapter = new LLamaSharpAdapter(settings, logger);
-
-        _output.WriteLine("Initializing adapter...");
-        await slmAdapter.InitializeAsync();
-
-        var imageAdapter = _serviceProvider.GetRequiredService<IImageAdapter>();
-        var generatorLogger = _serviceProvider.GetRequiredService<ILogger<SeededWorldGenerator>>();
-        var generator = new SeededWorldGenerator(slmAdapter, imageAdapter, generatorLogger);
+        var generator = new SeededWorldGenerator(
+            _fixture.Adapter,
+            _fixture.ServiceProvider.GetRequiredService<IImageAdapter>(),
+            _fixture.ServiceProvider.GetRequiredService<ILogger<SeededWorldGenerator>>());
 
         var options = new WorldGenerationOptions
         {
             Name = worldName,
             Seed = seed,
-            Theme = theme,
+            Theme = "Cyberpunk",
             Regions = regions,
-            NpcDensity = "medium"
+            NpcDensity = "medium",
+            Flavor = "Dark cyberpunk",
+            Description = "A cyberpunk world",
+            MainPlotPoint = "Find the hacker",
+            TimePeriod = "2089",
+            PowerStructure = "Corps vs. Hackers"
         };
 
         // Act - Generate twice
@@ -256,13 +208,11 @@ public class WorldGenerationIntegrationTests : IDisposable
             _output.WriteLine($"? NPC {i + 1} reproduced: {result1.Npcs[i].Name}");
         }
 
-        slmAdapter.Dispose();
         _output.WriteLine("? Reproducibility test passed!");
     }
 
     public void Dispose()
     {
-        // Cleanup test output directory
         try
         {
             if (Directory.Exists(_testOutputDir))
@@ -276,6 +226,93 @@ public class WorldGenerationIntegrationTests : IDisposable
             _output.WriteLine($"Warning: Could not cleanup test directory: {ex.Message}");
         }
     }
+}
+
+/// <summary>
+/// Shared fixture for integration tests - initializes services and model once
+/// </summary>
+public class IntegrationTestFixture : IDisposable
+{
+    public IServiceProvider ServiceProvider { get; }
+    public LLamaSharpAdapter Adapter { get; }
+
+    public IntegrationTestFixture()
+    {
+        Console.WriteLine("????????????????????????????????????????????????????????????");
+        Console.WriteLine("? Initializing Integration Test Fixture                   ?");
+        Console.WriteLine("????????????????????????????????????????????????????????????");
+        Console.WriteLine();
+        Console.WriteLine("Using TinyLlama Q4 (600MB) for quality testing");
+        Console.WriteLine("Services and model shared across all integration tests");
+        Console.WriteLine();
+
+        // Build configuration
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["AI:Provider"] = "LLamaSharp",
+                ["AI:Model"] = "tinyllama-q4",
+                ["AI:LLamaModelKey"] = "tinyllama-q4",
+                ["AI:ContextSize"] = "2048",
+                ["AI:UseGPU"] = "false",
+                ["AI:MaxInferenceThreads"] = "4"
+            })
+            .Build();
+
+        // Build service container
+        var services = new ServiceCollection();
+
+        services.AddLogging(builder =>
+        {
+            builder.AddConsole();
+            builder.SetMinimumLevel(LogLevel.Information);
+        });
+
+        services.AddSingleton<IConfiguration>(configuration);
+        services.Configure<AISettings>(configuration.GetSection("AI"));
+        services.AddSingleton<IImageAdapter, SimpleImageAdapter>();
+        services.AddSingleton<WorldValidator>();
+        services.AddSingleton<WorldExporter>();
+
+        ServiceProvider = services.BuildServiceProvider();
+
+        // Initialize adapter once
+        var settings = ServiceProvider.GetRequiredService<IOptions<AISettings>>();
+        var logger = ServiceProvider.GetRequiredService<ILogger<LLamaSharpAdapter>>();
+        Adapter = new LLamaSharpAdapter(settings, logger);
+
+        Console.WriteLine("Downloading/loading model (this happens once for all tests)...");
+        var progress = new Progress<DownloadProgress>(p =>
+        {
+            if (p.PercentComplete % 25 == 0 || p.PercentComplete == 100)
+            {
+                Console.WriteLine($"   ?? {p.PercentComplete}% - {p.FormattedETA} remaining");
+            }
+        });
+
+        Adapter.InitializeAsync(progress).GetAwaiter().GetResult();
+        
+        Console.WriteLine();
+        Console.WriteLine("? Model loaded and ready for all integration tests");
+        Console.WriteLine();
+    }
+
+    public void Dispose()
+    {
+        Console.WriteLine();
+        Console.WriteLine("Disposing integration test fixture...");
+        Adapter?.Dispose();
+        (ServiceProvider as IDisposable)?.Dispose();
+        Console.WriteLine("? Cleanup complete");
+    }
+}
+
+/// <summary>
+/// Collection definition for integration tests
+/// </summary>
+[CollectionDefinition("Integration Test Collection")]
+public class IntegrationTestCollection : ICollectionFixture<IntegrationTestFixture>
+{
 }
 
 /// <summary>

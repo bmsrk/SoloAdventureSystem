@@ -1,0 +1,30 @@
+@* Custom TextField Component - replacement for FluentTextField *@
+
+<div class="custom-textfield @Class">
+    @if (!string.IsNullOrEmpty(Label))
+    {
+        <label class="textfield-label">@Label</label>
+    }
+    <input type="text" 
+           class="textfield-input" 
+           @bind="Value" 
+           @bind:event="oninput"
+           style="@Style" />
+</div>
+
+@code {
+    [Parameter]
+    public string? Label { get; set; }
+    
+    [Parameter]
+    public string Value { get; set; } = "";
+    
+    [Parameter]
+    public EventCallback<string> ValueChanged { get; set; }
+    
+    [Parameter]
+    public string Class { get; set; } = "";
+    
+    [Parameter]
+    public string Style { get; set; } = "";
+}

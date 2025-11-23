@@ -1,0 +1,58 @@
+@inject IJSRuntime JS
+
+<div class="theme-switcher" style="@Style">
+    <select @onchange="ChangeTheme" class="theme-select" value="@CurrentTheme">
+        <option value="dark">Dark Theme</option>
+        <option value="light">Light Theme</option>
+    </select>
+</div>
+
+@code {
+    [Parameter]
+    public string CurrentTheme { get; set; } = "dark";
+    
+    [Parameter]
+    public string Style { get; set; } = "";
+    
+    [Parameter]
+    public EventCallback<string> OnThemeChanged { get; set; }
+    
+    private async Task ChangeTheme(ChangeEventArgs e)
+    {
+        var newTheme = e.Value?.ToString() ?? "dark";
+        CurrentTheme = newTheme;
+        
+        // Apply theme to body
+        await JS.InvokeVoidAsync("eval", 
+            $"document.body.setAttribute('data-theme', '{newTheme}')");
+        
+        // Notify parent
+        await OnThemeChanged.InvokeAsync(newTheme);
+    }
+}
+
+<style>
+.theme-switcher {
+    display: inline-block;
+}
+
+.theme-select {
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+    transition: border-color var(--transition-base);
+}
+
+.theme-select:hover {
+    border-color: var(--color-border-hover);
+}
+
+.theme-select:focus {
+    outline: none;
+    border-color: var(--color-border-focus);
+}
+</style>

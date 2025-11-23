@@ -4,11 +4,11 @@ using System.IO;
 using System.IO.Compression;
 using System.Text.Json;
 using System.Threading.Tasks;
-using MudVision.World.Models;
 using YamlDotNet.Serialization;
 using System.Linq;
+using SoloAdventureSystem.Engine.Models;
 
-namespace MudVision.WorldLoader
+namespace SoloAdventureSystem.Engine.WorldLoader
 {
     public class WorldLoaderService : IWorldLoader
     {
@@ -188,12 +188,12 @@ namespace MudVision.WorldLoader
 
     public class WorldModel
     {
-        public MudVision.World.Models.WorldDefinition? WorldDefinition { get; set; }
-        public List<MudVision.World.Models.Location>? Rooms { get; set; }
-        public List<MudVision.World.Models.Faction>? Factions { get; set; }
+        public WorldDefinition? WorldDefinition { get; set; }
+        public List<Location>? Rooms { get; set; }
+        public List<Faction>? Factions { get; set; }
         public List<EventModel>? Events { get; set; }
-        public List<MudVision.World.Models.NPC>? Npcs { get; set; }
-        public List<MudVision.World.Models.StoryNode>? StoryNodes { get; set; }
+        public List<NPC>? Npcs { get; set; }
+        public List<StoryNode>? StoryNodes { get; set; }
     }
 
     public class EventModel

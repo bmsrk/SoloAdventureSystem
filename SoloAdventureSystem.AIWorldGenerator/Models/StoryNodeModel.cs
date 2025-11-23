@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using YamlDotNet.Serialization;
 
-namespace SoloAdventureSystem.ContentGenerator
+namespace SoloAdventureSystem.ContentGenerator.Models
 {
     public class StoryNodeModel
     {

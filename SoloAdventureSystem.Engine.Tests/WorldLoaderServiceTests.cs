@@ -1,8 +1,8 @@
 using System.IO;
 using System.IO.Compression;
 using System.Text;
-using MudVision.WorldLoader;
-using MudVision.World.Models;
+using SoloAdventureSystem.Engine.Models;
+using SoloAdventureSystem.Engine.WorldLoader;
 using Xunit;
 
 namespace SoloAdventureSystem.Engine.Tests

@@ -1,0 +1,461 @@
+@page "/worlds/{seed}"
+@using System.IO
+@using System.IO.Compression
+@using System.Text.Json
+@inject NavigationManager Navigation
+
+<PageTitle>World Details</PageTitle>
+
+<div style="padding: 2rem; max-width: 1400px; margin: 0 auto;">
+    @if (isLoading)
+    {
+        <Card>
+            <div style="text-align: center; padding: 3rem;">
+                <div class="spinner" style="margin: 0 auto 1rem;"></div>
+                <p style="color: var(--color-text-muted);">Loading world...</p>
+            </div>
+        </Card>
+    }
+    else if (world == null)
+    {
+        <Card>
+            <div style="text-align: center; padding: 3rem;">
+                <div class="error-icon">!</div>
+                <h3 style="color: var(--color-text-primary); margin-bottom: 1rem;">World Not Found</h3>
+                <p style="color: var(--color-text-secondary); margin-bottom: 2rem;">
+                    The world you're looking for doesn't exist or has been deleted.
+                </p>
+                <a href="/worlds" class="custom-button btn-neutral" style="text-decoration: none;">
+                    Back to Worlds
+                </a>
+            </div>
+        </Card>
+    }
+    else
+    {
+        <!-- Header -->
+        <div style="margin-bottom: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                <div>
+                    <a href="/worlds" style="color: var(--color-text-muted); text-decoration: none; font-size: var(--font-size-sm);">
+                        &larr; Back to Worlds
+                    </a>
+                    <h1 style="color: var(--color-text-primary); margin: 0.5rem 0;">@world.WorldDefinition.Name</h1>
+                    <p style="color: var(--color-text-secondary); margin: 0;">
+                        Created @world.WorldDefinition.CreatedAt.ToString("MMMM dd, yyyy 'at' HH:mm")
+                    </p>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <Button Appearance="neutral" OnClick="ExportWorld">
+                        Export
+                    </Button>
+                    <Button Appearance="accent" OnClick="PlayWorld">
+                        Play
+                    </Button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Overview -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+            <Card>
+                <div style="text-align: center; padding: 1.5rem;">
+                    <div class="stat-icon-large">R</div>
+                    <div class="stat-value">@world.Rooms.Count</div>
+                    <div class="text-muted">Rooms</div>
+                </div>
+            </Card>
+            <Card>
+                <div style="text-align: center; padding: 1.5rem;">
+                    <div class="stat-icon-large">N</div>
+                    <div class="stat-value">@world.Npcs.Count</div>
+                    <div class="text-muted">NPCs</div>
+                </div>
+            </Card>
+            <Card>
+                <div style="text-align: center; padding: 1.5rem;">
+                    <div class="stat-icon-large">F</div>
+                    <div class="stat-value">@world.Factions.Count</div>
+                    <div class="text-muted">Factions</div>
+                </div>
+            </Card>
+            <Card>
+                <div style="text-align: center; padding: 1.5rem;">
+                    <div class="stat-icon-large">L</div>
+                    <div class="stat-value">@world.LoreEntries.Count</div>
+                    <div class="text-muted">Lore Entries</div>
+                </div>
+            </Card>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs" style="margin-bottom: 1rem;">
+            <button class="tab @(activeTab == "rooms" ? "active" : "")" @onclick='() => activeTab = "rooms"'>
+                Rooms (@world.Rooms.Count)
+            </button>
+            <button class="tab @(activeTab == "npcs" ? "active" : "")" @onclick='() => activeTab = "npcs"'>
+                NPCs (@world.Npcs.Count)
+            </button>
+            <button class="tab @(activeTab == "factions" ? "active" : "")" @onclick='() => activeTab = "factions"'>
+                Factions (@world.Factions.Count)
+            </button>
+            <button class="tab @(activeTab == "lore" ? "active" : "")" @onclick='() => activeTab = "lore"'>
+                Lore (@world.LoreEntries.Count)
+            </button>
+        </div>
+
+        <!-- Tab Content -->
+        @if (activeTab == "rooms")
+        {
+            <div style="display: grid; gap: 1rem;">
+                @foreach (var room in world.Rooms.Take(displayLimit))
+                {
+                    <Card Class="expandable-card">
+                        <h4 style="color: var(--color-accent-primary); margin-bottom: 0.5rem;">@room.Title</h4>
+                        <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                            <Badge Appearance="neutral">ID: @room.Id</Badge>
+                            @if (room.Id == world.WorldDefinition.StartLocationId)
+                            {
+                                <Badge Appearance="success">Start Location</Badge>
+                            }
+                        </div>
+                        <p style="color: var(--color-text-secondary); line-height: 1.6;">@room.BaseDescription</p>
+                        
+                        @if (room.Connections?.Any() == true)
+                        {
+                            <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--color-border-default);">
+                                <div style="color: var(--color-text-muted); font-size: var(--font-size-sm); margin-bottom: 0.5rem;">Connections:</div>
+                                <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                                    @foreach (var conn in room.Connections)
+                                    {
+                                        <span class="connection-badge">@conn.Key &rarr; @conn.Value</span>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </Card>
+                }
+                
+                @if (world.Rooms.Count > displayLimit)
+                {
+                    <div style="text-align: center; padding: 1rem;">
+                        <Button Appearance="neutral" OnClick="LoadMore">
+                            Show More (@(world.Rooms.Count - displayLimit) remaining)
+                        </Button>
+                    </div>
+                }
+            </div>
+        }
+        else if (activeTab == "npcs")
+        {
+            <div style="display: grid; gap: 1rem;">
+                @foreach (var npc in world.Npcs.Take(displayLimit))
+                {
+                    <Card Class="expandable-card">
+                        <div style="display: flex; justify-content: space-between; align-items: start;">
+                            <div>
+                                <h4 style="color: var(--color-accent-primary); margin-bottom: 0.5rem;">@npc.Name</h4>
+                                <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                                    <Badge Appearance="neutral">@npc.FactionId</Badge>
+                                </div>
+                            </div>
+                            <div class="npc-icon">N</div>
+                        </div>
+                        <p style="color: var(--color-text-secondary); line-height: 1.6;">@npc.Description</p>
+                    </Card>
+                }
+                
+                @if (world.Npcs.Count > displayLimit)
+                {
+                    <div style="text-align: center; padding: 1rem;">
+                        <Button Appearance="neutral" OnClick="LoadMore">
+                            Show More (@(world.Npcs.Count - displayLimit) remaining)
+                        </Button>
+                    </div>
+                }
+            </div>
+        }
+        else if (activeTab == "factions")
+        {
+            <div style="display: grid; gap: 1rem;">
+                @foreach (var faction in world.Factions.Take(displayLimit))
+                {
+                    <Card Class="expandable-card">
+                        <div style="display: flex; justify-content: space-between; align-items: start;">
+                            <div style="flex: 1;">
+                                <h4 style="color: var(--color-accent-primary); margin-bottom: 0.5rem;">@faction.Name</h4>
+                                <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                                    <Badge Appearance="neutral">@faction.Id</Badge>
+                                </div>
+                                <p style="color: var(--color-text-secondary); line-height: 1.6; margin-bottom: 1rem;">@faction.Description</p>
+                                
+                                @if (!string.IsNullOrEmpty(faction.Ideology))
+                                {
+                                    <div style="padding: 1rem; background: var(--color-bg-primary); border-radius: var(--radius-md); margin-bottom: 1rem;">
+                                        <div style="color: var(--color-text-muted); font-size: var(--font-size-sm); margin-bottom: 0.5rem;">Ideology:</div>
+                                        <div style="color: var(--color-text-secondary);">@faction.Ideology</div>
+                                    </div>
+                                }
+                            </div>
+                            <div class="faction-icon">F</div>
+                        </div>
+                    </Card>
+                }
+                
+                @if (world.Factions.Count > displayLimit)
+                {
+                    <div style="text-align: center; padding: 1rem;">
+                        <Button Appearance="neutral" OnClick="LoadMore">
+                            Show More (@(world.Factions.Count - displayLimit) remaining)
+                        </Button>
+                    </div>
+                }
+            </div>
+        }
+        else if (activeTab == "lore")
+        {
+            <div style="display: grid; gap: 1rem;">
+                @foreach (var lore in world.LoreEntries.Take(displayLimit))
+                {
+                    <Card Class="expandable-card">
+                        <div style="display: flex; gap: 1rem;">
+                            <div class="lore-icon">L</div>
+                            <p style="color: var(--color-text-secondary); line-height: 1.6; flex: 1;">@lore</p>
+                        </div>
+                    </Card>
+                }
+                
+                @if (world.LoreEntries.Count > displayLimit)
+                {
+                    <div style="text-align: center; padding: 1rem;">
+                        <Button Appearance="neutral" OnClick="LoadMore">
+                            Show More (@(world.LoreEntries.Count - displayLimit) remaining)
+                        </Button>
+                    </div>
+                }
+            </div>
+        }
+    }
+</div>
+
+<style>
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid var(--color-bg-elevated);
+    border-top: 4px solid var(--color-accent-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.error-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 1rem;
+    background: var(--color-error);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    color: white;
+    font-weight: var(--font-weight-bold);
+}
+
+.stat-icon-large {
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 1rem;
+    background: linear-gradient(135deg, var(--color-accent-primary), var(--color-border-hover));
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: white;
+    font-weight: var(--font-weight-bold);
+}
+
+.npc-icon, .faction-icon, .lore-icon {
+    width: 50px;
+    height: 50px;
+    background: var(--color-bg-elevated);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: var(--color-accent-primary);
+    font-weight: var(--font-weight-bold);
+    flex-shrink: 0;
+}
+
+.tabs {
+    display: flex;
+    gap: 0.5rem;
+    border-bottom: 2px solid var(--color-border-default);
+    margin-bottom: 1rem;
+}
+
+.tab {
+    padding: 0.75rem 1.5rem;
+    background: transparent;
+    border: none;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: all var(--transition-base);
+    font-size: var(--font-size-base);
+    font-family: var(--font-family-base);
+}
+
+.tab:hover {
+    color: var(--color-text-primary);
+    background: var(--color-bg-tertiary);
+}
+
+.tab.active {
+    color: var(--color-accent-primary);
+    border-bottom-color: var(--color-accent-primary);
+}
+
+.expandable-card {
+    transition: all var(--transition-base);
+}
+
+.expandable-card:hover {
+    transform: translateX(4px);
+}
+
+.connection-badge {
+    padding: 0.25rem 0.75rem;
+    background: var(--color-bg-primary);
+    border-radius: var(--radius-sm);
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+    font-family: monospace;
+}
+</style>
+
+@code {
+    [Parameter]
+    public string Seed { get; set; } = "";
+    
+    private WorldData? world;
+    private bool isLoading = true;
+    private string activeTab = "rooms";
+    private int displayLimit = 10;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadWorld();
+    }
+
+    private async Task LoadWorld()
+    {
+        isLoading = true;
+        
+        try
+        {
+            var worldsPath = GetWorldsDirectory();
+            var files = Directory.GetFiles(worldsPath, $"*_{Seed}.zip");
+            
+            if (files.Length > 0)
+            {
+                var filePath = files[0];
+                
+                using var zip = ZipFile.OpenRead(filePath);
+                var worldEntry = zip.GetEntry("world.json");
+                
+                if (worldEntry != null)
+                {
+                    using var stream = worldEntry.Open();
+                    using var reader = new StreamReader(stream);
+                    var json = await reader.ReadToEndAsync();
+                    
+                    world = JsonSerializer.Deserialize<WorldData>(json, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading world: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void LoadMore()
+    {
+        displayLimit += 10;
+    }
+
+    private void ExportWorld()
+    {
+        // TODO: Implement export functionality
+    }
+
+    private void PlayWorld()
+    {
+        // TODO: Implement play functionality
+        Navigation.NavigateTo($"/play/{Seed}");
+    }
+
+    private string GetWorldsDirectory()
+    {
+        return Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            "source", "repos", "SoloAdventureSystem", "content", "worlds");
+    }
+
+    private class WorldData
+    {
+        public WorldDefinition WorldDefinition { get; set; } = new();
+        public List<Room> Rooms { get; set; } = new();
+        public List<NPC> Npcs { get; set; } = new();
+        public List<Faction> Factions { get; set; } = new();
+        public List<string> LoreEntries { get; set; } = new();
+    }
+
+    private class WorldDefinition
+    {
+        public string Name { get; set; } = "";
+        public DateTime CreatedAt { get; set; }
+        public string StartLocationId { get; set; } = "";
+    }
+
+    private class Room
+    {
+        public string Id { get; set; } = "";
+        public string Title { get; set; } = "";
+        public string BaseDescription { get; set; } = "";
+        public Dictionary<string, string>? Connections { get; set; }
+    }
+
+    private class NPC
+    {
+        public string Id { get; set; } = "";
+        public string Name { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string FactionId { get; set; } = "";
+    }
+
+    private class Faction
+    {
+        public string Id { get; set; } = "";
+        public string Name { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string Ideology { get; set; } = "";
+    }
+}

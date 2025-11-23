@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using LLama;
 using LLama.Common;
+using LLama.Sampling;
 using Microsoft.Extensions.Logging;
 
 namespace SoloAdventureSystem.ContentGenerator.EmbeddedModel;
@@ -157,6 +158,7 @@ public class LLamaInferenceEngine : IDisposable
 
     /// <summary>
     /// Generates text based on the input prompt.
+    /// Automatically clears context after generation to prevent KV cache overflow.
     /// </summary>
     public string Generate(
         string prompt,
@@ -165,7 +167,7 @@ public class LLamaInferenceEngine : IDisposable
         int seed = -1,
         TimeSpan? timeout = null)
     {
-        if (!_isLoaded || _executor == null)
+        if (!_isLoaded || _executor == null || _context == null)
         {
             _logger?.LogError("? Cannot generate: Model not loaded");
             throw new InvalidOperationException("Model not loaded. Call LoadModel() first.");
@@ -181,11 +183,31 @@ public class LLamaInferenceEngine : IDisposable
 
             var startTime = DateTime.UtcNow;
 
+            // Clear context before each generation to prevent KV cache overflow
+            _logger?.LogDebug("?? Clearing context to prevent KV cache overflow...");
+            _context.NativeHandle.KvCacheClear();
+            
             var inferenceParams = new InferenceParams
             {
                 MaxTokens = maxTokens,
-                Temperature = temperature,
-                AntiPrompts = new List<string> { "\nUser:", "\nHuman:", "\n\n\n" }
+                // Use SamplingPipeline instead of obsolete Temperature property
+                SamplingPipeline = new DefaultSamplingPipeline
+                {
+                    Temperature = temperature
+                },
+                // Enhanced anti-prompts to stop at natural boundaries
+                AntiPrompts = new List<string> 
+                { 
+                    "\nUser:", 
+                    "\nHuman:", 
+                    "\nAssistant:",
+                    "\n\n\n",      // Triple newline (common in bad output)
+                    "Example:",    // Prevent it from generating examples
+                    "BAD Example:", 
+                    "GOOD Example:",
+                    "\nWrite",     // Stop before meta-instructions
+                    "\nSentence",  // Stop before structural instructions
+                }
             };
 
             var tokens = new List<string>();
@@ -211,7 +233,7 @@ public class LLamaInferenceEngine : IDisposable
                         lastLogTime = now;
                         var elapsed = now - startTime;
                         var tokensPerSecond = tokens.Count / Math.Max(elapsed.TotalSeconds, 0.001);
-                        _logger?.LogDebug("?? Generation in progress: {Tokens}/{MaxTokens} tokens ({TPS:F1} tok/s)",
+                        _logger?.LogDebug("? Generation in progress: {Tokens}/{MaxTokens} tokens ({TPS:F1} tok/s)",
                             tokens.Count, maxTokens, tokensPerSecond);
                     }
                     
@@ -224,6 +246,18 @@ public class LLamaInferenceEngine : IDisposable
             if (!task.Wait(actualTimeout))
             {
                 _logger?.LogError("? Generation timed out after {Timeout}", actualTimeout);
+                
+                // Clear context after timeout to ensure clean state
+                try
+                {
+                    _context.NativeHandle.KvCacheClear();
+                    _logger?.LogDebug("? Context cleared after timeout");
+                }
+                catch (Exception clearEx)
+                {
+                    _logger?.LogWarning(clearEx, "?? Failed to clear context after timeout");
+                }
+                
                 throw new TimeoutException($"Text generation timed out after {actualTimeout}");
             }
 
@@ -251,6 +285,21 @@ public class LLamaInferenceEngine : IDisposable
             _logger?.LogError("   1. The model encountered an internal error");
             _logger?.LogError("   2. The prompt may be too long or malformed");
             _logger?.LogError("   3. System resources (RAM/CPU) may be exhausted");
+            _logger?.LogError("   4. KV cache overflow - try reducing context size or max tokens");
+            
+            // Try to clear context for recovery
+            try
+            {
+                if (_context != null)
+                {
+                    _context.NativeHandle.KvCacheClear();
+                    _logger?.LogDebug("? Context cleared for error recovery");
+                }
+            }
+            catch (Exception clearEx)
+            {
+                _logger?.LogWarning(clearEx, "?? Failed to clear context during error recovery");
+            }
             
             throw new InvalidOperationException(
                 $"AI generation failed. The model may have encountered an error. " +

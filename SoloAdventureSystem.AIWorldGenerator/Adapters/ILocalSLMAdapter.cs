@@ -1,4 +1,4 @@
-namespace SoloAdventureSystem.ContentGenerator
+namespace SoloAdventureSystem.ContentGenerator.Adapters
 {
     public interface ILocalSLMAdapter
     {

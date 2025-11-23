@@ -1,7 +1,7 @@
-using MudVision.WorldLoader;
-using MudVision.World.Models;
+using SoloAdventureSystem.Engine.Models;
+using SoloAdventureSystem.Engine.WorldLoader;
 
-namespace MudVision.Game;
+namespace SoloAdventureSystem.Engine.Game;
 
 /// <summary>
 /// Represents the current state of the game session

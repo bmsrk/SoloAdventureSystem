@@ -4,8 +4,9 @@ using System.IO.Compression;
 using System.Text.Json;
 using YamlDotNet.Serialization;
 using System.Collections.Generic;
+using SoloAdventureSystem.ContentGenerator.Models;
 
-namespace SoloAdventureSystem.ContentGenerator
+namespace SoloAdventureSystem.ContentGenerator.Generation
 {
     public class WorldExporter
     {

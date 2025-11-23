@@ -1,4 +1,6 @@
-namespace SoloAdventureSystem.ContentGenerator
+using SoloAdventureSystem.ContentGenerator.Models;
+
+namespace SoloAdventureSystem.ContentGenerator.Generation
 {
     public interface IWorldGenerator
     {

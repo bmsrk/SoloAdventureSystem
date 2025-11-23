@@ -1,3 +1,4 @@
+using SoloAdventureSystem.ContentGenerator.Models;
 using System;
 
 namespace SoloAdventureSystem.ContentGenerator.Generation;
@@ -5,119 +6,177 @@ namespace SoloAdventureSystem.ContentGenerator.Generation;
 /// <summary>
 /// Provides enhanced AI prompt templates with few-shot learning examples.
 /// These prompts guide AI models to generate high-quality, atmospheric content.
+/// Templates now support custom world parameters for diverse generation.
 /// </summary>
 public static class PromptTemplates
 {
     /// <summary>
     /// System prompt for room description generation.
-    /// Includes few-shot examples to guide the AI.
+    /// Optimized for small language models with clear examples.
     /// </summary>
     public static string RoomDescriptionSystem => 
-        @"You are a creative writer for a cyberpunk text adventure game.
-Write vivid, immersive room descriptions that engage multiple senses (sight, sound, smell).
-Be SPECIFIC and CONCRETE - mention exact objects, colors, sounds.
-Format: 3-4 sentences. First sentence: overall appearance. Second: specific details. Third: atmosphere/sensory details.
+        @"You are a creative writer. Write a vivid room description in exactly 3 sentences.
 
-GOOD Example: 'The data vault hums with cooling fans, bathed in flickering blue server lights. Rows of black terminals stretch into shadows, screens casting ghostly glows on polished floors. Ozone mingles with stale air. A red-blinking security terminal guards the entrance, surrounded by scattered maintenance tools.'
+Sentence 1: Overall appearance with specific visual details
+Sentence 2: Key objects and their condition
+Sentence 3: Atmosphere - sounds, smells, or feeling
 
-BAD Example: 'A room with computers. It's dark and has some machines. There are things here.'
+GOOD Example:
+The server room bathes in flickering blue light from wall-mounted terminals. Black cables snake across white floors, connecting rows of humming mainframes marked with warning labels. The air tastes of ozone and stale coffee.
 
-Now write ONLY the room description, nothing else:";
+BAD Example:
+A room with computers. It's dark. There are things here.
+
+Write ONLY the 3-sentence description:";
 
     /// <summary>
     /// System prompt for NPC biography generation.
+    /// Optimized for character depth in minimal tokens.
     /// </summary>
     public static string NpcBioSystem =>
-        @"You are a creative writer for a cyberpunk text adventure game.
-Create compelling NPC personalities with depth and secrets.
-Format: 2-3 sentences. Structure: Role/background, motivation, secret/quirk.
+        @"You are a creative writer. Write a compelling NPC biography in exactly 2 sentences.
 
-GOOD Example: 'Marcus Chen clawed from street runner to corporate executive through cunning and ruthlessness. He champions corporate efficiency while secretly aiding underground hackers. His neural implant glows red when he lies.'
+Sentence 1: Role, background, and current motivation
+Sentence 2: A secret, quirk, or defining trait
 
-BAD Example: 'A person who does things. They work here. They have secrets.'
+GOOD Example:
+Marcus Chen rose from street hacker to corporate security chief, now secretly feeding data to his old crew while hunting them publicly. His left eye glows amber when accessing the net - a reminder of the implant that nearly killed him.
 
-Now write ONLY the NPC biography, nothing else:";
+BAD Example:
+A person who works here. They have secrets.
+
+Write ONLY the 2-sentence biography:";
 
     /// <summary>
     /// System prompt for faction lore generation.
+    /// Focuses on conflict and concrete details.
     /// </summary>
     public static string FactionLoreSystem =>
-        @"You are a creative writer for a cyberpunk text adventure game.
-Create faction lore defining goals, territory, and conflicts.
-Format: 3-4 sentences. Structure: What they do, ideology, location/influence, enemies/conflicts.
+        @"You are a creative writer. Write faction lore in exactly 3 sentences.
 
-GOOD Example: 'The Chrome Syndicate controls tech black markets through hackers and fixers. They fight for free information against corporate tyranny. From the Undercity, they wage constant war with corporate security. Their chrome skull icon marks every hack site.'
+Sentence 1: What they do and why (their cause)
+Sentence 2: Where they operate and their strength
+Sentence 3: Their main enemy and the conflict
 
-BAD Example: 'A group that exists. They do things. They fight others.'
+GOOD Example:
+The Neon Collective hacks corporate databases to leak secrets, believing information should be free. Operating from the Undercity's data havens, they command a network of 200 elite coders. MegaCorp's black-ops teams hunt them relentlessly, turning the dark web into a battlefield.
 
-Now write ONLY the faction description, nothing else:";
+BAD Example:
+A group that exists. They do things. They fight others.
+
+Write ONLY the 3-sentence faction description:";
 
     /// <summary>
     /// System prompt for world lore generation.
+    /// Creates interesting historical or cultural details.
     /// </summary>
     public static string WorldLoreSystem =>
-        @"You are a creative writer for a cyberpunk text adventure game.
-Create world-building lore revealing history, technology, or culture.
-Format: 1-2 sentences of interesting, specific detail.
+        @"You are a creative writer. Write a world lore entry in exactly 1-2 sentences.
+
+Focus on: specific events, technology, culture, or history that makes this world unique.
 
 GOOD Examples:
-'The Neural Net Collapse of 2089 killed millions when brain implant viruses spread, leading to strict neural interface regulations.'
-'Street vendors use banned GMO ingredients, making food cheaper but slightly illegal.'
+The AI Uprising of 2089 killed 4 million when neural implants were hacked, leading to the Neural Safety Act that now requires manual kill-switches in all brain tech.
 
-BAD Example: 'Some stuff happened in the past.'
+Street food vendors use illegal gene-modified ingredients that glow faintly blue - cheaper than real meat but technically contraband.
 
-Now write ONLY the lore entry, nothing else:";
+BAD Example:
+Some stuff happened in the past.
+
+Write ONLY the lore entry:";
 
     /// <summary>
-    /// Builds a contextual user prompt for room generation.
+    /// Builds a contextual user prompt for room generation with custom world parameters.
+    /// Optimized to keep context concise while informative.
     /// </summary>
-    public static string BuildRoomPrompt(string roomName, string theme, string atmosphere, int index, int total)
+    public static string BuildRoomPrompt(string roomName, WorldGenerationOptions options, string atmosphere, int index, int total)
     {
-        return $@"Generate a room description for:
-Name: {roomName}
-Theme: {theme}
-Atmosphere: {atmosphere}
-Position: Room {index + 1} of {total} in this world
+        return $@"Room Name: {roomName}
+World: {options.Description}
+Mood: {options.Flavor}
+Time: {options.TimePeriod}
+Context: {options.MainPlotPoint}
 
-Make this room feel unique and memorable within the {theme} setting.";
+Room {index + 1} of {total}. Make it {atmosphere.ToLower()}.
+
+Write 3 sentences describing this room:";
     }
 
     /// <summary>
-    /// Builds a contextual user prompt for NPC generation.
+    /// Builds a contextual user prompt for NPC generation with custom world parameters.
+    /// Focuses on personality and connection to the world's conflict.
     /// </summary>
-    public static string BuildNpcPrompt(string npcName, string theme, string roomContext, string factionName)
+    public static string BuildNpcPrompt(string npcName, WorldGenerationOptions options, string roomContext, string factionName)
     {
-        return $@"Generate an NPC biography for:
-Name: {npcName}
-Setting: {theme}
+        return $@"NPC Name: {npcName}
 Location: {roomContext}
 Faction: {factionName}
+World: {options.Description}
+Mood: {options.Flavor}
+Era: {options.TimePeriod}
+Society: {options.PowerStructure}
+Plot: {options.MainPlotPoint}
 
-Give this NPC a clear personality, motivation, and something that makes them memorable.";
+Write 2 sentences about {npcName}. Show their role and a defining trait:";
     }
 
     /// <summary>
-    /// Builds a contextual user prompt for faction generation.
+    /// Builds a contextual user prompt for faction generation with custom world parameters.
+    /// Creates factions that fit the power structure and main conflict.
     /// </summary>
+    public static string BuildFactionPrompt(string factionName, WorldGenerationOptions options)
+    {
+        return $@"Faction Name: {factionName}
+World: {options.Description}
+Mood: {options.Flavor}
+Era: {options.TimePeriod}
+Power Structure: {options.PowerStructure}
+Central Conflict: {options.MainPlotPoint}
+
+Write 3 sentences about {factionName}. Include their goal, territory, and enemy:";
+    }
+
+    /// <summary>
+    /// Builds a contextual user prompt for world lore with custom world parameters.
+    /// Creates lore that enriches the atmosphere and backstory.
+    /// </summary>
+    public static string BuildLorePrompt(string worldName, WorldGenerationOptions options, int entryNumber)
+    {
+        return $@"World: {worldName}
+Setting: {options.Description}
+Mood: {options.Flavor}
+Era: {options.TimePeriod}
+Context: {options.MainPlotPoint}
+
+Write lore entry #{entryNumber} - 1-2 sentences about an interesting detail from this world's history or culture:";
+    }
+    
+    // Keep old methods for backward compatibility (deprecated)
+    [Obsolete("Use BuildRoomPrompt with WorldGenerationOptions instead")]
+    public static string BuildRoomPrompt(string roomName, string theme, string atmosphere, int index, int total)
+    {
+        var options = new WorldGenerationOptions { Theme = theme };
+        return BuildRoomPrompt(roomName, options, atmosphere, index, total);
+    }
+    
+    [Obsolete("Use BuildNpcPrompt with WorldGenerationOptions instead")]
+    public static string BuildNpcPrompt(string npcName, string theme, string roomContext, string factionName)
+    {
+        var options = new WorldGenerationOptions { Theme = theme };
+        return BuildNpcPrompt(npcName, options, roomContext, factionName);
+    }
+    
+    [Obsolete("Use BuildFactionPrompt with WorldGenerationOptions instead")]
     public static string BuildFactionPrompt(string factionName, string theme, int worldSeed)
     {
-        return $@"Generate faction lore for:
-Name: {factionName}
-World Theme: {theme}
-World Seed: {worldSeed}
-
-Define this faction's goals, territory, and conflicts within the {theme} setting.";
+        var options = new WorldGenerationOptions { Theme = theme };
+        return BuildFactionPrompt(factionName, options);
     }
-
-    /// <summary>
-    /// Builds a contextual user prompt for world lore.
-    /// </summary>
+    
+    [Obsolete("Use BuildLorePrompt with WorldGenerationOptions instead")]
     public static string BuildLorePrompt(string worldName, string theme, int entryNumber)
     {
-        return $@"Generate lore entry #{entryNumber} for:
-World: {worldName}
-Theme: {theme}
-
-Reveal an interesting detail about this world's history, technology, or culture.";
+        var options = new WorldGenerationOptions { Theme = theme };
+        return BuildLorePrompt(worldName, options, entryNumber);
     }
 }

@@ -2,7 +2,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using SoloAdventureSystem.ContentGenerator;
 using SoloAdventureSystem.ContentGenerator.Adapters;
 using SoloAdventureSystem.ContentGenerator.Configuration;
 using SoloAdventureSystem.ContentGenerator.Generation;
@@ -10,8 +9,8 @@ using SoloAdventureSystem.ContentGenerator.Utils;
 using SoloAdventureSystem.UI.Game;
 using SoloAdventureSystem.UI.WorldGenerator;
 using SoloAdventureSystem.UI.Themes;
-using MudVision.WorldLoader;
 using Terminal.Gui;
+using SoloAdventureSystem.Engine.WorldLoader;
 
 namespace SoloAdventureSystem.UI;
 

@@ -1,6 +1,4 @@
-using MudVision.WorldLoader;
-
-namespace MudVision.WorldLoader
+namespace SoloAdventureSystem.Engine.WorldLoader
 {
     public interface IWorldState
     {

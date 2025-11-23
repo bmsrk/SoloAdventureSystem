@@ -1,0 +1,11 @@
+id: story1
+title: The Beginning
+text: |-
+  You awaken in Holo Alley, disoriented and uncertain how you arrived here. Expose the corporation covering up illegal AI experiments
+choices:
+- label: Look around
+  next: room1
+  effects: []
+- label: Stay still and listen
+  next: story2
+  effects: []

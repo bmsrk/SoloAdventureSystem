@@ -4,8 +4,9 @@ using System.Linq;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using SoloAdventureSystem.ContentGenerator.Adapters;
+using SoloAdventureSystem.ContentGenerator.Models;
 
-namespace SoloAdventureSystem.ContentGenerator
+namespace SoloAdventureSystem.ContentGenerator.Generation
 {
     /// <summary>
     /// Validation result for world quality checks.

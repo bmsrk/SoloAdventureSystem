@@ -1,4 +1,4 @@
-namespace MudVision.Rules;
+namespace SoloAdventureSystem.Engine.Rules;
 
 public enum Attribute
 {

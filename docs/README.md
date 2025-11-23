@@ -12,6 +12,7 @@ Welcome to the SoloAdventureSystem documentation. This folder contains all essen
 - **[LOGGING.md](LOGGING.md)** - Comprehensive logging guide and best practices
 - **[VALIDATION.md](VALIDATION.md)** - Validation system architecture and flow
 - **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Common issues and solutions
+- **[WORLD_CUSTOMIZATION_GUIDE.md](WORLD_CUSTOMIZATION_GUIDE.md)** - ? **NEW!** Create diverse worlds with custom parameters
 
 ### Technical References
 - **[CLI_IMPLEMENTATION.md](CLI_IMPLEMENTATION.md)** - Command-line interface implementation details
@@ -37,6 +38,20 @@ Welcome to the SoloAdventureSystem documentation. This folder contains all essen
 ### [projects/ValidationTool/](projects/ValidationTool/)
 - **README.md** - Validation tool overview
 - **PROMPT_TESTING.md** - Prompt testing guide
+
+---
+
+## ?? What's New
+
+### Enhanced World Generation (Latest)
+Create vastly different worlds by customizing:
+- **Flavor** - Atmospheric mood (e.g., "dark and gritty", "hopeful rebellion")
+- **Description** - Setting overview (e.g., "Megacity ruled by AI corporations")
+- **Main Plot Point** - Central conflict (e.g., "Stop the rogue AI uprising")
+- **Time Period** - When it takes place (e.g., "2089", "Post-apocalypse year 47")
+- **Power Structure** - Dominant factions (e.g., "Megacorps vs. Hackers")
+
+**See:** [WORLD_CUSTOMIZATION_GUIDE.md](WORLD_CUSTOMIZATION_GUIDE.md) for examples and best practices!
 
 ---
 

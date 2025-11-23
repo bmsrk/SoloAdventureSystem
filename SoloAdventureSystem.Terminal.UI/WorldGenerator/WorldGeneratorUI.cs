@@ -2,8 +2,8 @@ using Terminal.Gui;
 using SoloAdventureSystem.ContentGenerator.Configuration;
 using SoloAdventureSystem.ContentGenerator.Adapters;
 using SoloAdventureSystem.ContentGenerator.Utils;
-using SoloAdventureSystem.ContentGenerator;
 using SoloAdventureSystem.ContentGenerator.Generation;
+using SoloAdventureSystem.ContentGenerator.Models;
 using SoloAdventureSystem.ContentGenerator.EmbeddedModel;
 using SoloAdventureSystem.UI.Themes;
 using Microsoft.Extensions.Options;
@@ -27,6 +27,11 @@ public class WorldGeneratorUI : IDisposable
     // UI Components
     private TextField _nameField = null!;
     private TextField _seedField = null!;
+    private TextField _flavorField = null!;
+    private TextField _descriptionField = null!;
+    private TextField _plotField = null!;
+    private TextField _timePeriodField = null!;
+    private TextField _regionsField = null!;
     private RadioGroup _modelRadio = null!;
     private TextView _logView = null!;
     private ProgressBar _progressBar = null!;
@@ -85,13 +90,14 @@ public class WorldGeneratorUI : IDisposable
         title.X = Pos.Center();
         title.Y = 1;
 
-        // Configuration Frame
+        // Configuration Frame - Improved layout with wider fields
         var configFrame = ComponentFactory.CreateFrame("[ Configuration ]");
         configFrame.X = 1;
         configFrame.Y = 3;
         configFrame.Width = Dim.Fill(1);
-        configFrame.Height = 14;
+        configFrame.Height = 16;
 
+        // Row 1: Name and Regions (side by side)
         var nameLabel = ComponentFactory.CreateLabel("Name:");
         nameLabel.X = 2;
         nameLabel.Y = 1;
@@ -99,8 +105,18 @@ public class WorldGeneratorUI : IDisposable
         _nameField = ComponentFactory.CreateTextField("MyWorld");
         _nameField.X = 16;
         _nameField.Y = 1;
-        _nameField.Width = 30;
+        _nameField.Width = Dim.Percent(50);
         
+        var regionsLabel = ComponentFactory.CreateLabel("Regions:");
+        regionsLabel.X = Pos.Percent(55);
+        regionsLabel.Y = 1;
+        
+        _regionsField = ComponentFactory.CreateTextField("5");
+        _regionsField.X = Pos.Right(regionsLabel) + 2;
+        _regionsField.Y = 1;
+        _regionsField.Width = 8;
+        
+        // Row 2: Seed
         var seedLabel = ComponentFactory.CreateLabel("Seed:");
         seedLabel.X = 2;
         seedLabel.Y = 2;
@@ -108,29 +124,81 @@ public class WorldGeneratorUI : IDisposable
         _seedField = ComponentFactory.CreateTextField("12345");
         _seedField.X = 16;
         _seedField.Y = 2;
-        _seedField.Width = 30;
+        _seedField.Width = Dim.Percent(50);
+        
+        // Row 3: Flavor (full width)
+        var flavorLabel = ComponentFactory.CreateLabel("Flavor:");
+        flavorLabel.X = 2;
+        flavorLabel.Y = 3;
+        
+        _flavorField = ComponentFactory.CreateTextField("Dark and mysterious");
+        _flavorField.X = 16;
+        _flavorField.Y = 3;
+        _flavorField.Width = Dim.Fill(3);
+        
+        // Row 4: Setting (full width)
+        var descLabel = ComponentFactory.CreateLabel("Setting:");
+        descLabel.X = 2;
+        descLabel.Y = 4;
+        
+        _descriptionField = ComponentFactory.CreateTextField("A cyberpunk megacity ruled by AI");
+        _descriptionField.X = 16;
+        _descriptionField.Y = 4;
+        _descriptionField.Width = Dim.Fill(3);
+        
+        // Row 5: Main Plot (full width)
+        var plotLabel = ComponentFactory.CreateLabel("Main Plot:");
+        plotLabel.X = 2;
+        plotLabel.Y = 5;
+        
+        _plotField = ComponentFactory.CreateTextField("Uncover the conspiracy behind the disappearances");
+        _plotField.X = 16;
+        _plotField.Y = 5;
+        _plotField.Width = Dim.Fill(3);
+        
+        // Row 6: Time Period (full width)
+        var timeLabel = ComponentFactory.CreateLabel("Time Period:");
+        timeLabel.X = 2;
+        timeLabel.Y = 6;
+        
+        _timePeriodField = ComponentFactory.CreateTextField("Near future (2077)");
+        _timePeriodField.X = 16;
+        _timePeriodField.Y = 6;
+        _timePeriodField.Width = Dim.Fill(3);
 
+        // Row 7-9: Model selection
         var modelLabel = ComponentFactory.CreateLabel("Model:");
         modelLabel.X = 2;
-        modelLabel.Y = 4;
+        modelLabel.Y = 8;
         
         _modelRadio = ComponentFactory.CreateRadioGroup(new ustring[] 
         { 
-            GetModelDisplayName("phi-3-mini-q4", "Phi-3-mini Q4 (2GB)"),
-            GetModelDisplayName("tinyllama-q4", "TinyLlama Q4 (600MB)"),
-            GetModelDisplayName("llama-3.2-1b-q4", "Llama-3.2-1B Q4 (800MB)")
+            GetModelDisplayName("phi-3-mini-q4", "Phi-3-mini Q4 (2GB) - Best quality"),
+            GetModelDisplayName("tinyllama-q4", "TinyLlama Q4 (600MB) - Fastest"),
+            GetModelDisplayName("llama-3.2-1b-q4", "Llama-3.2-1B Q4 (800MB) - Balanced")
         });
         _modelRadio.X = 16;
-        _modelRadio.Y = 4;
-        _modelRadio.SelectedItem = 0;
+        _modelRadio.Y = 8;
+        _modelRadio.SelectedItem = 1; // Default to TinyLlama for speed
+        
+        // Helpful tip
+        var helpLabel = ComponentFactory.CreateMutedLabel("?? Customize Flavor, Setting, and Plot to create unique worlds!");
+        helpLabel.X = 2;
+        helpLabel.Y = 13;
 
-        configFrame.Add(nameLabel, _nameField, seedLabel, _seedField);
+        configFrame.Add(nameLabel, _nameField, regionsLabel, _regionsField);
+        configFrame.Add(seedLabel, _seedField);
+        configFrame.Add(flavorLabel, _flavorField);
+        configFrame.Add(descLabel, _descriptionField);
+        configFrame.Add(plotLabel, _plotField);
+        configFrame.Add(timeLabel, _timePeriodField);
         configFrame.Add(modelLabel, _modelRadio);
+        configFrame.Add(helpLabel);
 
-        // Progress Frame
+        // Progress Frame - More compact, positioned better
         var progressFrame = ComponentFactory.CreateFrame("[ Progress ]");
         progressFrame.X = 1;
-        progressFrame.Y = 18;
+        progressFrame.Y = 20;
         progressFrame.Width = Dim.Fill(1);
         progressFrame.Height = Dim.Fill(4);
 
@@ -303,11 +371,19 @@ public class WorldGeneratorUI : IDisposable
                 Name = _nameField.Text.ToString() ?? "MyWorld",
                 Seed = int.TryParse(_seedField.Text.ToString(), out var s) ? s : 12345,
                 Theme = "Cyberpunk",
-                Regions = 5,
-                NpcDensity = "medium"
+                Regions = int.TryParse(_regionsField.Text.ToString(), out var r) ? Math.Max(3, r) : 5,
+                NpcDensity = "medium",
+                Flavor = _flavorField.Text.ToString() ?? "Atmospheric and mysterious",
+                Description = _descriptionField.Text.ToString() ?? "A cyberpunk world where technology and humanity collide",
+                MainPlotPoint = _plotField.Text.ToString() ?? "Uncover the conspiracy behind recent disappearances",
+                TimePeriod = _timePeriodField.Text.ToString() ?? "Near future (2077)",
+                PowerStructure = "Corporations, hackers, and underground resistance"
             };
 
             Log($"Generating '{options.Name}' (seed: {options.Seed})...");
+            Log($"Flavor: '{options.Flavor}'");
+            Log($"Setting: '{options.Description}'");
+            Log($"Plot: '{options.MainPlotPoint}'");
             
             // Check for cancellation before generation
             cancellationToken.ThrowIfCancellationRequested();

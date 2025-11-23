@@ -1,7 +1,5 @@
-using MudVision.World.Models;
-using MudVision.WorldLoader;
 
-namespace MudVision.WorldLoader
+namespace SoloAdventureSystem.Engine.WorldLoader
 {
     public class WorldState : IWorldState
     {

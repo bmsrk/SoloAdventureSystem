@@ -1,8 +1,8 @@
 using Terminal.Gui;
 using SoloAdventureSystem.UI.Themes;
-using MudVision.WorldLoader;
-using MudVision.World.Models;
-using MudVision.Game;
+using SoloAdventureSystem.Engine.Models;
+using SoloAdventureSystem.Engine.Game;
+using SoloAdventureSystem.Engine.WorldLoader;
 
 namespace SoloAdventureSystem.UI.Game;
 

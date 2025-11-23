@@ -1,0 +1,40 @@
+@* Custom Button Component - replacement for FluentButton *@
+
+<button class="custom-button @AppearanceClass @Class" 
+        type="@Type" 
+        disabled="@Disabled"
+        @onclick="OnClick"
+        style="@Style">
+    @ChildContent
+</button>
+
+@code {
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+    
+    [Parameter]
+    public string Appearance { get; set; } = "neutral";
+    
+    [Parameter]
+    public string Type { get; set; } = "button";
+    
+    [Parameter]
+    public bool Disabled { get; set; }
+    
+    [Parameter]
+    public EventCallback OnClick { get; set; }
+    
+    [Parameter]
+    public string Class { get; set; } = "";
+    
+    [Parameter]
+    public string Style { get; set; } = "";
+    
+    private string AppearanceClass => Appearance.ToLower() switch
+    {
+        "accent" => "btn-accent",
+        "primary" => "btn-primary",
+        "neutral" => "btn-neutral",
+        _ => "btn-neutral"
+    };
+}

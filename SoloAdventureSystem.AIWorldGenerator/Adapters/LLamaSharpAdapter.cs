@@ -102,10 +102,10 @@ public class LLamaSharpAdapter : ILocalSLMAdapter, IDisposable
 
             var output = _engine.Generate(
                 fullPrompt,
-                maxTokens: 200,
-                temperature: 0.6f,  // Reduced from 0.7f for more consistent formatting
+                maxTokens: 180,      // Reduced for tighter control
+                temperature: 0.5f,   // Lower for more consistent formatting
                 seed: seed,
-                timeout: TimeSpan.FromMinutes(3));  // Add timeout
+                timeout: TimeSpan.FromMinutes(3));
 
             var cleaned = CleanOutput(output);
             _logger?.LogDebug("? Room description generated ({Length} chars)", cleaned.Length);
@@ -133,8 +133,8 @@ public class LLamaSharpAdapter : ILocalSLMAdapter, IDisposable
 
             var output = _engine.Generate(
                 fullPrompt,
-                maxTokens: 250,  // Increased from 150
-                temperature: 0.7f,  // Increased for more creative bios
+                maxTokens: 150,      // Reduced for 2-sentence target
+                temperature: 0.6f,   // Balanced for personality
                 seed: seed,
                 timeout: TimeSpan.FromMinutes(3));
 
@@ -172,8 +172,8 @@ public class LLamaSharpAdapter : ILocalSLMAdapter, IDisposable
 
             var output = _engine.Generate(
                 fullPrompt,
-                maxTokens: 250,  // Increased from 200
-                temperature: 0.7f,  // Increased for more creative descriptions
+                maxTokens: 180,      // 3 sentences target
+                temperature: 0.6f,   // Balanced for faction personality
                 seed: seed,
                 timeout: TimeSpan.FromMinutes(3));
 
@@ -218,10 +218,10 @@ public class LLamaSharpAdapter : ILocalSLMAdapter, IDisposable
 
                 var output = _engine.Generate(
                     fullPrompt,
-                    maxTokens: 100,
-                    temperature: 0.7f, // Keep higher for variety in lore
+                    maxTokens: 100,      // 1-2 sentences target
+                    temperature: 0.65f,  // Slightly higher for variety
                     seed: seed + i,
-                    timeout: TimeSpan.FromMinutes(2));  // Add timeout
+                    timeout: TimeSpan.FromMinutes(2));
 
                 var cleaned = CleanOutput(output);
                 entries.Add(cleaned);

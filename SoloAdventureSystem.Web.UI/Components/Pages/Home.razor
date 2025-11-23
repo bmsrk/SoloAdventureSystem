@@ -1,0 +1,142 @@
+﻿@page "/"
+
+<PageTitle>SoloAdventureSystem</PageTitle>
+
+<div style="padding: 2rem; max-width: 1200px; margin: 0 auto;">
+    <div style="text-align: center; margin-bottom: 3rem;">
+        <h1 class="display-4" style="font-weight: 700; color: var(--color-text-primary); margin-bottom: 1rem;">SoloAdventureSystem</h1>
+        <p class="lead" style="color: var(--color-text-secondary); margin-bottom: 2rem;">Generate procedural game worlds using local AI</p>
+        <a href="/generate" class="custom-button btn-accent" style="padding: 14px 40px; font-size: 1.1rem; text-decoration: none; display: inline-block;">
+            Start Generating →
+        </a>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+        <Card>
+            <div style="text-align: center; padding: 2rem;">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">🤖</div>
+                <h5 style="color: var(--color-text-primary); margin-bottom: 1rem;">AI-Powered</h5>
+                <p style="color: var(--color-text-secondary);">Uses local LLM models (Phi-3, TinyLlama, Llama-3.2) to create unique game worlds</p>
+            </div>
+        </Card>
+
+        <Card>
+            <div style="text-align: center; padding: 2rem;">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">⚡</div>
+                <h5 style="color: var(--color-text-primary); margin-bottom: 1rem;">CUDA Acceleration</h5>
+                <p style="color: var(--color-text-secondary);">GPU acceleration for fast inference, with CPU fallback available</p>
+            </div>
+        </Card>
+
+        <Card>
+            <div style="text-align: center; padding: 2rem;">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">🔒</div>
+                <h5 style="color: var(--color-text-primary); margin-bottom: 1rem;">100% Local</h5>
+                <p style="color: var(--color-text-secondary);">No internet required after download. All processing on your machine</p>
+            </div>
+        </Card>
+    </div>
+
+    <Card Style="margin-bottom: 2rem;">
+        <div style="padding: 1.5rem;">
+            <h4 style="color: var(--color-text-primary); margin-bottom: 1rem;">Getting Started</h4>
+            <ol style="margin-left: 1.5rem; color: var(--color-text-secondary);">
+                <li style="margin-bottom: 0.5rem;">Navigate to AI World Generator</li>
+                <li style="margin-bottom: 0.5rem;">Select a model (TinyLlama for fastest, Phi-3 for best quality)</li>
+                <li style="margin-bottom: 0.5rem;">Initialize the model (one-time download)</li>
+                <li style="margin-bottom: 0.5rem;">Configure world parameters</li>
+                <li>Generate and export your world</li>
+            </ol>
+        </div>
+    </Card>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+        <Card>
+            <div style="padding: 1.5rem;">
+                <h5 style="color: var(--color-text-primary); margin-bottom: 1rem;">Features</h5>
+                <ul style="margin-left: 1.5rem; color: var(--color-text-secondary);">
+                    <li style="margin-bottom: 0.5rem;">Procedural world generation</li>
+                    <li style="margin-bottom: 0.5rem;">Dynamic NPC creation</li>
+                    <li style="margin-bottom: 0.5rem;">Faction systems</li>
+                    <li style="margin-bottom: 0.5rem;">Lore and backstory</li>
+                    <li style="margin-bottom: 0.5rem;">Deterministic seeds</li>
+                    <li>Export to ZIP format</li>
+                </ul>
+            </div>
+        </Card>
+
+        <Card>
+            <div style="padding: 1.5rem;">
+                <h5 style="color: var(--color-text-primary); margin-bottom: 1rem;">System Requirements</h5>
+                <h6 style="color: var(--color-border-hover); margin-top: 1rem;">Minimum</h6>
+                <ul style="margin-left: 1.5rem; color: var(--color-text-secondary);">
+                    <li>.NET 10 Runtime</li>
+                    <li>8GB RAM</li>
+                    <li>2GB disk space</li>
+                </ul>
+                <h6 style="color: var(--color-border-hover); margin-top: 1rem;">Recommended</h6>
+                <ul style="margin-left: 1.5rem; color: var(--color-text-secondary);">
+                    <li>NVIDIA GPU with CUDA 12.x</li>
+                    <li>16GB RAM</li>
+                    <li>SSD storage</li>
+                </ul>
+            </div>
+        </Card>
+    </div>
+
+    <Card Style="margin-bottom: 2rem;">
+        <div style="padding: 1.5rem;">
+            <h5 style="color: var(--color-text-primary); margin-bottom: 1rem;">Model Comparison</h5>
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid var(--color-bg-elevated);">
+                            <th style="padding: 0.75rem; text-align: left; color: var(--color-text-primary);">Model</th>
+                            <th style="padding: 0.75rem; text-align: left; color: var(--color-text-primary);">Size</th>
+                            <th style="padding: 0.75rem; text-align: left; color: var(--color-text-primary);">Speed</th>
+                            <th style="padding: 0.75rem; text-align: left; color: var(--color-text-primary);">Quality</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid var(--color-border-default);">
+                            <td style="padding: 0.75rem; color: var(--color-text-secondary);">TinyLlama</td>
+                            <td style="padding: 0.75rem; color: var(--color-text-secondary);">~700MB</td>
+                            <td style="padding: 0.75rem;">
+                                <Badge Appearance="success">Fast</Badge>
+                            </td>
+                            <td style="padding: 0.75rem;">
+                                <Badge Appearance="neutral">Good</Badge>
+                            </td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--color-border-default);">
+                            <td style="padding: 0.75rem; color: var(--color-text-secondary);">Llama-3.2</td>
+                            <td style="padding: 0.75rem; color: var(--color-text-secondary);">~2GB</td>
+                            <td style="padding: 0.75rem;">
+                                <Badge Appearance="accent">Medium</Badge>
+                            </td>
+                            <td style="padding: 0.75rem;">
+                                <Badge Appearance="success">Excellent</Badge>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 0.75rem; color: var(--color-text-secondary);">Phi-3 Mini</td>
+                            <td style="padding: 0.75rem; color: var(--color-text-secondary);">~2.3GB</td>
+                            <td style="padding: 0.75rem;">
+                                <Badge Appearance="accent">Medium</Badge>
+                            </td>
+                            <td style="padding: 0.75rem;">
+                                <Badge Appearance="success">Best</Badge>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </Card>
+
+    <div style="text-align: center; margin-top: 3rem;">
+        <a href="/generate" class="custom-button btn-accent" style="padding: 14px 40px; font-size: 1.1rem; text-decoration: none; display: inline-block;">
+            Start Generating →
+        </a>
+    </div>
+</div>

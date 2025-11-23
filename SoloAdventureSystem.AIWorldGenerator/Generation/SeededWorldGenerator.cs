@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using SoloAdventureSystem.ContentGenerator.Generation;
+using SoloAdventureSystem.ContentGenerator.Adapters;
+using SoloAdventureSystem.ContentGenerator.Models;
 
-namespace SoloAdventureSystem.ContentGenerator
+namespace SoloAdventureSystem.ContentGenerator.Generation
 {
     public class SeededWorldGenerator : IWorldGenerator
     {
@@ -23,6 +24,9 @@ namespace SoloAdventureSystem.ContentGenerator
             _logger?.LogInformation("Starting enhanced world generation: {Name} (seed: {Seed}, regions: {Regions})", 
                 options.Name, options.Seed, options.Regions);
             
+            _logger?.LogInformation("World Parameters - Flavor: '{Flavor}', Setting: '{Description}'", 
+                options.Flavor, options.Description);
+            
             var rand = new Random(options.Seed);
             var result = new WorldGenerationResult();
             
@@ -34,7 +38,7 @@ namespace SoloAdventureSystem.ContentGenerator
                 string factionDescription;
                 try
                 {
-                    var factionPrompt = PromptTemplates.BuildFactionPrompt(factionName, options.Theme, options.Seed);
+                    var factionPrompt = PromptTemplates.BuildFactionPrompt(factionName, options);
                     factionDescription = _slm.GenerateFactionFlavor(
                         factionPrompt, 
                         options.Seed);
@@ -72,7 +76,7 @@ namespace SoloAdventureSystem.ContentGenerator
                     {
                         var roomPrompt = PromptTemplates.BuildRoomPrompt(
                             roomName, 
-                            options.Theme, 
+                            options,
                             atmosphere, 
                             i, 
                             roomCount);
@@ -134,7 +138,7 @@ namespace SoloAdventureSystem.ContentGenerator
                     {
                         var npcPrompt = PromptTemplates.BuildNpcPrompt(
                             npcName,
-                            options.Theme,
+                            options,
                             result.Rooms[i].Title,
                             faction.Name);
                         npcBio = _slm.GenerateNpcBio(
@@ -171,7 +175,7 @@ namespace SoloAdventureSystem.ContentGenerator
                     var loreEntries = new List<string>();
                     for (int i = 0; i < 3; i++)
                     {
-                        var lorePrompt = PromptTemplates.BuildLorePrompt(options.Name, options.Theme, i + 1);
+                        var lorePrompt = PromptTemplates.BuildLorePrompt(options.Name, options, i + 1);
                         var entry = _slm.GenerateLoreEntries(lorePrompt, options.Seed + i, 1)[0];
                         loreEntries.Add(entry);
                     }
@@ -183,12 +187,12 @@ namespace SoloAdventureSystem.ContentGenerator
                         $"Failed to generate lore entries. Error: {ex.Message}", ex);
                 }
                 
-                // Step 6: Create story nodes
+                // Step 6: Create story nodes based on main plot point
                 var storyNode = new StoryNodeModel
                 {
                     Id = "story1",
                     Title = "The Beginning",
-                    Text = $"You awaken in {result.Rooms[0].Title}, disoriented and uncertain how you arrived here.",
+                    Text = $"You awaken in {result.Rooms[0].Title}, disoriented and uncertain how you arrived here. {options.MainPlotPoint}",
                     Choices = new List<StoryChoice>
                     {
                         new StoryChoice { Label = "Look around", Next = result.Rooms[0].Id, Effects = new List<string>() },
@@ -197,11 +201,11 @@ namespace SoloAdventureSystem.ContentGenerator
                 };
                 result.StoryNodes.Add(storyNode);
                 
-                // Step 7: Create world metadata
+                // Step 7: Create world metadata with enhanced description
                 result.World = new WorldJsonModel
                 {
                     Name = options.Name,
-                    Description = $"A {options.Theme} world generated with seed {options.Seed}",
+                    Description = $"{options.Description} ({options.Flavor}). {options.MainPlotPoint}",
                     Version = "1.0.0",
                     Author = "SoloAdventureSystem (Enhanced Generator)",
                     CreatedAt = DateTime.UtcNow,

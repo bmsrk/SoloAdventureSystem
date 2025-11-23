@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace SoloAdventureSystem.ContentGenerator
+namespace SoloAdventureSystem.ContentGenerator.Models
 {
     public class WorldJsonModel
     {

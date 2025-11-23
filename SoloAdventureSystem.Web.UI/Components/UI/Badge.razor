@@ -1,0 +1,30 @@
+@* Custom Badge Component - replacement for FluentBadge *@
+
+<span class="custom-badge @AppearanceClass @Class" style="@Style">
+    @ChildContent
+</span>
+
+@code {
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+    
+    [Parameter]
+    public string Appearance { get; set; } = "neutral";
+    
+    [Parameter]
+    public string Class { get; set; } = "";
+    
+    [Parameter]
+    public string Style { get; set; } = "";
+    
+    private string AppearanceClass => Appearance.ToLower() switch
+    {
+        "accent" => "badge-accent",
+        "neutral" => "badge-neutral",
+        "success" => "badge-success",
+        "warning" => "badge-warning",
+        "error" => "badge-error",
+        "danger" => "badge-error",
+        _ => "badge-neutral"
+    };
+}
