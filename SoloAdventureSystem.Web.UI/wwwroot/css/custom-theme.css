@@ -1,4 +1,4 @@
-/* Complete Dark Mode - No Fluent UI */
+/* Complete Dark Mode - Minimalistic tweaks + brand identity */
 :root {
     --neutral-foreground-rest: #e5e7eb !important;
     --neutral-foreground-hint: #6b7280 !important;
@@ -8,11 +8,19 @@
     --neutral-layer-4: #334155 !important;
     --accent-fill-rest: #3b82f6 !important;
     --fill-color: #0a0a0a !important;
+
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
 }
+
+html, body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 
 body {
     background: #0a0a0a !important;
     color: #e5e7eb !important;
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
 }
 
 /* Remove ALL white backgrounds */
@@ -29,15 +37,10 @@ div, span, p, h1, h2, h3, h4, h5, h6, label, a, button, td, th, li {
     color: #e5e7eb;
 }
 
-/* Muted text exceptions */
-.small, .text-muted, .lead {
-    color: #9ca3af !important;
-}
-
 /* Model cards */
 .model-card {
     background: #0f172a !important;
-    border: 2px solid #1f2937;
+    border: 1px solid rgba(255,255,255,0.04);
     border-radius: 8px;
     padding: 1.5rem;
     cursor: pointer;
@@ -95,13 +98,13 @@ div, span, p, h1, h2, h3, h4, h5, h6, label, a, button, td, th, li {
 /* Preview cards */
 .preview-card {
     background: #0a0a0a !important;
-    border: 1px solid #1f2937;
+    border: 1px solid rgba(255,255,255,0.04);
     border-radius: 6px;
     padding: 1.5rem;
 }
 
 .preview-card h6 {
-    color: #60a5fa !important;
+    color: #7c3aed !important;
 }
 
 .preview-card p {
@@ -161,6 +164,7 @@ select {
     background: #1e293b !important;
     color: #e5e7eb !important;
     border: 1px solid #1f2937 !important;
+    border-radius: 8px;
 }
 
 input::placeholder,
@@ -170,9 +174,11 @@ textarea::placeholder {
 
 /* Buttons */
 button {
-    background: #334155;
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.04);
     color: #e5e7eb;
-    border: none;
+    padding: 0.5rem 0.8rem;
+    border-radius: 8px;
 }
 
 button:hover {
@@ -191,7 +197,7 @@ a:hover {
 
 /* Scrollbars */
 ::-webkit-scrollbar {
-    width: 12px;
+    width: 9px;
     background: #0a0a0a;
 }
 
@@ -200,7 +206,7 @@ a:hover {
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #334155;
+    background: #1f2937;
     border-radius: 6px;
 }
 

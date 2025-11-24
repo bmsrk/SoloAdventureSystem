@@ -1,3 +1,19 @@
+:root {
+    --brand-gradient-1: #7c3aed;
+    --brand-gradient-2: #06b6d4;
+    --brand-accent: linear-gradient(90deg, var(--brand-gradient-1), var(--brand-gradient-2));
+}
+
+.top-bar-legacy {
+    display: none; /* legacy - hidden by default */
+}
+
+.brand-legacy {
+    color: var(--neutral-foreground-rest);
+    text-decoration: none;
+    font-weight: 700;
+}
+
 .navbar-toggler {
     appearance: none;
     cursor: pointer;
