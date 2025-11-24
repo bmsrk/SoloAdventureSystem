@@ -8,6 +8,8 @@ using SoloAdventureSystem.ContentGenerator.Models;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using System.IO;
+using System.Collections.Generic;
 
 namespace SoloAdventureSystem.Web.UI.Services;
 
@@ -96,6 +98,8 @@ public class WorldGenerationService : IDisposable
         
         return result;
     }
+
+    // NOTE: Prefill/LLM helper methods were removed temporarily. Reintroduce when ready to rework the UI wizard.
 
     public string ExportWorld(WorldGenerationResult result, WorldGenerationOptions options, string outputPath)
     {
