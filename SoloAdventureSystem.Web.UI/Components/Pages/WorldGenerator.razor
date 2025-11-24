@@ -4,6 +4,7 @@
 @using SoloAdventureSystem.ContentGenerator.Models
 @using SoloAdventureSystem.ContentGenerator.Configuration
 @using SoloAdventureSystem.ContentGenerator.EmbeddedModel
+@using SoloAdventureSystem.ContentGenerator.Adapters
 @using SoloAdventureSystem.Web.UI.Services
 @using SoloAdventureSystem.ContentGenerator.Generation
 @using Microsoft.Extensions.Options
@@ -15,35 +16,89 @@
 
 <div style="padding: 2rem; max-width: 1400px; margin: 0 auto;">
     <div style="text-align: center; margin-bottom: 2rem;">
-        <h1 class="display-4" style="font-weight: 700; color: white;">AI World Generator</h1>
-        <p class="lead" style="color: #c8c8c8;">Generate procedural game worlds using local LLM models</p>
+        <h1 class="display-4" style="font-weight: 700; color: var(--color-text-primary);">AI World Generator</h1>
+        <p class="lead" style="color: var(--color-text-secondary);">Generate procedural game worlds using local LLM models</p>
     </div>
 
     @if (!GenerationService.IsInitialized)
     {
-        <FluentCard style="margin-bottom: 2rem;">
+        <Card Style="margin-bottom: 2rem;">
             <div style="padding: 1.5rem;">
-                <h4 style="color: white; margin-bottom: 1rem;">Select AI Model</h4>
+                <h4 style="color: var(--color-text-primary); margin-bottom: 1rem;">Select AI Model</h4>
+                
+                <!-- Model Management Section -->
+                <div style="margin-bottom: 2rem; padding: 1rem; background: var(--color-bg-secondary); border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h5 style="color: var(--color-text-primary); margin: 0;">Model Management</h5>
+                        <Button Appearance="outline" 
+                                OnClick="LoadCachedModels"
+                                Style="padding: 4px 8px;">
+                            ?? Refresh
+                        </Button>
+                    </div>
+                    
+                    @if (cachedModels.Count > 0)
+                    {
+                        <div style="margin-bottom: 1rem;">
+                            <div class="small" style="color: var(--color-text-muted); margin-bottom: 0.5rem;">
+                                Cached Models (@cachedModels.Count) - Total: @FormatFileSize(totalCacheSize)
+                            </div>
+                            
+                            @foreach (var model in cachedModels)
+                            {
+                                <div style="display: flex; justify-content: space-between; align-items: center; 
+                                          padding: 0.5rem; margin-bottom: 0.5rem; background: var(--color-bg-primary); 
+                                          border-radius: 4px;">
+                                    <div>
+                                        <strong style="color: var(--color-text-primary);">@model.Key</strong>
+                                        <div class="small" style="color: var(--color-text-muted);">
+                                            @FormatFileSize(model.Value.SizeBytes) - Modified: @model.Value.LastModified.ToString("yyyy-MM-dd HH:mm")
+                                        </div>
+                                    </div>
+                                    <Button Appearance="secondary" 
+                                            OnClick="() => DeleteModel(model.Key)"
+                                            Style="padding: 4px 8px; font-size: 0.8rem;">
+                                        ??? Delete
+                                    </Button>
+                                </div>
+                            }
+                            
+                            <div style="margin-top: 1rem; text-align: center;">
+                                <Button Appearance="outline" 
+                                        OnClick="DeleteAllModels"
+                                        Style="padding: 6px 12px;">
+                                    ??? Delete All Cached Models
+                                </Button>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div style="text-align: center; color: var(--color-text-muted); padding: 1rem;">
+                            No cached models found. Models will be downloaded when first used.
+                        </div>
+                    }
+                </div>
                 
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
                     <!-- TinyLlama -->
                     <div class="model-card @(selectedModel == "tinyllama-q4" ? "selected" : "")" 
                          @onclick='() => SelectModel("tinyllama-q4")'>
                         <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
-                            <h5 style="color: white;">TinyLlama</h5>
+                            <h5 style="color: var(--color-text-primary);">TinyLlama</h5>
                             <span class="model-badge badge-speed-fast">FASTEST</span>
                         </div>
                         <div style="margin-bottom: 0.75rem;">
-                            <div class="small" style="color: #9ca3af;">SIZE</div>
-                            <div class="h4" style="color: white;">~700 MB</div>
+                            <div class="small" style="color: var(--color-text-muted);">SIZE</div>
+                            <div class="h4" style="color: var(--color-text-primary);">~700 MB</div>
                         </div>
                         <div style="margin-bottom: 0.75rem;">
-                            <div class="small" style="color: #9ca3af;">DOWNLOAD</div>
-                            <div style="color: white;">2-5 minutes</div>
+                            <div class="small" style="color: var(--color-text-muted);">DOWNLOAD</div>
+                            <div style="color: var(--color-text-primary);">2-5 minutes</div>
                         </div>
                         <div style="margin-bottom: 0.75rem;">
-                            <div class="small" style="color: #9ca3af;">SPEED</div>
-                            <div style="color: white;">30-45 seconds</div>
+                            <div class="small" style="color: var(--color-text-muted);">SPEED</div>
+                            <div style="color: var(--color-text-primary);">30-45 seconds</div>
                         </div>
                         <span class="model-badge badge-quality-good">Good Quality</span>
                     </div>
@@ -52,20 +107,20 @@
                     <div class="model-card @(selectedModel == "llama-3.2-1b-q4" ? "selected" : "")" 
                          @onclick='() => SelectModel("llama-3.2-1b-q4")'>
                         <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
-                            <h5 style="color: white;">Llama 3.2</h5>
+                            <h5 style="color: var(--color-text-primary);">Llama 3.2</h5>
                             <span class="model-badge badge-speed-medium">BALANCED</span>
                         </div>
                         <div style="margin-bottom: 0.75rem;">
-                            <div class="small" style="color: #9ca3af;">SIZE</div>
-                            <div class="h4" style="color: white;">~2 GB</div>
+                            <div class="small" style="color: var(--color-text-muted);">SIZE</div>
+                            <div class="h4" style="color: var(--color-text-primary);">~2 GB</div>
                         </div>
                         <div style="margin-bottom: 0.75rem;">
-                            <div class="small" style="color: #9ca3af;">DOWNLOAD</div>
-                            <div style="color: white;">4-8 minutes</div>
+                            <div class="small" style="color: var(--color-text-muted);">DOWNLOAD</div>
+                            <div style="color: var(--color-text-primary);">4-8 minutes</div>
                         </div>
                         <div style="margin-bottom: 0.75rem;">
-                            <div class="small" style="color: #9ca3af;">SPEED</div>
-                            <div style="color: white;">1-2 minutes</div>
+                            <div class="small" style="color: var(--color-text-muted);">SPEED</div>
+                            <div style="color: var(--color-text-primary);">1-2 minutes</div>
                         </div>
                         <span class="model-badge badge-quality-best">Excellent</span>
                     </div>
@@ -74,46 +129,46 @@
                     <div class="model-card @(selectedModel == "phi-3-mini-q4" ? "selected" : "")" 
                          @onclick='() => SelectModel("phi-3-mini-q4")'>
                         <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
-                            <h5 style="color: white;">Phi-3 Mini</h5>
+                            <h5 style="color: var(--color-text-primary);">Phi-3 Mini</h5>
                             <span class="model-badge badge-quality-best">BEST</span>
                         </div>
                         <div style="margin-bottom: 0.75rem;">
-                            <div class="small" style="color: #9ca3af;">SIZE</div>
-                            <div class="h4" style="color: white;">~2.3 GB</div>
+                            <div class="small" style="color: var(--color-text-muted);">SIZE</div>
+                            <div class="h4" style="color: var(--color-text-primary);">~2.3 GB</div>
                         </div>
                         <div style="margin-bottom: 0.75rem;">
-                            <div class="small" style="color: #9ca3af;">DOWNLOAD</div>
-                            <div style="color: white;">5-10 minutes</div>
+                            <div class="small" style="color: var(--color-text-muted);">DOWNLOAD</div>
+                            <div style="color: var(--color-text-primary);">5-10 minutes</div>
                         </div>
                         <div style="margin-bottom: 0.75rem;">
-                            <div class="small" style="color: #9ca3af;">SPEED</div>
-                            <div style="color: white;">1-2 minutes</div>
+                            <div class="small" style="color: var(--color-text-muted);">SPEED</div>
+                            <div style="color: var(--color-text-primary);">1-2 minutes</div>
                         </div>
                         <span class="model-badge badge-quality-best">Best Quality</span>
                     </div>
                 </div>
 
                 <div style="text-align: center; margin-bottom: 1.5rem;">
-                    <FluentButton Appearance="Appearance.Accent" 
-                                  @onclick="InitializeAI" 
-                                  Disabled="@(isInitializing || string.IsNullOrEmpty(selectedModel))"
-                                  Style="padding: 12px 32px;">
+                    <Button Appearance="accent" 
+                            OnClick="InitializeAI" 
+                            Disabled="@(isInitializing || string.IsNullOrEmpty(selectedModel))"
+                            Style="padding: 12px 32px; width: auto;">
                         @if (isInitializing)
                         {
-                            <FluentProgressRing Style="width: 16px; height: 16px; margin-right: 8px;" />
-                            <span>Initializing...</span>
+                            <span class="spinner-small"></span>
+                            <span style="margin-left: 8px;">Initializing...</span>
                         }
                         else
                         {
                             <span>Initialize @selectedModel</span>
                         }
-                    </FluentButton>
+                    </Button>
                 </div>
 
                 @if (!string.IsNullOrEmpty(initProgress))
                 {
                     <div class="message-bar message-bar-info">
-                        <div class="message-icon">??</div>
+                        <div class="message-icon">?</div>
                         <div class="message-content">
                             <strong>Progress:</strong> <span>@initProgress</span>
                         </div>
@@ -121,12 +176,12 @@
                 }
 
                 <div class="message-bar message-bar-info">
-                    <div class="message-icon">??</div>
+                    <div class="message-icon">?</div>
                     <div class="message-content">
                         <strong>GPU Acceleration:</strong>
-                        <FluentBadge Appearance="@(AISettings.Value.UseGPU ? Appearance.Accent : Appearance.Neutral)" Style="margin-left: 8px;">
+                        <Badge Appearance="@(AISettings.Value.UseGPU ? "accent" : "neutral")" Style="margin-left: 8px;">
                             @(AISettings.Value.UseGPU ? "ENABLED" : "DISABLED")
-                        </FluentBadge>
+                        </Badge>
                         @if (AISettings.Value.UseGPU)
                         {
                             <div class="small" style="margin-top: 8px;">Using CUDA for faster generation</div>
@@ -134,81 +189,75 @@
                     </div>
                 </div>
             </div>
-        </FluentCard>
+        </Card>
     }
     else
     {
-        <FluentCard style="margin-bottom: 2rem;">
+        <Card Style="margin-bottom: 2rem;">
             <div style="padding: 1.5rem;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                    <h4 style="color: white; margin: 0;">World Configuration</h4>
-                    <div>
-                        <FluentBadge Appearance="Appearance.Accent" Style="margin-right: 8px;">AI READY</FluentBadge>
-                        <FluentBadge Appearance="Appearance.Neutral">@selectedModel</FluentBadge>
+                    <h4 style="color: var(--color-text-primary); margin: 0;">World Configuration</h4>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <Badge Appearance="accent">AI READY</Badge>
+                        <Badge Appearance="neutral">@selectedModel</Badge>
                     </div>
                 </div>
 
                 <EditForm Model="@options" OnValidSubmit="@GenerateWorld">
-                    <h6 style="color: white; margin-bottom: 1rem;">Basic Settings</h6>
+                    <h6 style="color: var(--color-text-primary); margin-bottom: 1rem;">Basic Settings</h6>
                     
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-                        <FluentTextField Label="World Name" @bind-Value="options.Name" Style="width: 100%;" />
-                        <FluentNumberField Label="Random Seed" @bind-Value="options.Seed" Style="width: 100%;" />
+                        <TextField Label="World Name" @bind-Value="options.Name" />
+                        <NumberField Label="Random Seed" @bind-Value="options.Seed" />
                     </div>
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem;">
-                        <FluentTextField Label="Theme" @bind-Value="options.Theme" Style="width: 100%;" />
-                        <FluentNumberField Label="Regions" @bind-Value="options.Regions" Min="3" Max="20" Style="width: 100%;" />
+                        <TextField Label="Theme" @bind-Value="options.Theme" />
+                        <NumberField Label="Regions" @bind-Value="options.Regions" Min="3" Max="20" />
                     </div>
 
-                    <h6 style="color: white; margin-bottom: 1rem;">Advanced Settings</h6>
+                    <h6 style="color: var(--color-text-primary); margin-bottom: 1rem;">Advanced Settings</h6>
 
-                    <div style="margin-bottom: 1rem;">
-                        <FluentTextField Label="Flavor/Mood" @bind-Value="options.Flavor" Style="width: 100%;" />
-                    </div>
-                    <div style="margin-bottom: 1rem;">
-                        <FluentTextArea Label="Setting Description" @bind-Value="options.Description" Rows="2" Style="width: 100%;" />
-                    </div>
-                    <div style="margin-bottom: 1rem;">
-                        <FluentTextField Label="Main Plot Point" @bind-Value="options.MainPlotPoint" Style="width: 100%;" />
-                    </div>
+                    <TextField Label="Flavor/Mood" @bind-Value="options.Flavor" Style="margin-bottom: 1rem;" />
+                    <TextArea Label="Setting Description" @bind-Value="options.Description" Rows="2" Style="margin-bottom: 1rem;" />
+                    <TextField Label="Main Plot Point" @bind-Value="options.MainPlotPoint" Style="margin-bottom: 1rem;" />
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
-                        <FluentTextField Label="Time Period" @bind-Value="options.TimePeriod" Style="width: 100%;" />
-                        <FluentTextField Label="Power Structure" @bind-Value="options.PowerStructure" Style="width: 100%;" />
+                        <TextField Label="Time Period" @bind-Value="options.TimePeriod" />
+                        <TextField Label="Power Structure" @bind-Value="options.PowerStructure" />
                     </div>
 
-                    <FluentButton Appearance="Appearance.Accent" 
-                                  Type="ButtonType.Submit" 
-                                  Disabled="@isGenerating"
-                                  Style="width: 100%; padding: 14px;">
+                    <Button Appearance="accent" 
+                            Type="submit" 
+                            Disabled="@isGenerating"
+                            Style="width: 100%; padding: 14px;">
                         @if (isGenerating)
                         {
-                            <FluentProgressRing Style="width: 16px; height: 16px; margin-right: 8px;" />
-                            <span>Generating...</span>
+                            <span class="spinner-small"></span>
+                            <span style="margin-left: 8px;">Generating...</span>
                         }
                         else
                         {
                             <span>Generate World</span>
                         }
-                    </FluentButton>
+                    </Button>
                 </EditForm>
 
                 @if (!string.IsNullOrEmpty(generationProgress))
                 {
                     <div style="margin-top: 1.5rem;">
-                        <FluentProgress Value="@progressPercentage" Max="100" Style="width: 100%; margin-bottom: 1rem;" />
-                        <div style="color: white;"><strong>Status:</strong> @generationProgress</div>
+                        <ProgressBar Value="@progressPercentage" Max="100" Style="width: 100%; margin-bottom: 1rem;" />
+                        <div style="color: var(--color-text-primary);"><strong>Status:</strong> @generationProgress</div>
                     </div>
                 }
             </div>
-        </FluentCard>
+        </Card>
 
         @if (generatedWorld != null)
         {
-            <FluentCard style="margin-bottom: 2rem;">
+            <Card Style="margin-bottom: 2rem;">
                 <div style="padding: 1.5rem;">
-                    <h4 style="color: white; margin-bottom: 1.5rem;">Generation Complete</h4>
+                    <h4 style="color: var(--color-text-primary); margin-bottom: 1.5rem;">Generation Complete</h4>
                     
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 2rem; text-align: center; margin-bottom: 1.5rem;">
                         <div>
@@ -235,36 +284,36 @@
                             <div class="message-icon">?</div>
                             <div class="message-content">
                                 <h6 style="margin: 0 0 0.5rem 0;">Exported Successfully</h6>
-                                <code style="background: #0a0a0a; padding: 4px 8px; border-radius: 4px; display: block; margin-bottom: 0.5rem;">@exportPath</code>
+                                <code style="background: var(--color-bg-primary); padding: 4px 8px; border-radius: 4px; display: block; margin-bottom: 0.5rem;">@exportPath</code>
                                 <div class="small">@FormatFileSize(new FileInfo(exportPath).Length)</div>
                             </div>
                         </div>
                     }
                 </div>
-            </FluentCard>
+            </Card>
 
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 1rem;">
-                <FluentCard>
+                <Card>
                     <div style="padding: 1.5rem;">
-                        <h5 style="color: white; margin-bottom: 1rem;">First Room</h5>
+                        <h5 style="color: var(--color-text-primary); margin-bottom: 1rem;">First Room</h5>
                         <div class="preview-card">
                             <h6>@generatedWorld.Rooms[0].Title</h6>
                             <p>@generatedWorld.Rooms[0].BaseDescription</p>
                         </div>
                     </div>
-                </FluentCard>
+                </Card>
 
                 @if (generatedWorld.Npcs.Count > 0)
                 {
-                    <FluentCard>
+                    <Card>
                         <div style="padding: 1.5rem;">
-                            <h5 style="color: white; margin-bottom: 1rem;">First NPC</h5>
+                            <h5 style="color: var(--color-text-primary); margin-bottom: 1rem;">First NPC</h5>
                             <div class="preview-card">
                                 <h6>@generatedWorld.Npcs[0].Name</h6>
                                 <p>@generatedWorld.Npcs[0].Description</p>
                             </div>
                         </div>
-                    </FluentCard>
+                    </Card>
                 }
             </div>
         }
@@ -272,7 +321,7 @@
         @if (!string.IsNullOrEmpty(errorMessage))
         {
             <div class="message-bar message-bar-error">
-                <div class="message-icon">??</div>
+                <div class="message-icon">?</div>
                 <div class="message-content">
                     <h5 style="margin: 0 0 0.5rem 0;">Error</h5>
                     <p style="margin: 0;">@errorMessage</p>
@@ -281,6 +330,23 @@
         }
     }
 </div>
+
+<style>
+.spinner-small {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top: 2px solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+</style>
 
 @code {
     private WorldGenerationOptions options = new()
@@ -305,9 +371,20 @@
     private string errorMessage = "";
     private string exportPath = "";
     private WorldGenerationResult? generatedWorld;
+    
+    // Model management
+    private List<ModelCacheInfo> cachedModels = new();
+    private long totalCacheSize = 0;
 
-    protected override void OnInitialized()
+    private class ModelCacheInfo
     {
+        public string Key { get; set; } = "";
+        public CachedModelInfo Value { get; set; } = new();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCachedModels();
         selectedModel = AISettings.Value.LLamaModelKey ?? "tinyllama-q4";
     }
 
@@ -315,6 +392,72 @@
     {
         selectedModel = model;
         StateHasChanged();
+    }
+
+    private async Task LoadCachedModels()
+    {
+        try
+        {
+            var cached = GGUFModelDownloader.GetCachedModels();
+            cachedModels = cached.Select(kvp => new ModelCacheInfo { Key = kvp.Key, Value = kvp.Value }).ToList();
+            totalCacheSize = GGUFModelDownloader.GetTotalCacheSize();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load cached models");
+            errorMessage = $"Failed to load model cache: {ex.Message}";
+        }
+    }
+
+    private async Task DeleteModel(string modelKey)
+    {
+        try
+        {
+            GGUFModelDownloader.DeleteModel(modelKey);
+            Logger.LogInformation("Deleted cached model: {ModelKey}", modelKey);
+            
+            // If this was the currently selected model, show a message
+            if (selectedModel == modelKey)
+            {
+                errorMessage = $"Deleted model '{modelKey}'. Select a different model to continue.";
+            }
+            
+            await LoadCachedModels(); // Refresh the list
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to delete model {ModelKey}", modelKey);
+            errorMessage = $"Failed to delete model '{modelKey}': {ex.Message}";
+            StateHasChanged();
+        }
+    }
+
+    private async Task DeleteAllModels()
+    {
+        try
+        {
+            var modelsDir = GGUFModelDownloader.GetModelCacheDirectory();
+            if (Directory.Exists(modelsDir))
+            {
+                var modelFiles = Directory.GetFiles(modelsDir, "*.gguf");
+                foreach (var file in modelFiles)
+                {
+                    File.Delete(file);
+                }
+                
+                Logger.LogInformation("Deleted all cached models ({Count} files)", modelFiles.Length);
+                errorMessage = $"Deleted all cached models ({modelFiles.Length} files). Models will be re-downloaded when needed.";
+                
+                await LoadCachedModels(); // Refresh the list
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to delete all models");
+            errorMessage = $"Failed to delete all models: {ex.Message}";
+            StateHasChanged();
+        }
     }
 
     private async Task InitializeAI()
@@ -343,6 +486,9 @@
 
             await GenerationService.InitializeAsync(progress);
             initProgress = $"Initialized successfully";
+            
+            // Refresh cached models after initialization (in case a new one was downloaded)
+            await LoadCachedModels();
         }
         catch (Exception ex)
         {

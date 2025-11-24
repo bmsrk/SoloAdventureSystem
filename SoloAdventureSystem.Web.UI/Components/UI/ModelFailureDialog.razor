@@ -1,0 +1,119 @@
+@using SoloAdventureSystem.ContentGenerator.Adapters
+@using SoloAdventureSystem.ContentGenerator.EmbeddedModel
+
+<div class="modal-backdrop" @onclick="OnCancel">
+    <div class="modal-dialog" @onclick:stopPropagation="true">
+        <div class="modal-header">
+            <h3>?? AI Model Stopped Working</h3>
+        </div>
+        
+        <div class="modal-body">
+            <div class="alert alert-warning">
+                <p><strong>The AI model '@ModelKey' has stopped generating output.</strong></p>
+                <p>This typically happens when:</p>
+                <ul>
+                    <li>The model file is corrupted</li>
+                    <li>The prompt format is incompatible with this model</li>
+                    <li>The model ran out of context space</li>
+                </ul>
+            </div>
+            
+            <div class="recovery-options">
+                <h4>Recovery Options:</h4>
+                
+                <div class="option-card">
+                    <h5>?? Switch to TinyLlama (Recommended)</h5>
+                    <p>TinyLlama is the most stable and tested model. It's smaller and faster.</p>
+                    <button class="btn btn-primary" @onclick="SwitchToTinyLlama">
+                        Switch to TinyLlama
+                    </button>
+                </div>
+                
+                <div class="option-card">
+                    <h5>??? Delete and Re-download Model</h5>
+                    <p>Delete the current model file and download a fresh copy.</p>
+                    <button class="btn btn-warning" @onclick="DeleteAndRedownload">
+                        Delete & Re-download
+                    </button>
+                </div>
+                
+                <div class="option-card">
+                    <h5>?? Try Another Model</h5>
+                    <p>Switch to a different AI model.</p>
+                    <div class="model-selection">
+                        @foreach (var model in AvailableModels)
+                        {
+                            <button class="btn btn-secondary model-btn" 
+                                    disabled="@(model.Key == ModelKey)"
+                                    @onclick="() => SwitchToModel(model.Key)">
+                                @model.Name
+                            </button>
+                        }
+                    </div>
+                </div>
+                
+                <div class="option-card">
+                    <h5>? Cancel Generation</h5>
+                    <p>Return to the generator and try again later.</p>
+                    <button class="btn btn-secondary" @onclick="OnCancel">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string ModelKey { get; set; } = "";
+    [Parameter] public int ConsecutiveFailures { get; set; }
+    [Parameter] public EventCallback<string?> OnModelSelected { get; set; }
+    [Parameter] public EventCallback OnCancelRequested { get; set; }
+    
+    private List<ModelInfo> AvailableModels = new()
+    {
+        new ModelInfo { Key = "tinyllama-q4", Name = "TinyLlama Q4 (600MB) - Most Stable" },
+        new ModelInfo { Key = "phi-3-mini-q4", Name = "Phi-3 Mini Q4 (2GB) - Best Quality" },
+        new ModelInfo { Key = "llama-3.2-1b-q4", Name = "Llama 3.2 1B Q4 (800MB) - Balanced" }
+    };
+    
+    private async Task SwitchToTinyLlama()
+    {
+        await OnModelSelected.InvokeAsync("tinyllama-q4");
+    }
+    
+    private async Task SwitchToModel(string modelKey)
+    {
+        await OnModelSelected.InvokeAsync(modelKey);
+    }
+    
+    private async Task DeleteAndRedownload()
+    {
+        try
+        {
+            var modelPath = GGUFModelDownloader.GetModelPath(ModelKey);
+            if (File.Exists(modelPath))
+            {
+                File.Delete(modelPath);
+            }
+            
+            // Re-download will happen automatically on next initialization
+            await OnModelSelected.InvokeAsync(ModelKey);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to delete model: {ex.Message}");
+        }
+    }
+    
+    private async Task OnCancel()
+    {
+        await OnCancelRequested.InvokeAsync();
+    }
+    
+    private class ModelInfo
+    {
+        public string Key { get; set; } = "";
+        public string Name { get; set; } = "";
+    }
+}

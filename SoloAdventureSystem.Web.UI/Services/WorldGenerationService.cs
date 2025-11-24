@@ -21,7 +21,7 @@ public class WorldGenerationService : IDisposable
     private readonly IImageAdapter _imageAdapter;
     private readonly WorldValidator _validator;
     private readonly WorldExporter _exporter;
-    private LLamaSharpAdapter? _adapter;
+    private ILocalSLMAdapter? _adapter;
     private bool _isInitialized;
     private readonly SemaphoreSlim _initLock = new(1, 1);
 
@@ -30,13 +30,15 @@ public class WorldGenerationService : IDisposable
         IOptions<AISettings> settings,
         IImageAdapter imageAdapter,
         WorldValidator validator,
-        WorldExporter exporter)
+        WorldExporter exporter,
+        ILocalSLMAdapter adapter)
     {
         _logger = logger;
         _settings = settings.Value;
         _imageAdapter = imageAdapter;
         _validator = validator;
         _exporter = exporter;
+        _adapter = adapter;
     }
 
     public bool IsInitialized => _isInitialized;
@@ -46,19 +48,23 @@ public class WorldGenerationService : IDisposable
         await _initLock.WaitAsync(cancellationToken);
         try
         {
-            if (_isInitialized)
+            // Dispose existing adapter if reinitializing
+            if (_isInitialized && _adapter != null)
             {
-                _logger.LogInformation("AI adapter already initialized");
-                return;
+                _logger.LogInformation("Disposing existing adapter for reinitialization");
+                if (_adapter is IDisposable disposableAdapter)
+                {
+                    disposableAdapter.Dispose();
+                }
+                _isInitialized = false;
             }
 
             _logger.LogInformation("Initializing AI adapter with model: {Model}", _settings.LLamaModelKey);
             
-            _adapter = new LLamaSharpAdapter(Options.Create(_settings), _logger as ILogger<LLamaSharpAdapter>);
             await _adapter.InitializeAsync(progress);
             
             _isInitialized = true;
-            _logger.LogInformation("AI adapter initialized successfully with GPU: {UseGPU}", _settings.UseGPU);
+            _logger.LogInformation("AI adapter initialized successfully");
         }
         finally
         {
@@ -120,7 +126,10 @@ public class WorldGenerationService : IDisposable
 
     public void Dispose()
     {
-        _adapter?.Dispose();
+        if (_adapter is IDisposable disposableAdapter)
+        {
+            disposableAdapter.Dispose();
+        }
         _initLock?.Dispose();
         GC.SuppressFinalize(this);
     }

@@ -7,7 +7,7 @@ namespace SoloAdventureSystem.ContentGenerator.Adapters;
 
 /// <summary>
 /// Factory for creating SLM adapters based on configuration.
-/// Supports LLamaSharp (embedded AI).
+/// Supports MaIN.NET (embedded AI).
 /// </summary>
 public class SLMAdapterFactory
 {
@@ -21,20 +21,20 @@ public class SLMAdapterFactory
 
         ILocalSLMAdapter adapter = settings.Provider.ToLowerInvariant() switch
         {
-            "llamasharp" or "llama" or "embedded" => CreateLLamaSharpAdapter(services, settings, loggerFactory),
-            _ => throw new InvalidOperationException($"Unknown AI provider: {settings.Provider}. Use 'LLamaSharp'.")
+            "main.net" or "main" or "embedded" => CreateMaINAdapter(services, settings, loggerFactory),
+            _ => throw new InvalidOperationException($"Unknown AI provider: {settings.Provider}. Use 'MaIN.NET'.")
         };
 
         return adapter;
     }
 
-    private static LLamaSharpAdapter CreateLLamaSharpAdapter(IServiceProvider services, AISettings settings, ILoggerFactory loggerFactory)
+    private static MaINAdapter CreateMaINAdapter(IServiceProvider services, AISettings settings, ILoggerFactory loggerFactory)
     {
-        var logger = loggerFactory.CreateLogger<LLamaSharpAdapter>();
-        var adapter = new LLamaSharpAdapter(Options.Create(settings), logger);
+        var logger = loggerFactory.CreateLogger<MaINAdapter>();
+        var adapter = new MaINAdapter(Options.Create(settings), logger);
         
         // Initialize asynchronously (will download model if needed)
-        logger.LogInformation("Initializing LLamaSharp adapter...");
+        logger.LogInformation("Initializing MaIN.NET adapter...");
         adapter.InitializeAsync().GetAwaiter().GetResult();
         
         return adapter;

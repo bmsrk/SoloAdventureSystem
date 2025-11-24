@@ -58,13 +58,19 @@ class Program
 
             services.Configure<AISettings>(options =>
             {
-                options.Provider = "LLamaSharp";
+                options.Provider = "MaIN.NET";
                 options.Model = modelKey;
                 options.LLamaModelKey = modelKey;
                 options.ContextSize = 2048;
                 options.UseGPU = false;
                 options.MaxInferenceThreads = 4;
             });
+
+            // Register services
+            services.AddSingleton<IImageAdapter, SimpleImageAdapter>();
+            services.AddSingleton<WorldValidator>();
+            services.AddSingleton<WorldExporter>();
+            services.AddSingleton<ILocalSLMAdapter, MaINAdapter>();
 
             var serviceProvider = services.BuildServiceProvider();
 
@@ -120,9 +126,9 @@ class Program
             Console.WriteLine("????????????????????????????????????????????????????????????");
             
             var settings = serviceProvider.GetRequiredService<IOptions<AISettings>>();
-            var logger = serviceProvider.GetRequiredService<ILogger<LLamaSharpAdapter>>();
+            var logger = serviceProvider.GetRequiredService<ILogger<MaINAdapter>>();
             
-            using var adapter = new LLamaSharpAdapter(settings, logger);
+            using var adapter = new MaINAdapter(settings, logger);
             
             startTime = DateTime.UtcNow;
             await adapter.InitializeAsync();

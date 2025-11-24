@@ -4,16 +4,12 @@ using SoloAdventureSystem.ContentGenerator.Adapters;
 using SoloAdventureSystem.ContentGenerator.Utils;
 using SoloAdventureSystem.Web.UI.Services;
 using SoloAdventureSystem.ContentGenerator.Generation;
-using Microsoft.FluentUI.AspNetCore.Components;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
-
-// Add Fluent UI services
-builder.Services.AddFluentUIComponents();
 
 // Configure AI settings
 builder.Services.Configure<AISettings>(builder.Configuration.GetSection(AISettings.SectionName));
@@ -22,6 +18,7 @@ builder.Services.Configure<AISettings>(builder.Configuration.GetSection(AISettin
 builder.Services.AddSingleton<IImageAdapter, SimpleImageAdapter>();
 builder.Services.AddSingleton<WorldValidator>();
 builder.Services.AddSingleton<WorldExporter>();
+builder.Services.AddSingleton<ILocalSLMAdapter, MaINAdapter>();
 builder.Services.AddSingleton<WorldGenerationService>();
 
 var app = builder.Build();

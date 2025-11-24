@@ -1,6 +1,6 @@
 @* Custom Card Component - replacement for FluentCard *@
 
-<div class="custom-card @Class" style="@Style">
+<div class="custom-card @Class" style="@Style" id="@Id">
     @ChildContent
 </div>
 
@@ -13,4 +13,7 @@
     
     [Parameter]
     public string Style { get; set; } = "";
+    
+    [Parameter]
+    public string Id { get; set; } = "";
 }

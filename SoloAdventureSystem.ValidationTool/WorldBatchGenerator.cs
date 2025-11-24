@@ -39,7 +39,7 @@ class WorldBatchGenerator
 
         services.Configure<AISettings>(options =>
         {
-            options.Provider = "LLamaSharp";
+            options.Provider = "MaIN.NET";
             options.Model = modelKey;
             options.LLamaModelKey = modelKey;
             options.ContextSize = 2048;
@@ -57,9 +57,9 @@ class WorldBatchGenerator
         // Initialize adapter once for all worlds
         Console.WriteLine("?? Initializing AI adapter...");
         var settings = serviceProvider.GetRequiredService<IOptions<AISettings>>();
-        var logger = serviceProvider.GetRequiredService<ILogger<LLamaSharpAdapter>>();
+        var logger = serviceProvider.GetRequiredService<ILogger<MaINAdapter>>();
         
-        using var slmAdapter = new LLamaSharpAdapter(settings, logger);
+        using var slmAdapter = new MaINAdapter(settings, logger);
         
         var progress = new Progress<DownloadProgress>(p =>
         {
@@ -90,6 +90,7 @@ class WorldBatchGenerator
             {
                 Name = "NeonCity",
                 Seed = 10001,
+                Theme = "Cyberpunk",
                 Regions = 5,
                 Flavor = "Neon-soaked cyberpunk noir",
                 Description = "A sprawling megacity where AI corporations control everything",
@@ -101,6 +102,7 @@ class WorldBatchGenerator
             {
                 Name = "WastelandHope",
                 Seed = 10002,
+                Theme = "Post-Apocalyptic",
                 Regions = 5,
                 Flavor = "Desperate but hopeful",
                 Description = "Scattered communities rebuilding after the nuclear collapse",
@@ -112,6 +114,7 @@ class WorldBatchGenerator
             {
                 Name = "StationOmega",
                 Seed = 10003,
+                Theme = "Sci-Fi Horror",
                 Regions = 5,
                 Flavor = "Claustrophobic paranoia",
                 Description = "Isolated deep space station on the edge of known territory",
@@ -123,6 +126,7 @@ class WorldBatchGenerator
             {
                 Name = "DigitalPrison",
                 Seed = 10004,
+                Theme = "Virtual Reality",
                 Regions = 5,
                 Flavor = "Surreal and disorienting",
                 Description = "Virtual reality prison where human minds are trapped forever",
@@ -134,6 +138,7 @@ class WorldBatchGenerator
             {
                 Name = "RetroFuture",
                 Seed = 10005,
+                Theme = "Retro-Futurism",
                 Regions = 5,
                 Flavor = "Vibrant retro-futuristic",
                 Description = "Alternative 1985 where AI emerged twenty years early",

@@ -1,4 +1,4 @@
-@page "/worlds/{seed}"
+﻿@page "/worlds/{seed}"
 @rendermode InteractiveServer
 @using System.IO
 @using System.IO.Compression
@@ -65,28 +65,28 @@
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
             <Card>
                 <div style="text-align: center; padding: 1.5rem;">
-                    <div class="stat-icon-large">???</div>
+                    <div class="stat-icon-large">R</div>
                     <div class="stat-value">@world.Rooms.Count</div>
                     <div class="text-muted">Rooms</div>
                 </div>
             </Card>
             <Card>
                 <div style="text-align: center; padding: 1.5rem;">
-                    <div class="stat-icon-large">??</div>
+                    <div class="stat-icon-large">N</div>
                     <div class="stat-value">@world.Npcs.Count</div>
                     <div class="text-muted">NPCs</div>
                 </div>
             </Card>
             <Card>
                 <div style="text-align: center; padding: 1.5rem;">
-                    <div class="stat-icon-large">??</div>
+                    <div class="stat-icon-large">F</div>
                     <div class="stat-value">@world.Factions.Count</div>
                     <div class="text-muted">Factions</div>
                 </div>
             </Card>
             <Card>
                 <div style="text-align: center; padding: 1.5rem;">
-                    <div class="stat-icon-large">??</div>
+                    <div class="stat-icon-large">L</div>
                     <div class="stat-value">@world.LoreEntries.Count</div>
                     <div class="text-muted">Lore Entries</div>
                 </div>
@@ -115,22 +115,22 @@
         <!-- Tabs -->
         <div class="tabs" style="margin-bottom: 1rem;">
             <button class="tab @(activeTab == "overview" ? "active" : "")" @onclick='() => activeTab = "overview"'>
-                ?? Overview
+                Overview
             </button>
             <button class="tab @(activeTab == "rooms" ? "active" : "")" @onclick='() => activeTab = "rooms"'>
-                ??? Rooms (@world.Rooms.Count)
+                Rooms (@world.Rooms.Count)
             </button>
             <button class="tab @(activeTab == "npcs" ? "active" : "")" @onclick='() => activeTab = "npcs"'>
-                ?? NPCs (@world.Npcs.Count)
+                NPCs (@world.Npcs.Count)
             </button>
             <button class="tab @(activeTab == "factions" ? "active" : "")" @onclick='() => activeTab = "factions"'>
-                ?? Factions (@world.Factions.Count)
+                Factions (@world.Factions.Count)
             </button>
             <button class="tab @(activeTab == "lore" ? "active" : "")" @onclick='() => activeTab = "lore"'>
-                ?? Lore (@world.LoreEntries.Count)
+                Lore (@world.LoreEntries.Count)
             </button>
             <button class="tab @(activeTab == "analysis" ? "active" : "")" @onclick='() => activeTab = "analysis"'>
-                ?? Analysis
+                Analysis
             </button>
         </div>
 
@@ -206,15 +206,15 @@
                             <Badge Appearance="neutral">ID: @room.Id</Badge>
                             @if (room.Id == world.World.StartLocationId)
                             {
-                                <Badge Appearance="success">? Start Location</Badge>
+                                <Badge Appearance="success">Start Location</Badge>
                             }
                             @if (room.Npcs?.Any() == true)
                             {
-                                <Badge Appearance="accent">?? @room.Npcs.Count NPC(s)</Badge>
+                                <Badge Appearance="accent">@room.Npcs.Count NPC(s)</Badge>
                             }
                             @if (room.Exits?.Any() == true)
                             {
-                                <Badge Appearance="neutral">?? @room.Exits.Count Exit(s)</Badge>
+                                <Badge Appearance="neutral">@room.Exits.Count Exit(s)</Badge>
                             }
                         </div>
                         <p style="color: var(--color-text-secondary); line-height: 1.6; white-space: pre-wrap;">@room.BaseDescription</p>
@@ -222,12 +222,12 @@
                         @if (room.Exits?.Any() == true)
                         {
                             <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--color-border-default);">
-                                <div style="color: var(--color-text-muted); font-size: var(--font-size-sm); margin-bottom: 0.5rem;">?? Connections:</div>
+                                <div style="color: var(--color-text-muted); font-size: var(--font-size-sm); margin-bottom: 0.5rem;">Connections:</div>
                                 <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
                                     @foreach (var exit in room.Exits)
                                     {
                                         <span class="connection-badge" @onclick="() => NavigateToRoom(exit.Value)">
-                                            @exit.Key ? @GetRoomTitle(exit.Value)
+                                            @exit.Key -> @GetRoomTitle(exit.Value)
                                         </span>
                                     }
                                 </div>
@@ -237,7 +237,7 @@
                         @if (room.Npcs?.Any() == true)
                         {
                             <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--color-border-default);">
-                                <div style="color: var(--color-text-muted); font-size: var(--font-size-sm); margin-bottom: 0.5rem;">?? NPCs in this room:</div>
+                                <div style="color: var(--color-text-muted); font-size: var(--font-size-sm); margin-bottom: 0.5rem;">NPCs in this room:</div>
                                 <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
                                     @foreach (var npcId in room.Npcs)
                                     {
@@ -278,7 +278,7 @@
                                 </div>
                                 <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
                                     <Badge Appearance="neutral">ID: @npc.Id</Badge>
-                                    <Badge Appearance="accent">?? @npc.FactionId</Badge>
+                                    <Badge Appearance="accent">Faction: @npc.FactionId</Badge>
                                     <Badge Appearance="@GetHostilityBadge(npc.Hostility)">@npc.Hostility</Badge>
                                     <Badge Appearance="neutral">@npc.Behavior</Badge>
                                 </div>
@@ -290,14 +290,14 @@
                                 @if (npcLocation != null)
                                 {
                                     <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--color-border-default);">
-                                        <span style="color: var(--color-text-muted); font-size: var(--font-size-sm);">?? Location:</span>
+                                        <span style="color: var(--color-text-muted); font-size: var(--font-size-sm);">Location:</span>
                                         <span class="connection-badge" @onclick="() => NavigateToRoom(npcLocation.Id)" style="margin-left: 0.5rem;">
                                             @npcLocation.Title
                                         </span>
                                     </div>
                                 }
                             </div>
-                            <div class="npc-icon">??</div>
+                            <div class="npc-icon">N</div>
                         </div>
                     </Card>
                 }
@@ -327,14 +327,14 @@
                                     @{
                                         var memberCount = world.Npcs.Count(n => n.FactionId == faction.Id);
                                     }
-                                    <Badge Appearance="accent">?? @memberCount member(s)</Badge>
+                                    <Badge Appearance="accent">@memberCount member(s)</Badge>
                                 </div>
                                 <p style="color: var(--color-text-secondary); line-height: 1.6; white-space: pre-wrap; margin-bottom: 1rem;">@faction.Description</p>
                                 
                                 @if (!string.IsNullOrEmpty(faction.Ideology))
                                 {
                                     <div style="padding: 1rem; background: var(--color-bg-primary); border-radius: var(--radius-md); margin-bottom: 1rem;">
-                                        <div style="color: var(--color-text-muted); font-size: var(--font-size-sm); margin-bottom: 0.5rem;">?? Ideology:</div>
+                                        <div style="color: var(--color-text-muted); font-size: var(--font-size-sm); margin-bottom: 0.5rem;">Ideology:</div>
                                         <div style="color: var(--color-text-secondary);">@faction.Ideology</div>
                                     </div>
                                 }
@@ -345,7 +345,7 @@
                                 @if (factionMembers.Any())
                                 {
                                     <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--color-border-default);">
-                                        <div style="color: var(--color-text-muted); font-size: var(--font-size-sm); margin-bottom: 0.5rem;">?? Members:</div>
+                                        <div style="color: var(--color-text-muted); font-size: var(--font-size-sm); margin-bottom: 0.5rem;">Members:</div>
                                         <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
                                             @foreach (var member in factionMembers)
                                             {
@@ -357,7 +357,7 @@
                                     </div>
                                 }
                             </div>
-                            <div class="faction-icon">??</div>
+                            <div class="faction-icon">F</div>
                         </div>
                     </Card>
                 }
@@ -400,7 +400,7 @@
         {
             <div style="display: grid; gap: 1.5rem;">
                 <Card>
-                    <h3 style="color: var(--color-accent-primary); margin-bottom: 1rem;">?? Content Quality Analysis</h3>
+                    <h3 style="color: var(--color-accent-primary); margin-bottom: 1rem;">Content Quality Analysis</h3>
                     <div style="display: grid; gap: 1rem;">
                         <div class="analysis-metric">
                             <div class="metric-header">
@@ -408,7 +408,7 @@
                                 <span class="metric-value">@GetQualityScore(GetAverageRoomLength())</span>
                             </div>
                             <div class="metric-bar">
-                                <div class="metric-fill" style="width: @(GetQualityPercentage(GetAverageRoomLength()))%"></div>
+                                <div class="metric-fill" style="width: @(GetQualityPercentage(GetAverageRoomLength()))"></div>
                             </div>
                             <div class="metric-detail">Average: @GetAverageRoomLength() chars (Target: 200-400)</div>
                         </div>
@@ -419,7 +419,7 @@
                                 <span class="metric-value">@GetQualityScore(GetAverageNpcLength())</span>
                             </div>
                             <div class="metric-bar">
-                                <div class="metric-fill" style="width: @(GetQualityPercentage(GetAverageNpcLength()))%"></div>
+                                <div class="metric-fill" style="width: @(GetQualityPercentage(GetAverageNpcLength()))"></div>
                             </div>
                             <div class="metric-detail">Average: @GetAverageNpcLength() chars (Target: 150-300)</div>
                         </div>
@@ -430,7 +430,7 @@
                                 <span class="metric-value">@GetQualityScore(GetAverageLoreLength())</span>
                             </div>
                             <div class="metric-bar">
-                                <div class="metric-fill" style="width: @(GetQualityPercentage(GetAverageLoreLength()))%"></div>
+                                <div class="metric-fill" style="width: @(GetQualityPercentage(GetAverageLoreLength()))"></div>
                             </div>
                             <div class="metric-detail">Average: @GetAverageLoreLength() chars (Target: 150-350)</div>
                         </div>
@@ -441,7 +441,7 @@
                                 <span class="metric-value">@GetConnectivityScore()</span>
                             </div>
                             <div class="metric-bar">
-                                <div class="metric-fill" style="width: @(GetConnectivityPercentage())%"></div>
+                                <div class="metric-fill" style="width: @(GetConnectivityPercentage())"></div>
                             </div>
                             <div class="metric-detail">@GetAverageConnectionsPerRoom() connections per room (Target: 2-4)</div>
                         </div>
@@ -449,40 +449,40 @@
                 </Card>
 
                 <Card>
-                    <h3 style="color: var(--color-accent-primary); margin-bottom: 1rem;">?? Content Issues</h3>
+                    <h3 style="color: var(--color-accent-primary); margin-bottom: 1rem;">Content Issues</h3>
                     <div style="display: grid; gap: 0.5rem;">
                         @if (GetShortRooms().Any())
                         {
                             <div class="issue-item warning">
-                                <span class="issue-icon">??</span>
+                                <span class="issue-icon">!</span>
                                 <span>@GetShortRooms().Count() room(s) with short descriptions (&lt;150 chars)</span>
                             </div>
                         }
                         @if (GetShortNpcs().Any())
                         {
                             <div class="issue-item warning">
-                                <span class="issue-icon">??</span>
+                                <span class="issue-icon">!</span>
                                 <span>@GetShortNpcs().Count() NPC(s) with short biographies (&lt;100 chars)</span>
                             </div>
                         }
                         @if (GetIsolatedRooms().Any())
                         {
                             <div class="issue-item error">
-                                <span class="issue-icon">?</span>
+                                <span class="issue-icon">X</span>
                                 <span>@GetIsolatedRooms().Count() isolated room(s) (no connections)</span>
                             </div>
                         }
                         @if (GetRoomsWithoutNpcs().Any())
                         {
                             <div class="issue-item info">
-                                <span class="issue-icon">??</span>
+                                <span class="issue-icon">i</span>
                                 <span>@GetRoomsWithoutNpcs().Count() room(s) without NPCs</span>
                             </div>
                         }
                         @if (!GetShortRooms().Any() && !GetShortNpcs().Any() && !GetIsolatedRooms().Any())
                         {
                             <div class="issue-item success">
-                                <span class="issue-icon">?</span>
+                                <span class="issue-icon">✓</span>
                                 <span>No major content issues detected</span>
                             </div>
                         }
@@ -490,7 +490,7 @@
                 </Card>
 
                 <Card>
-                    <h3 style="color: var(--color-accent-primary); margin-bottom: 1rem;">?? Recommendations</h3>
+                    <h3 style="color: var(--color-accent-primary); margin-bottom: 1rem;">Recommendations</h3>
                     <div style="display: grid; gap: 0.75rem;">
                         @foreach (var recommendation in GetRecommendations())
                         {
@@ -845,24 +845,109 @@
                 var filePath = files[0];
                 
                 using var zip = ZipFile.OpenRead(filePath);
-                var worldEntry = zip.GetEntry("world.json");
                 
+                // Read world.json for metadata
+                var worldEntry = zip.GetEntry("world.json");
                 if (worldEntry != null)
                 {
                     using var stream = worldEntry.Open();
                     using var reader = new StreamReader(stream);
                     rawJson = await reader.ReadToEndAsync();
                     
-                    world = JsonSerializer.Deserialize<WorldData>(rawJson, new JsonSerializerOptions
+                    var worldMetadata = JsonSerializer.Deserialize<WorldJsonModel>(rawJson, new JsonSerializerOptions
                     {
                         PropertyNameCaseInsensitive = true
                     });
+                    
+                    if (worldMetadata != null)
+                    {
+                        world = new WorldData
+                        {
+                            World = worldMetadata,
+                            Rooms = new List<RoomModel>(),
+                            Npcs = new List<NpcModel>(),
+                            Factions = new List<FactionModel>(),
+                            LoreEntries = new List<string>()
+                        };
+                    }
+                }
+                
+                if (world == null) return;
+                
+                // Read all rooms
+                foreach (var entry in zip.Entries.Where(e => e.FullName.StartsWith("rooms/") && e.FullName.EndsWith(".json")))
+                {
+                    using var stream = entry.Open();
+                    using var reader = new StreamReader(stream);
+                    var roomJson = await reader.ReadToEndAsync();
+                    var room = JsonSerializer.Deserialize<RoomModel>(roomJson, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+                    if (room != null)
+                    {
+                        world.Rooms.Add(room);
+                    }
+                }
+                
+                // Read all NPCs
+                foreach (var entry in zip.Entries.Where(e => e.FullName.StartsWith("npcs/") && e.FullName.EndsWith(".json")))
+                {
+                    using var stream = entry.Open();
+                    using var reader = new StreamReader(stream);
+                    var npcJson = await reader.ReadToEndAsync();
+                    var npc = JsonSerializer.Deserialize<NpcModel>(npcJson, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+                    if (npc != null)
+                    {
+                        world.Npcs.Add(npc);
+                    }
+                }
+                
+                // Read all factions
+                foreach (var entry in zip.Entries.Where(e => e.FullName.StartsWith("factions/") && e.FullName.EndsWith(".json")))
+                {
+                    using var stream = entry.Open();
+                    using var reader = new StreamReader(stream);
+                    var factionJson = await reader.ReadToEndAsync();
+                    var faction = JsonSerializer.Deserialize<FactionModel>(factionJson, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+                    if (faction != null)
+                    {
+                        world.Factions.Add(faction);
+                    }
+                }
+                
+                // Try to read lore from world.json if available
+                if (!string.IsNullOrEmpty(rawJson))
+                {
+                    try
+                    {
+                        var fullWorld = JsonSerializer.Deserialize<WorldData>(rawJson, new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        });
+                        
+                        if (fullWorld?.LoreEntries != null && fullWorld.LoreEntries.Any())
+                        {
+                            world.LoreEntries = fullWorld.LoreEntries;
+                        }
+                    }
+                    catch
+                    {
+                        // Lore might not be in world.json, that's ok
+                    }
                 }
             }
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error loading world: {ex.Message}");
+            Console.WriteLine($"Stack trace: {ex.StackTrace}");
         }
         finally
         {

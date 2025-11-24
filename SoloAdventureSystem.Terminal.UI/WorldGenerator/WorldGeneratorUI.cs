@@ -38,7 +38,7 @@ public class WorldGeneratorUI : IDisposable
     private Label _statusLabel = null!;
 
     // Cached adapters to avoid re-downloading models
-    private LLamaSharpAdapter? _cachedLlamaAdapter;
+    private MaINAdapter? _cachedAdapter;
     private string? _cachedModelKey;
     private CancellationTokenSource? _cancellationTokenSource;
 
@@ -61,11 +61,11 @@ public class WorldGeneratorUI : IDisposable
     /// </summary>
     public void Dispose()
     {
-        if (_cachedLlamaAdapter != null)
+        if (_cachedAdapter != null)
         {
-            _logger?.LogInformation("Disposing cached LLamaSharp adapter to free memory...");
-            _cachedLlamaAdapter.Dispose();
-            _cachedLlamaAdapter = null;
+            _logger?.LogInformation("Disposing cached MaIN.NET adapter to free memory...");
+            _cachedAdapter.Dispose();
+            _cachedAdapter = null;
             _cachedModelKey = null;
         }
         
@@ -297,7 +297,7 @@ public class WorldGeneratorUI : IDisposable
 
             Log($"Provider: LLamaSharp, Model: {model}");
 
-            // Initialize LLamaSharp adapter (with caching)
+            // Initialize MaIN.NET adapter (with caching)
             ILocalSLMAdapter slmAdapter;
             try
             {
@@ -305,26 +305,26 @@ public class WorldGeneratorUI : IDisposable
                 cancellationToken.ThrowIfCancellationRequested();
                 
                 // Check if we can reuse cached adapter
-                if (_cachedLlamaAdapter != null && _cachedModelKey == model)
+                if (_cachedAdapter != null && _cachedModelKey == model)
                 {
-                    Log("Using cached LLamaSharp adapter...");
-                    slmAdapter = _cachedLlamaAdapter;
+                    Log("Using cached MaIN.NET adapter...");
+                    slmAdapter = _cachedAdapter;
                 }
                 else
                 {
                     // Dispose old adapter if exists
-                    if (_cachedLlamaAdapter != null)
+                    if (_cachedAdapter != null)
                     {
                         Log("Model changed, disposing old adapter...");
-                        _cachedLlamaAdapter.Dispose();
-                        _cachedLlamaAdapter = null;
+                        _cachedAdapter.Dispose();
+                        _cachedAdapter = null;
                     }
 
                     UpdateStatus("Checking model...", 5);
-                    Log("Initializing LLamaSharp adapter...");
-                    _logger?.LogInformation("?? Creating new LLamaSharp adapter for model: {Model}", model);
+                    Log("Initializing MaIN.NET adapter...");
+                    _logger?.LogInformation("?? Creating new MaIN.NET adapter for model: {Model}", model);
                     
-                    var llamaAdapter = new LLamaSharpAdapter(_settings, _logger as ILogger<LLamaSharpAdapter>);
+                    var adapter = new MaINAdapter(_settings, _logger as ILogger<MaINAdapter>);
                     
                     var progress = new Progress<DownloadProgress>(p =>
                     {
@@ -340,22 +340,22 @@ public class WorldGeneratorUI : IDisposable
                     Log("Downloading/loading model (this may take a while)...");
                     _logger?.LogInformation("?? Model download/load starting...");
                     
-                    await llamaAdapter.InitializeAsync(progress);
+                    await adapter.InitializeAsync(progress);
                     
                     Log("Model loaded successfully!");
                     _logger?.LogInformation("? Model initialization complete");
                     
                     // Cache the adapter
-                    _cachedLlamaAdapter = llamaAdapter;
+                    _cachedAdapter = adapter;
                     _cachedModelKey = model;
                     _logger?.LogInformation("?? Adapter cached for reuse (model: {Model})", model);
-                    slmAdapter = llamaAdapter;
+                    slmAdapter = adapter;
                 }
             }
-            catch (Exception llamaEx)
+            catch (Exception ex)
             {
-                Log($"LLamaSharp initialization failed: {llamaEx.Message}");
-                _logger.LogError(llamaEx, "LLamaSharp initialization failed");
+                Log($"MaIN.NET initialization failed: {ex.Message}");
+                _logger.LogError(ex, "MaIN.NET initialization failed");
                 throw;
             }
 

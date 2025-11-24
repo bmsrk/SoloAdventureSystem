@@ -18,7 +18,7 @@ namespace SoloAdventureSystem.ValidationTool;
 /// </summary>
 public class PromptTester : IDisposable
 {
-    private readonly LLamaSharpAdapter _adapter;
+    private readonly MaINAdapter _adapter;
     private readonly ILogger? _logger;
 
     public PromptTester(string modelKey = "tinyllama-q4", ILogger? logger = null)
@@ -27,7 +27,7 @@ public class PromptTester : IDisposable
         
         var settings = Options.Create(new AISettings
         {
-            Provider = "LLamaSharp",
+            Provider = "MaIN.NET",
             Model = modelKey,
             LLamaModelKey = modelKey,
             ContextSize = 2048,
@@ -35,7 +35,7 @@ public class PromptTester : IDisposable
             MaxInferenceThreads = 4
         });
 
-        _adapter = new LLamaSharpAdapter(settings, logger as ILogger<LLamaSharpAdapter>);
+        _adapter = new MaINAdapter(settings, logger as ILogger<MaINAdapter>);
     }
 
     /// <summary>
@@ -45,7 +45,7 @@ public class PromptTester : IDisposable
     {
         try
         {
-            Console.WriteLine("?? Initializing LLamaSharp adapter...");
+            Console.WriteLine("?? Initializing MaIN.NET adapter...");
             
             var progress = new Progress<DownloadProgress>(p =>
             {

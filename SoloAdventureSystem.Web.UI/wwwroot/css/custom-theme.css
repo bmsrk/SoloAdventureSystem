@@ -1,45 +1,43 @@
-/* Fluent UI 2 Dark Theme - Force White Text */
+/* Complete Dark Mode - No Fluent UI */
 :root {
-    --neutral-foreground-rest: #ffffff;
-    --neutral-foreground-hint: #9ca3af;
-    --neutral-layer-1: #0a0a0a;
-    --neutral-layer-2: #1a1a1a;
-    --neutral-layer-3: #2a2a2a;
-    --accent-fill-rest: #3b82f6;
+    --neutral-foreground-rest: #e5e7eb !important;
+    --neutral-foreground-hint: #6b7280 !important;
+    --neutral-layer-1: #0a0a0a !important;
+    --neutral-layer-2: #0f172a !important;
+    --neutral-layer-3: #1e293b !important;
+    --neutral-layer-4: #334155 !important;
+    --accent-fill-rest: #3b82f6 !important;
+    --fill-color: #0a0a0a !important;
 }
 
 body {
-    background: var(--neutral-layer-1) !important;
-    color: #ffffff !important;
+    background: #0a0a0a !important;
+    color: #e5e7eb !important;
 }
 
-/* Force all text to be white by default */
-div, span, p, h1, h2, h3, h4, h5, h6, label {
-    color: #ffffff !important;
+/* Remove ALL white backgrounds */
+*, *::before, *::after {
+    background-color: transparent;
+}
+
+html {
+    background: #0a0a0a !important;
+}
+
+/* Force all text elements to use proper colors */
+div, span, p, h1, h2, h3, h4, h5, h6, label, a, button, td, th, li {
+    color: #e5e7eb;
 }
 
 /* Muted text exceptions */
-.small {
+.small, .text-muted, .lead {
     color: #9ca3af !important;
-}
-
-.text-muted {
-    color: #9ca3af !important;
-}
-
-.lead {
-    color: #c8c8c8 !important;
-}
-
-/* Fluent UI cards */
-fluent-card {
-    background: var(--neutral-layer-2) !important;
 }
 
 /* Model cards */
 .model-card {
-    background: var(--neutral-layer-2);
-    border: 2px solid #333333;
+    background: #0f172a !important;
+    border: 2px solid #1f2937;
     border-radius: 8px;
     padding: 1.5rem;
     cursor: pointer;
@@ -47,13 +45,13 @@ fluent-card {
 }
 
 .model-card:hover {
-    border-color: #505050;
-    background: var(--neutral-layer-3);
+    border-color: #374151;
+    background: #1e293b !important;
 }
 
 .model-card.selected {
-    border-color: var(--accent-fill-rest);
-    background: rgba(59, 130, 246, 0.05);
+    border-color: #3b82f6;
+    background: #1e293b !important;
 }
 
 /* Model badges */
@@ -78,7 +76,7 @@ fluent-card {
 }
 
 .badge-quality-best {
-    background: #3b82f6 !important;
+    background: #8b5cf6 !important;
     color: white !important;
 }
 
@@ -91,32 +89,121 @@ fluent-card {
 .stat-value {
     font-size: 2.5rem;
     font-weight: 700;
-    color: #3b82f6 !important;
+    color: #60a5fa !important;
 }
 
 /* Preview cards */
 .preview-card {
-    background: var(--neutral-layer-2);
-    border: 1px solid #404040;
+    background: #0a0a0a !important;
+    border: 1px solid #1f2937;
     border-radius: 6px;
     padding: 1.5rem;
 }
 
-/* Code */
+.preview-card h6 {
+    color: #60a5fa !important;
+}
+
+.preview-card p {
+    color: #9ca3af !important;
+}
+
+/* Code blocks */
 code {
-    background: var(--neutral-layer-3);
-    border: 1px solid #404040;
+    background: #1e293b !important;
+    border: 1px solid #1f2937;
     color: #60a5fa !important;
     padding: 3px 8px;
     border-radius: 4px;
 }
 
-/* Tables */
-table, table * {
-    color: #ffffff !important;
+/* Tables - Force dark */
+table {
+    background: transparent !important;
+}
+
+table thead tr {
+    background: transparent !important;
+    border-bottom: 2px solid #1f2937;
+}
+
+table tbody tr {
+    background: transparent !important;
+    border-bottom: 1px solid #1f2937;
+}
+
+table th {
+    color: #e5e7eb !important;
+    background: transparent !important;
+}
+
+table td {
+    color: #9ca3af !important;
+    background: transparent !important;
 }
 
 /* Lists */
-ul, ol, li {
-    color: #ffffff !important;
+ul, ol {
+    color: #9ca3af;
+}
+
+li {
+    color: #9ca3af !important;
+}
+
+/* Form elements - NO WHITE */
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="password"],
+textarea,
+select {
+    background: #1e293b !important;
+    color: #e5e7eb !important;
+    border: 1px solid #1f2937 !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: #6b7280 !important;
+}
+
+/* Buttons */
+button {
+    background: #334155;
+    color: #e5e7eb;
+    border: none;
+}
+
+button:hover {
+    background: #475569;
+}
+
+/* Links */
+a {
+    color: #60a5fa;
+    text-decoration: none;
+}
+
+a:hover {
+    color: #93c5fd;
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+    width: 12px;
+    background: #0a0a0a;
+}
+
+::-webkit-scrollbar-track {
+    background: #0a0a0a;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #475569;
 }

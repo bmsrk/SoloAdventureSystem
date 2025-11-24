@@ -27,7 +27,7 @@
     {
         <Card>
             <div style="text-align: center; padding: 3rem;">
-                <div style="font-size: 4rem; margin-bottom: 1rem;">??</div>
+                <div style="font-size: 4rem; margin-bottom: 1rem;">&#x1F5FA;</div>
                 <h3 style="color: var(--color-text-primary); margin-bottom: 1rem;">No Worlds Yet</h3>
                 <p style="color: var(--color-text-secondary); margin-bottom: 2rem;">
                     You haven't generated any worlds yet. Get started by creating your first world!
@@ -370,15 +370,22 @@
             var name = parts.Length > 1 ? string.Join("_", parts[1..^1]) : fileName;
             var seed = parts.Length > 1 ? parts[^1] : "0";
 
-            // Try to read world.json from zip
+            // Try to read content from zip
             WorldStats? stats = null;
             bool isValid = true;
             
             try
             {
                 using var zip = ZipFile.OpenRead(filePath);
-                var worldEntry = zip.GetEntry("world.json");
                 
+                // Count items in subdirectories
+                int roomCount = zip.Entries.Count(e => e.FullName.StartsWith("rooms/") && e.FullName.EndsWith(".json"));
+                int npcCount = zip.Entries.Count(e => e.FullName.StartsWith("npcs/") && e.FullName.EndsWith(".json"));
+                int factionCount = zip.Entries.Count(e => e.FullName.StartsWith("factions/") && e.FullName.EndsWith(".json"));
+                
+                // Count lore entries from world.json
+                int loreCount = 0;
+                var worldEntry = zip.GetEntry("world.json");
                 if (worldEntry != null)
                 {
                     using var stream = worldEntry.Open();
@@ -388,14 +395,32 @@
                     var doc = JsonDocument.Parse(json);
                     var root = doc.RootElement;
                     
-                    stats = new WorldStats
+                    // Check if it has the full structure with arrays
+                    if (root.TryGetProperty("Rooms", out var rooms))
                     {
-                        Rooms = root.TryGetProperty("rooms", out var rooms) ? rooms.GetArrayLength() : 0,
-                        NPCs = root.TryGetProperty("npcs", out var npcs) ? npcs.GetArrayLength() : 0,
-                        Factions = root.TryGetProperty("factions", out var factions) ? factions.GetArrayLength() : 0,
-                        Lore = root.TryGetProperty("loreEntries", out var lore) ? lore.GetArrayLength() : 0
-                    };
+                        roomCount = rooms.GetArrayLength();
+                    }
+                    if (root.TryGetProperty("Npcs", out var npcs))
+                    {
+                        npcCount = npcs.GetArrayLength();
+                    }
+                    if (root.TryGetProperty("Factions", out var factions))
+                    {
+                        factionCount = factions.GetArrayLength();
+                    }
+                    if (root.TryGetProperty("LoreEntries", out var lore))
+                    {
+                        loreCount = lore.GetArrayLength();
+                    }
                 }
+                
+                stats = new WorldStats
+                {
+                    Rooms = roomCount,
+                    NPCs = npcCount,
+                    Factions = factionCount,
+                    Lore = loreCount
+                };
             }
             catch
             {
