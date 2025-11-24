@@ -10,7 +10,7 @@ namespace SoloAdventureSystem.Engine.Tests;
 /// </summary>
 public class PromptTemplatesTests
 {
-    private WorldGenerationOptions GetTestOptions()
+    private static WorldGenerationOptions GetTestOptions()
     {
         return new WorldGenerationOptions
         {

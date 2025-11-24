@@ -51,13 +51,13 @@ namespace SoloAdventureSystem.ContentGenerator.Generation
             _logger?.LogInformation("?? Starting world validation...");
 
             if (result.World == null)
-                throw new Exception("Missing world.json");
-            if (result.Rooms == null || result.Rooms.Count < 3)
-                throw new Exception("At least 3 rooms are required.");
-            if (result.Factions == null || result.Factions.Count < 1)
-                throw new Exception("At least 1 faction is required.");
-            if (result.StoryNodes == null || result.StoryNodes.Count < 1)
-                throw new Exception("At least 1 story node is required.");
+                throw new InvalidOperationException("Missing world.json");
+            if (result.Rooms == null || result.Rooms.Count < GenerationLimits.MinimumRooms)
+                throw new InvalidOperationException($"At least {GenerationLimits.MinimumRooms} rooms are required.");
+            if (result.Factions == null || result.Factions.Count < GenerationLimits.MinimumFactions)
+                throw new InvalidOperationException($"At least {GenerationLimits.MinimumFactions} faction is required.");
+            if (result.StoryNodes == null || result.StoryNodes.Count < GenerationLimits.MinimumStoryNodes)
+                throw new InvalidOperationException($"At least {GenerationLimits.MinimumStoryNodes} story node is required.");
 
             _logger?.LogInformation("? Basic structural validation passed");
         }

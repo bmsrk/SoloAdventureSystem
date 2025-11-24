@@ -260,7 +260,7 @@ public class IntegrationTestFixture : IDisposable
             })
             .Build();
 
-        // Build service container
+        // Build service collection
         var services = new ServiceCollection();
 
         services.AddLogging(builder =>
@@ -275,11 +275,13 @@ public class IntegrationTestFixture : IDisposable
         services.AddSingleton<WorldValidator>();
         services.AddSingleton<WorldExporter>();
 
-        ServiceProvider = services.BuildServiceProvider();
+        // Build a temporary provider to create the adapter (we need settings & logger)
+        var tempProvider = services.BuildServiceProvider();
+
+        var settings = tempProvider.GetRequiredService<IOptions<AISettings>>();
+        var logger = tempProvider.GetRequiredService<ILogger<MaINAdapter>>();
 
         // Initialize adapter once
-        var settings = ServiceProvider.GetRequiredService<IOptions<AISettings>>();
-        var logger = ServiceProvider.GetRequiredService<ILogger<MaINAdapter>>();
         Adapter = new MaINAdapter(settings, logger);
 
         Console.WriteLine("Downloading/loading model (this happens once for all tests)...");
@@ -292,7 +294,16 @@ public class IntegrationTestFixture : IDisposable
         });
 
         Adapter.InitializeAsync(progress).GetAwaiter().GetResult();
-        
+
+        // Dispose temporary provider
+        if (tempProvider is IDisposable d) d.Dispose();
+
+        // Now register the initialized adapter so other services (WorldValidator) get it
+        services.AddSingleton<ILocalSLMAdapter>(Adapter);
+
+        // Build final service provider with adapter registered
+        ServiceProvider = services.BuildServiceProvider();
+
         Console.WriteLine();
         Console.WriteLine("? Model loaded and ready for all integration tests");
         Console.WriteLine();
