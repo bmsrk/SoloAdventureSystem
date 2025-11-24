@@ -1,6 +1,6 @@
 namespace SoloAdventureSystem.Engine.Rules;
 
-public enum Attribute
+public enum GameAttribute
 {
     Soul,
     Body,
@@ -37,7 +37,7 @@ public enum AdvantageType
 public record class RollResult(
     int Total,
     List<int> Dice,
-    Attribute Attribute,
+    GameAttribute Attribute,
     Skill Skill,
     int TargetNumber,
     bool Success,
@@ -64,19 +64,19 @@ public record class OpposedResult(
 );
 
 public record class CharacterStats(
-    Dictionary<Attribute, int> Attributes,
+    Dictionary<GameAttribute, int> Attributes,
     Dictionary<Skill, int> Skills,
     int HP,
     int Defense
 )
 {
-    public static int CalculateHP(Dictionary<Attribute, int> attributes)
-        => 10 + attributes[Attribute.Body] * 2;
+    public static int CalculateHP(Dictionary<GameAttribute, int> attributes)
+        => 10 + attributes[GameAttribute.Body] * 2;
 
-    public static int CalculateDefense(Dictionary<Attribute, int> attributes, Dictionary<Skill, int> skills)
+    public static int CalculateDefense(Dictionary<GameAttribute, int> attributes, Dictionary<Skill, int> skills)
         => skills[Skill.Combat] > 0
-            ? 6 + attributes[Attribute.Body] + skills[Skill.Combat]
-            : 6 + attributes[Attribute.Body] + skills[Skill.Awareness];
+            ? 6 + attributes[GameAttribute.Body] + skills[Skill.Combat]
+            : 6 + attributes[GameAttribute.Body] + skills[Skill.Awareness];
 }
 
 public static class DiceRoller
@@ -110,7 +110,7 @@ public static class DiceRoller
 
 public class RuleEngine
 {
-    public static RollResult RollAction(Attribute attribute, Skill skill, int targetNumber, Dictionary<Attribute, int> attributes, Dictionary<Skill, int> skills, AdvantageType advantage = AdvantageType.None)
+    public static RollResult RollAction(GameAttribute attribute, Skill skill, int targetNumber, Dictionary<GameAttribute, int> attributes, Dictionary<Skill, int> skills, AdvantageType advantage = AdvantageType.None)
     {
         List<int> dice = advantage switch
         {
@@ -128,7 +128,7 @@ public class RuleEngine
         return new RollResult(total, dice, attribute, skill, targetNumber, success, criticalSuccess, criticalFailure);
     }
 
-    public static OpposedResult RollOpposed(CharacterStats attacker, CharacterStats defender, (Attribute attr, Skill skill) skillAttrPair)
+    public static OpposedResult RollOpposed(CharacterStats attacker, CharacterStats defender, (GameAttribute attr, Skill skill) skillAttrPair)
     {
         var atkRoll = RollAction(skillAttrPair.attr, skillAttrPair.skill, 0, attacker.Attributes, attacker.Skills);
         var defRoll = RollAction(skillAttrPair.attr, skillAttrPair.skill, 0, defender.Attributes, defender.Skills);
@@ -138,7 +138,7 @@ public class RuleEngine
 
     public static AttackResult RollCombatAttack(CharacterStats attacker, CharacterStats defender)
     {
-        var attackRoll = RollAction(Attribute.Body, Skill.Combat, 0, attacker.Attributes, attacker.Skills);
+        var attackRoll = RollAction(GameAttribute.Body, Skill.Combat, 0, attacker.Attributes, attacker.Skills);
         int defense = CharacterStats.CalculateDefense(defender.Attributes, defender.Skills);
         bool hit = attackRoll.Total > defense;
         return new AttackResult(attackRoll, defense, hit);
@@ -176,19 +176,19 @@ public class RuleEngine
 
     public static RollResult RollFearTest(CharacterStats stats, int targetNumber)
     {
-        return RollAction(Attribute.Soul, Skill.Will, targetNumber, stats.Attributes, stats.Skills);
+        return RollAction(GameAttribute.Soul, Skill.Will, targetNumber, stats.Attributes, stats.Skills);
     }
 
     public static AttackResult RollSocialInteraction(CharacterStats attacker, CharacterStats defender)
     {
-        var attackRoll = RollAction(Attribute.Presence, Skill.Social, 0, attacker.Attributes, attacker.Skills);
-        int defense = 6 + defender.Attributes[Attribute.Presence] + defender.Skills[Skill.Social];
+        var attackRoll = RollAction(GameAttribute.Presence, Skill.Social, 0, attacker.Attributes, attacker.Skills);
+        int defense = 6 + defender.Attributes[GameAttribute.Presence] + defender.Skills[Skill.Social];
         bool hit = attackRoll.Total > defense;
         return new AttackResult(attackRoll, defense, hit);
     }
 
     public static RollResult RollSupernatural(CharacterStats stats, int targetNumber)
     {
-        return RollAction(Attribute.Soul, Skill.Occult, targetNumber, stats.Attributes, stats.Skills);
+        return RollAction(GameAttribute.Soul, Skill.Occult, targetNumber, stats.Attributes, stats.Skills);
     }
 }

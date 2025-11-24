@@ -1,0 +1,179 @@
+@page "/select-world"
+@rendermode InteractiveServer
+@using System.IO
+@using System.IO.Compression
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<PageTitle>Select World</PageTitle>
+
+<div style="padding: 2rem; max-width: 1000px; margin: 0 auto;">
+    <div style="margin-bottom: 1.5rem; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+            <h1 style="color: var(--color-text-primary); margin: 0;">Select a World</h1>
+            <p style="color: var(--color-text-secondary); margin: 0.25rem 0 0;">Choose a generated world to play.</p>
+        </div>
+        <div>
+            <a class="custom-button btn-accent" href="/generate">Generate New World</a>
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+        <Card>
+            <div style="text-align:center; padding:2rem;">
+                <div class="spinner"></div>
+                <div style="color:var(--color-text-muted); margin-top:0.75rem;">Loading worlds...</div>
+            </div>
+        </Card>
+    }
+    else if (worlds.Count == 0)
+    {
+        <Card>
+            <div style="text-align:center; padding:2rem;">
+                <div style="font-size:3rem;">&#x1F5FA;</div>
+                <h3 style="color:var(--color-text-primary);">No worlds available</h3>
+                <p style="color:var(--color-text-secondary);">Create a world first using the generator.</p>
+                <div style="margin-top:1rem;"><a class="custom-button btn-accent" href="/generate">Generate World</a></div>
+            </div>
+        </Card>
+    }
+    else
+    {
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap:1rem;">
+            @foreach (var w in worlds)
+            {
+                <Card Class="world-card">
+                    <div style="display:flex; justify-content:space-between; gap:1rem; align-items:start;">
+                        <div>
+                            <h3 style="margin:0; color:var(--color-text-primary);">@w.Name</h3>
+                            <div style="color:var(--color-text-secondary); font-size:0.9rem;">Seed: @w.Seed • @w.Created.ToString("MMM dd, yyyy")</div>
+                            <p style="color:var(--color-text-muted); margin-top:0.5rem;">@w.Description</p>
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:0.5rem;">
+                            <Button Appearance="accent" OnClick="() => PlayWorld(w.FilePath)">Play</Button>
+                            <Button Appearance="neutral" OnClick="() => ViewDetails(w)">Details</Button>
+                            <Button Appearance="danger" OnClick="() => DeleteWorld(w)">Delete</Button>
+                        </div>
+                    </div>
+                </Card>
+            }
+        </div>
+    }
+</div>
+
+<style>
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid var(--color-bg-elevated);
+    border-top: 4px solid var(--color-accent-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+@@keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }
+</style>
+
+@code {
+    private record WorldInfo(string Name, string Seed, string FilePath, string Description, DateTime Created);
+
+    private List<WorldInfo> worlds = new();
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadWorlds();
+    }
+
+    private async Task LoadWorlds()
+    {
+        isLoading = true;
+        worlds.Clear();
+
+        try
+        {
+            var worldsPath = GetWorldsDirectory();
+            if (!Directory.Exists(worldsPath))
+            {
+                isLoading = false;
+                return;
+            }
+
+            var files = Directory.GetFiles(worldsPath, "*.zip");
+            foreach (var file in files)
+            {
+                try
+                {
+                    var fi = new FileInfo(file);
+                    var fileName = Path.GetFileNameWithoutExtension(file);
+                    var parts = fileName.Split('_');
+                    var name = parts.Length > 1 ? string.Join("_", parts[1..^1]) : fileName;
+                    var seed = parts.Length > 1 ? parts[^1] : "0";
+
+                    // Try to read world.json description if present
+                    string desc = "";
+                    try
+                    {
+                        using var zip = ZipFile.OpenRead(file);
+                        var entry = zip.GetEntry("world.json");
+                        if (entry != null)
+                        {
+                            using var s = entry.Open();
+                            using var r = new StreamReader(s);
+                            var json = await r.ReadToEndAsync();
+                            var doc = System.Text.Json.JsonDocument.Parse(json);
+                            if (doc.RootElement.TryGetProperty("Description", out var d))
+                            {
+                                desc = d.GetString() ?? "";
+                            }
+                        }
+                    }
+                    catch { /* ignore zip read errors per-file */ }
+
+                    worlds.Add(new WorldInfo(name, seed, file, desc, fi.CreationTime));
+                }
+                catch { }
+            }
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private string GetWorldsDirectory()
+    {
+        return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "source", "repos", "SoloAdventureSystem", "content", "worlds");
+    }
+
+    private void PlayWorld(string filePath)
+    {
+        // Navigate to /game/{seed}
+        var fileName = Path.GetFileNameWithoutExtension(filePath);
+        var parts = fileName.Split('_');
+        var seed = parts.Length > 1 ? parts[^1] : "0";
+        Navigation.NavigateTo($"/game/{Uri.EscapeDataString(seed)}");
+    }
+
+    private void ViewDetails(WorldInfo w)
+    {
+        Navigation.NavigateTo($"/worlds/{Uri.EscapeDataString(w.Seed)}");
+    }
+
+    private async void DeleteWorld(WorldInfo w)
+    {
+        var ok = await JS.InvokeAsync<bool>("confirm", $"Delete world '{w.Name}'? This action cannot be undone.");
+        if (!ok) return;
+
+        try
+        {
+            File.Delete(w.FilePath);
+            await LoadWorlds();
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", $"Failed to delete: {ex.Message}");
+        }
+    }
+}

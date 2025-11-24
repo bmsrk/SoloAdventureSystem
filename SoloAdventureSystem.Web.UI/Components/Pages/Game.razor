@@ -1,0 +1,762 @@
+@page "/game/{seed}"
+@rendermode InteractiveServer
+@using System.IO
+@using System.IO.Compression
+@using System.Text.Json
+@using SoloAdventureSystem.Engine.Models
+@using SoloAdventureSystem.Engine.Game
+@using SoloAdventureSystem.Engine.WorldLoader
+@using SoloAdventureSystem.Engine.Rules
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<PageTitle>Playing @world?.WorldDefinition?.Name ?? "Game"</PageTitle>
+
+<div style="padding: 2rem; width: 100%; max-width: none; box-sizing: border-box; margin: 0 auto;">
+    @if (isLoading)
+    {
+        <Card>
+            <div style="text-align: center; padding: 3rem;">
+                <div class="spinner" style="margin: 0 auto 1rem;"></div>
+                <p style="color: var(--color-text-muted);">Loading game...</p>
+            </div>
+        </Card>
+    }
+    else if (world == null)
+    {
+        <Card>
+            <div style="text-align: center; padding: 3rem;">
+                <div class="error-icon">!</div>
+                <h3 style="color: var(--color-text-primary); margin-bottom: 1rem;">World Not Found</h3>
+                <p style="color: var(--color-text-secondary); margin-bottom: 2rem;">
+                    The world you're trying to play doesn't exist or has been deleted.
+                </p>
+                <a href="/worlds" class="custom-button btn-neutral" style="text-decoration: none;">
+                    Back to Worlds
+                </a>
+            </div>
+        </Card>
+    }
+    else
+    {
+        <!-- Header -->
+        <div style="margin-bottom: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                <div>
+                    <a href="/worlds" style="color: var(--color-text-muted); text-decoration: none; font-size: var(--font-size-sm);">
+                        &larr; Back to Worlds
+                    </a>
+                    <h1 style="color: var(--color-text-primary); margin: 0.5rem 0;">Playing @world.WorldDefinition.Name</h1>
+                    <p style="color: var(--color-text-secondary); margin: 0;">
+                        Turn: @gameState.TurnCount | HP: @gameState.Player.HP/@gameState.Player.MaxHP
+                    </p>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <Button Appearance="neutral" OnClick="ShowStats">Stats</Button>
+                    <Button Appearance="neutral" OnClick="ShowInventory">Inventory</Button>
+                    <Button Appearance="danger" OnClick="QuitGame">Quit</Button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Layout -->
+        <div style="display: grid; grid-template-columns: 1fr 300px; gap: 2rem;">
+            <!-- Main Game Area -->
+            <div>
+                <!-- Location -->
+                <Card Style="margin-bottom: 1.5rem;">
+                    <!-- Make description area scrollable with fixed max-height -->
+                    <div style="padding: 1.5rem; max-height: 420px; overflow-y: auto; overflow-x: hidden;">
+                        <h3 style="color: var(--color-accent-primary); margin-bottom: 1rem;">@gameState.CurrentLocation.Name</h3>
+                        <p style="color: var(--color-text-secondary); line-height: 1.6; white-space: pre-wrap;">@GetLocationDescription()</p>
+                    </div>
+                </Card>
+
+                <!-- Actions -->
+                <Card>
+                    <div style="padding: 1.5rem;">
+                        <h4 style="color: var(--color-accent-primary); margin-bottom: 1rem;">Available Actions</h4>
+                        <!-- Make action list scrollable -->
+                        <div style="max-height: 320px; overflow-y: auto; display: grid; gap: 0.5rem;">
+                            @foreach (var action in availableActions)
+                            {
+                                <Button Appearance="accent" 
+                                        OnClick="() => ExecuteAction(action)"
+                                        Style="width: 100%; text-align: left; justify-content: flex-start;">
+                                    @action
+                                </Button>
+                            }
+                        </div>
+                    </div>
+                </Card>
+            </div>
+
+            <!-- Sidebar -->
+            <div>
+                <!-- Quick Actions -->
+                <Card Style="margin-bottom: 1.5rem;">
+                    <div style="padding: 1.5rem;">
+                        <h4 style="color: var(--color-accent-primary); margin-bottom: 1rem;">Quick Actions</h4>
+                        <div style="display: grid; gap: 0.5rem;">
+                            <Button Appearance="neutral" OnClick="LookAround" Style="width: 100%;">Look Around</Button>
+                        </div>
+                    </div>
+                </Card>
+
+                <!-- Player Info -->
+                <Card>
+                    <div style="padding: 1.5rem;">
+                        <h4 style="color: var(--color-accent-primary); margin-bottom: 1rem;">Player</h4>
+                        <div style="display: grid; gap: 0.5rem;">
+                            <div><strong>Name:</strong> @gameState.Player.Name</div>
+                            <div><strong>HP:</strong> @gameState.Player.HP/@gameState.Player.MaxHP</div>
+                            <div><strong>Items:</strong> @gameState.Inventory.Count</div>
+                            <div><strong>Quests:</strong> @gameState.Player.ActiveQuests.Count</div>
+                        </div>
+                    </div>
+                </Card>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Stats Modal -->
+@if (showStatsModal)
+{
+    <div class="modal-overlay" @onclick="CloseStatsModal">
+        <div class="modal-content" @onclick:stopPropagation="true">
+            <h3 style="color: var(--color-text-primary); margin-bottom: 1rem;">Character Stats</h3>
+            <div style="display: grid; gap: 1rem;">
+                <div>
+                    <h5>Attributes</h5>
+                    @foreach (var attr in gameState.Player.Attributes)
+                    {
+                        <div>@attr.Key: @attr.Value</div>
+                    }
+                </div>
+                <div>
+                    <h5>Skills</h5>
+                    @foreach (var skill in gameState.Player.Skills)
+                    {
+                        <div>@skill.Key: @skill.Value</div>
+                    }
+                </div>
+                <div>
+                    <h5>Equipment</h5>
+                    @if (gameState.Player.Equipment.Any())
+                    {
+                        @foreach (var item in gameState.Player.Equipment)
+                        {
+                            <div>@item</div>
+                        }
+                    }
+                    else
+                    {
+                        <div>No equipment</div>
+                    }
+                </div>
+            </div>
+            <div style="margin-top: 1.5rem; text-align: right;">
+                <Button Appearance="neutral" OnClick="CloseStatsModal">Close</Button>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Inventory Modal -->
+@if (showInventoryModal)
+{
+    <div class="modal-overlay" @onclick="CloseInventoryModal">
+        <div class="modal-content" @onclick:stopPropagation="true">
+            <h3 style="color: var(--color-text-primary); margin-bottom: 1rem;">Inventory</h3>
+            @if (gameState.Inventory.Any())
+            {
+                <div style="display: grid; gap: 0.5rem;">
+                    @foreach (var item in gameState.Inventory)
+                    {
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: var(--color-bg-primary); border-radius: var(--radius-sm);">
+                            <span>@item</span>
+                            <Button Appearance="accent" Size="small" OnClick="() => UseItem(item)">Use</Button>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div style="text-align: center; color: var(--color-text-muted); padding: 2rem;">Your inventory is empty.</div>
+            }
+            <div style="margin-top: 1.5rem; text-align: right;">
+                <Button Appearance="neutral" OnClick="CloseInventoryModal">Close</Button>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Message Modal -->
+@if (!string.IsNullOrEmpty(message))
+{
+    <div class="modal-overlay" @onclick="CloseMessage">
+        <div class="modal-content" @onclick:stopPropagation="true">
+            <h3 style="color: var(--color-text-primary); margin-bottom: 1rem;">Message</h3>
+            <p style="color: var(--color-text-secondary); white-space: pre-wrap;">@message</p>
+            <div style="margin-top: 1.5rem; text-align: right;">
+                <Button Appearance="accent" OnClick="CloseMessage">Continue</Button>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid var(--color-bg-elevated);
+    border-top: 4px solid var(--color-accent-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.error-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 1rem;
+    background: var(--color-error);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    color: white;
+    font-weight: var(--font-weight-bold);
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-lg);
+}
+</style>
+
+@code {
+    [Parameter]
+    public string Seed { get; set; } = "";
+    
+    private WorldModel? world;
+    private GameState gameState = new();
+    private bool isLoading = true;
+    private List<string> availableActions = new();
+    private bool showStatsModal = false;
+    private bool showInventoryModal = false;
+    private string message = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadWorld();
+        if (world != null)
+        {
+            InitializeGame();
+        }
+    }
+
+    private async Task LoadWorld()
+    {
+        isLoading = true;
+        
+        try
+        {
+            var worldsPath = GetWorldsDirectory();
+            var files = Directory.GetFiles(worldsPath, $"*_{Seed}.zip");
+            
+            if (files.Length > 0)
+            {
+                var filePath = files[0];
+                
+                using var zip = ZipFile.OpenRead(filePath);
+                
+                // Read world.json for metadata
+                var worldEntry = zip.GetEntry("world.json");
+                if (worldEntry != null)
+                {
+                    using var stream = worldEntry.Open();
+                    using var reader = new StreamReader(stream);
+                    var json = await reader.ReadToEndAsync();
+                    
+                    var worldMetadata = JsonSerializer.Deserialize<WorldJsonModel>(json, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+                    
+                    if (worldMetadata != null)
+                    {
+                        world = new WorldModel
+                        {
+                            WorldDefinition = new WorldDefinition(
+                                worldMetadata.Name,
+                                worldMetadata.Description,
+                                worldMetadata.Version,
+                                worldMetadata.Author,
+                                worldMetadata.CreatedAt,
+                                worldMetadata.StartLocationId,
+                                worldMetadata.LocationIds,
+                                worldMetadata.NpcIds,
+                                worldMetadata.ItemIds,
+                                worldMetadata.FactionIds,
+                                worldMetadata.StoryNodeIds
+                            ),
+                            Rooms = new List<Location>(),
+                            Npcs = new List<NPC>(),
+                            Factions = new List<Faction>(),
+                            Events = new List<EventModel>(),
+                            StoryNodes = new List<StoryNode>()
+                        };
+                    }
+                }
+                
+                if (world == null) return;
+                
+                // Read all rooms
+                foreach (var entry in zip.Entries.Where(e => e.FullName.StartsWith("rooms/") && e.FullName.EndsWith(".json")))
+                {
+                    using var stream = entry.Open();
+                    using var reader = new StreamReader(stream);
+                    var roomJson = await reader.ReadToEndAsync();
+                    var room = JsonSerializer.Deserialize<RoomModel>(roomJson, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+                    if (room != null)
+                    {
+                        world.Rooms.Add(new Location(
+                            room.Id,
+                            room.Title,
+                            room.BaseDescription,
+                            room.Exits ?? new Dictionary<string, string>(),
+                            room.Npcs ?? new List<string>(),
+                            room.Items ?? new List<string>()
+                        ));
+                    }
+                }
+                
+                // Read all NPCs
+                foreach (var entry in zip.Entries.Where(e => e.FullName.StartsWith("npcs/") && e.FullName.EndsWith(".json")))
+                {
+                    using var stream = entry.Open();
+                    using var reader = new StreamReader(stream);
+                    var npcJson = await reader.ReadToEndAsync();
+                    var npc = JsonSerializer.Deserialize<NpcModel>(npcJson, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+                    if (npc != null)
+                    {
+                        world.Npcs.Add(new NPC(
+                            npc.Id,
+                            npc.Name,
+                            npc.Description,
+                            npc.FactionId,
+                            Enum.Parse<Hostility>(npc.Hostility, true),
+                            new Attributes(
+                                npc.Attributes.Strength,
+                                npc.Attributes.Dexterity,
+                                npc.Attributes.Intelligence,
+                                npc.Attributes.Constitution,
+                                npc.Attributes.Wisdom,
+                                npc.Attributes.Charisma
+                            ),
+                            Enum.Parse<Behavior>(npc.Behavior, true),
+                            npc.Inventory
+                        ));
+                    }
+                }
+                
+                // Read all factions
+                foreach (var entry in zip.Entries.Where(e => e.FullName.StartsWith("factions/") && e.FullName.EndsWith(".json")))
+                {
+                    using var stream = entry.Open();
+                    using var reader = new StreamReader(stream);
+                    var factionJson = await reader.ReadToEndAsync();
+                    var faction = JsonSerializer.Deserialize<FactionModel>(factionJson, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+                    if (faction != null)
+                    {
+                        world.Factions.Add(new Faction(
+                            faction.Id,
+                            faction.Name,
+                            faction.Description,
+                            faction.Ideology,
+                            faction.Relations ?? new Dictionary<string, int>()
+                        ));
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading world: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void InitializeGame()
+    {
+        if (world?.WorldDefinition == null) return;
+
+        gameState.World = world;
+        var startLocation = world.Rooms?.FirstOrDefault(l => l.Id == world.WorldDefinition.StartLocationId);
+        if (startLocation != null)
+        {
+            gameState.CurrentLocation = startLocation;
+        }
+        gameState.Player = new PlayerCharacter();
+        gameState.TurnCount = 0;
+
+        UpdateAvailableActions();
+    }
+
+    private void UpdateAvailableActions()
+    {
+        availableActions.Clear();
+
+        // Movement options
+        if (gameState.CurrentLocation.Connections?.Count > 0)
+        {
+            foreach (var connection in gameState.CurrentLocation.Connections)
+            {
+                availableActions.Add($"Go {connection.Key}");
+            }
+        }
+
+        // Interaction options
+        if (gameState.CurrentLocation.NpcIds?.Count > 0)
+        {
+            var npcs = gameState.World.Npcs?
+                .Where(n => gameState.CurrentLocation.NpcIds.Contains(n.Id))
+                .ToList();
+            
+            if (npcs?.Count > 0)
+            {
+                foreach (var npc in npcs)
+                {
+                    availableActions.Add($"Talk to {npc.Name}");
+                    if (npc.Hostility == Hostility.Hostile)
+                    {
+                        availableActions.Add($"Attack {npc.Name}");
+                    }
+                }
+            }
+        }
+
+        // Item options
+        if (gameState.CurrentLocation.ItemIds?.Count > 0)
+        {
+            foreach (var itemId in gameState.CurrentLocation.ItemIds)
+            {
+                availableActions.Add($"Take {itemId}");
+            }
+        }
+
+        // Inventory use options
+        if (gameState.Inventory.Count > 0)
+        {
+            foreach (var itemId in gameState.Inventory)
+            {
+                availableActions.Add($"Use {itemId}");
+            }
+        }
+
+        StateHasChanged();
+    }
+
+    private void ExecuteAction(string action)
+    {
+        gameState.TurnCount++;
+
+        if (action.StartsWith("Go "))
+        {
+            var direction = action.Substring(3);
+            MoveToLocation(direction);
+        }
+        else if (action.StartsWith("Talk to "))
+        {
+            var npcName = action.Substring(8);
+            TalkToNPC(npcName);
+        }
+        else if (action.StartsWith("Attack "))
+        {
+            var npcName = action.Substring(7);
+            AttackNPC(npcName);
+        }
+        else if (action.StartsWith("Take "))
+        {
+            var itemName = action.Substring(5);
+            TakeItem(itemName);
+        }
+        else if (action.StartsWith("Use "))
+        {
+            var itemName = action.Substring(4);
+            UseItem(itemName);
+        }
+
+        UpdateAvailableActions();
+    }
+
+    private void MoveToLocation(string direction)
+    {
+        if (gameState.CurrentLocation.Connections?.TryGetValue(direction, out var locationId) == true)
+        {
+            var newLocation = gameState.World.Rooms?.FirstOrDefault(l => l.Id == locationId);
+            if (newLocation != null)
+            {
+                gameState.CurrentLocation = newLocation;
+                ShowMessage($"You travel {direction}.");
+            }
+        }
+    }
+
+    private void TalkToNPC(string npcName)
+    {
+        var npc = gameState.World.Npcs?.FirstOrDefault(n => 
+            n.Name == npcName && gameState.CurrentLocation.NpcIds?.Contains(n.Id) == true);
+        
+        if (npc != null)
+        {
+            var description = npc.Description ?? "They have nothing to say.";
+            var name = npc.Name ?? "Someone";
+            ShowMessage($"\"{description}\"\n\n- {name}");
+        }
+    }
+
+    private void AttackNPC(string npcName)
+    {
+        var npc = gameState.World.Npcs?.FirstOrDefault(n => 
+            n.Name == npcName && gameState.CurrentLocation.NpcIds?.Contains(n.Id) == true);
+        
+        if (npc != null)
+        {
+            var playerStats = gameState.Player.ToCharacterStats();
+            var npcAttributes = new Dictionary<GameAttribute, int>
+            {
+                [GameAttribute.Body] = npc.Attributes.Strength,
+                [GameAttribute.Mind] = npc.Attributes.Intelligence,
+                [GameAttribute.Soul] = npc.Attributes.Wisdom,
+                [GameAttribute.Presence] = npc.Attributes.Charisma
+            };
+            var npcSkills = new Dictionary<Skill, int>
+            {
+                [Skill.Combat] = 0,
+                [Skill.Stealth] = 0,
+                [Skill.Knowledge] = 0,
+                [Skill.Awareness] = 0,
+                [Skill.Social] = 0,
+                [Skill.Will] = 0,
+                [Skill.Occult] = 0
+            };
+            var npcStats = new CharacterStats(npcAttributes, npcSkills, 10, 6);
+
+            var attackResult = RuleEngine.RollCombatAttack(playerStats, npcStats);
+            
+            if (attackResult.Hit)
+            {
+                var damageResult = RuleEngine.RollDamage(DamageType.Unarmed);
+                ShowMessage($"You hit {npcName} for {damageResult.Damage} damage!\n\nThe {npcName} is defeated.");
+                gameState.CurrentLocation.NpcIds?.Remove(npc.Id);
+            }
+            else
+            {
+                ShowMessage($"You miss {npcName}.");
+            }
+        }
+    }
+
+    private void TakeItem(string itemName)
+    {
+        if (gameState.CurrentLocation.ItemIds?.Contains(itemName) == true)
+        {
+            gameState.Inventory.Add(itemName);
+            gameState.CurrentLocation.ItemIds?.Remove(itemName);
+            ShowMessage($"You take the {itemName}.");
+        }
+    }
+
+    private void UseItem(string itemName)
+    {
+        if (gameState.Inventory.Contains(itemName))
+        {
+            ShowMessage($"You use the {itemName}.");
+        }
+    }
+
+    private void LookAround()
+    {
+        var locationName = gameState.CurrentLocation.Name ?? "Unknown Location";
+        var description = gameState.CurrentLocation.Description ?? "You see nothing of interest.";
+        ShowMessage($"You look around {locationName}.\n\n{description}");
+    }
+
+    private void ShowStats()
+    {
+        showStatsModal = true;
+        StateHasChanged();
+    }
+
+    private void CloseStatsModal()
+    {
+        showStatsModal = false;
+        StateHasChanged();
+    }
+
+    private void ShowInventory()
+    {
+        showInventoryModal = true;
+        StateHasChanged();
+    }
+
+    private void CloseInventoryModal()
+    {
+        showInventoryModal = false;
+        StateHasChanged();
+    }
+
+    private void ShowMessage(string msg)
+    {
+        message = msg;
+        StateHasChanged();
+    }
+
+    private void CloseMessage()
+    {
+        message = "";
+        StateHasChanged();
+    }
+
+    private void QuitGame()
+    {
+        Navigation.NavigateTo("/worlds");
+    }
+
+    private string GetLocationDescription()
+    {
+        var description = gameState.CurrentLocation.Description;
+        
+        // Add NPCs info
+        if (gameState.CurrentLocation.NpcIds?.Count > 0)
+        {
+            var npcs = gameState.World.Npcs?
+                .Where(n => gameState.CurrentLocation.NpcIds.Contains(n.Id))
+                .ToList();
+            
+            if (npcs?.Count > 0)
+            {
+                description += "\n\n= People here:\n";
+                foreach (var npc in npcs)
+                {
+                    description += $"  * {npc.Name} - {npc.Description}\n";
+                }
+            }
+        }
+
+        // Add items info
+        if (gameState.CurrentLocation.ItemIds?.Count > 0)
+        {
+            description += "\n\n= Items here:\n";
+            foreach (var itemId in gameState.CurrentLocation.ItemIds)
+            {
+                description += $"  * {itemId}\n";
+            }
+        }
+
+        return description;
+    }
+
+    private string GetWorldsDirectory()
+    {
+        return Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            "source", "repos", "SoloAdventureSystem", "content", "worlds");
+    }
+
+    // Data models for loading
+    private class WorldJsonModel
+    {
+        public string Name { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string Version { get; set; } = "";
+        public string Author { get; set; } = "";
+        public DateTime CreatedAt { get; set; }
+        public string StartLocationId { get; set; } = "";
+        public List<string> LocationIds { get; set; } = new();
+        public List<string> NpcIds { get; set; } = new();
+        public List<string> ItemIds { get; set; } = new();
+        public List<string> FactionIds { get; set; } = new();
+        public List<string> StoryNodeIds { get; set; } = new();
+    }
+
+    private class RoomModel
+    {
+        public string Id { get; set; } = "";
+        public string Title { get; set; } = "";
+        public string BaseDescription { get; set; } = "";
+        public Dictionary<string, string>? Exits { get; set; }
+        public List<string>? Npcs { get; set; }
+        public List<string>? Items { get; set; }
+    }
+
+    private class NpcModel
+    {
+        public string Id { get; set; } = "";
+        public string Name { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string FactionId { get; set; } = "";
+        public string Hostility { get; set; } = "Neutral";
+        public string Behavior { get; set; } = "Static";
+        public List<string> Inventory { get; set; } = new();
+        public NpcAttributes Attributes { get; set; } = new();
+    }
+
+    private class NpcAttributes
+    {
+        public int Strength { get; set; } = 10;
+        public int Dexterity { get; set; } = 10;
+        public int Intelligence { get; set; } = 10;
+        public int Constitution { get; set; } = 10;
+        public int Wisdom { get; set; } = 10;
+        public int Charisma { get; set; } = 10;
+    }
+
+    private class FactionModel
+    {
+        public string Id { get; set; } = "";
+        public string Name { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string Ideology { get; set; } = "";
+        public Dictionary<string, int> Relations { get; set; } = new();
+    }
+}

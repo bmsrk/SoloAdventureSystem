@@ -3,6 +3,7 @@ using SoloAdventureSystem.UI.Themes;
 using SoloAdventureSystem.Engine.Models;
 using SoloAdventureSystem.Engine.Game;
 using SoloAdventureSystem.Engine.WorldLoader;
+using SoloAdventureSystem.Engine.Rules;
 
 namespace SoloAdventureSystem.UI.Game;
 
@@ -58,6 +59,7 @@ public class GameUI
         }
 
         _gameState.CurrentLocation = startLocation;
+        _gameState.Player = new PlayerCharacter(); // Initialize player character
         _gameState.TurnCount = 0;
 
         // Main window
@@ -131,8 +133,13 @@ public class GameUI
         inventoryBtn.Y = 0;
         inventoryBtn.Clicked += ShowInventory;
 
+        var statsBtn = ComponentFactory.CreateButton("[ S ] Stats");
+        statsBtn.X = Pos.Right(inventoryBtn) + 2;
+        statsBtn.Y = 0;
+        statsBtn.Clicked += ShowStats;
+
         var lookBtn = ComponentFactory.CreateButton("[ L ] Look Around");
-        lookBtn.X = Pos.Right(inventoryBtn) + 2;
+        lookBtn.X = Pos.Right(statsBtn) + 2;
         lookBtn.Y = 0;
         lookBtn.Clicked += LookAround;
 
@@ -141,7 +148,7 @@ public class GameUI
         quitBtn.Y = 0;
         quitBtn.Clicked += QuitGame;
 
-        commandFrame.Add(inventoryBtn, lookBtn, quitBtn);
+        commandFrame.Add(inventoryBtn, statsBtn, lookBtn, quitBtn);
 
         _mainWindow.Add(_locationLabel, _statsLabel, descriptionFrame, actionsFrame, commandFrame);
 
@@ -160,7 +167,7 @@ public class GameUI
 
         if (_statsLabel != null)
         {
-            _statsLabel.Text = $"Turn: {_gameState.TurnCount} | Items: {_gameState.Inventory.Count}";
+            _statsLabel.Text = $"Turn: {_gameState.TurnCount} | Items: {_gameState.Inventory.Count} | HP: {_gameState.Player.HP}/{_gameState.Player.MaxHP}";
         }
 
         if (_descriptionView != null)
@@ -226,6 +233,10 @@ public class GameUI
                 foreach (var npc in npcs)
                 {
                     _availableActions.Add($"Talk to {npc.Name}");
+                    if (npc.Hostility == SoloAdventureSystem.Engine.Models.Hostility.Hostile)
+                    {
+                        _availableActions.Add($"Attack {npc.Name}");
+                    }
                 }
             }
         }
@@ -235,6 +246,15 @@ public class GameUI
             foreach (var itemId in _gameState.CurrentLocation.ItemIds)
             {
                 _availableActions.Add($"Take {itemId}");
+            }
+        }
+
+        // Item usage from inventory
+        if (_gameState.Inventory.Count > 0)
+        {
+            foreach (var itemId in _gameState.Inventory)
+            {
+                _availableActions.Add($"Use {itemId}");
             }
         }
 
@@ -262,10 +282,20 @@ public class GameUI
             var npcName = action.Substring(8);
             TalkToNPC(npcName);
         }
+        else if (action.StartsWith("Attack "))
+        {
+            var npcName = action.Substring(7);
+            AttackNPC(npcName);
+        }
         else if (action.StartsWith("Take "))
         {
             var itemName = action.Substring(5);
             TakeItem(itemName);
+        }
+        else if (action.StartsWith("Use "))
+        {
+            var itemName = action.Substring(4);
+            UseItem(itemName);
         }
 
         UpdateUI();
@@ -299,6 +329,49 @@ public class GameUI
         }
     }
 
+    private void AttackNPC(string npcName)
+    {
+        var npc = _gameState.World.Npcs?.FirstOrDefault(n => 
+            n.Name == npcName && _gameState.CurrentLocation.NpcIds?.Contains(n.Id) == true);
+        
+        if (npc != null)
+        {
+            var playerStats = _gameState.Player.ToCharacterStats();
+            var npcAttributes = new Dictionary<GameAttribute, int>
+            {
+                [GameAttribute.Body] = npc.Attributes.Strength,
+                [GameAttribute.Mind] = npc.Attributes.Intelligence,
+                [GameAttribute.Soul] = npc.Attributes.Wisdom,
+                [GameAttribute.Presence] = npc.Attributes.Charisma
+            };
+            var npcSkills = new Dictionary<Skill, int>
+            {
+                [Skill.Combat] = 0, // Assume 0 for now
+                [Skill.Stealth] = 0,
+                [Skill.Knowledge] = 0,
+                [Skill.Awareness] = 0,
+                [Skill.Social] = 0,
+                [Skill.Will] = 0,
+                [Skill.Occult] = 0
+            };
+            var npcStats = new CharacterStats(npcAttributes, npcSkills, 10, 6); // Dummy HP and defense
+
+            var attackResult = RuleEngine.RollCombatAttack(playerStats, npcStats);
+            
+            if (attackResult.Hit)
+            {
+                var damageResult = RuleEngine.RollDamage(DamageType.Unarmed);
+                MessageBox.Query("Combat", $"You hit {npcName} for {damageResult.Damage} damage!\n\nThe {npcName} is defeated.", "Continue");
+                // Remove NPC from location
+                _gameState.CurrentLocation.NpcIds?.Remove(npc.Id);
+            }
+            else
+            {
+                MessageBox.Query("Combat", $"You miss {npcName}.", "Continue");
+            }
+        }
+    }
+
     private void TakeItem(string itemName)
     {
         if (_gameState.CurrentLocation.ItemIds?.Contains(itemName) == true)
@@ -306,6 +379,15 @@ public class GameUI
             _gameState.Inventory.Add(itemName);
             _gameState.CurrentLocation.ItemIds?.Remove(itemName);
             MessageBox.Query("Item Acquired", $"You take the {itemName}.", "OK");
+        }
+    }
+
+    private void UseItem(string itemName)
+    {
+        if (_gameState.Inventory.Contains(itemName))
+        {
+            // Here you would define what using the item does
+            MessageBox.Query("Item Used", $"You use the {itemName}.", "OK");
         }
     }
 
@@ -324,6 +406,26 @@ public class GameUI
         }
 
         MessageBox.Query("Inventory", inventoryText, "OK");
+    }
+
+    private void ShowStats()
+    {
+        var statsText = $"Character: {_gameState.Player.Name}\n\n";
+        statsText += "Attributes:\n";
+        foreach (var attr in _gameState.Player.Attributes)
+        {
+            statsText += $"  {attr.Key}: {attr.Value}\n";
+        }
+        statsText += "\nSkills:\n";
+        foreach (var skill in _gameState.Player.Skills)
+        {
+            statsText += $"  {skill.Key}: {skill.Value}\n";
+        }
+        statsText += $"\nHealth: {_gameState.Player.HP}/{_gameState.Player.MaxHP}\n";
+        statsText += $"Equipment: {string.Join(", ", _gameState.Player.Equipment)}\n";
+        statsText += $"Active Quests: {string.Join(", ", _gameState.Player.ActiveQuests)}";
+
+        MessageBox.Query("Character Stats", statsText, "OK");
     }
 
     private void LookAround()

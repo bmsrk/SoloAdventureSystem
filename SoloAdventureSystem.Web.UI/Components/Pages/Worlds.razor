@@ -128,6 +128,9 @@
                             <Button Appearance="accent" OnClick="@(() => ViewWorld(world))" Style="white-space: nowrap;">
                                 View Details
                             </Button>
+                            <Button Appearance="success" OnClick="@(() => PlayGame(world))" Style="white-space: nowrap;">
+                                Play Game
+                            </Button>
                             <Button Appearance="neutral" OnClick="@(() => CopyPath(world))" Style="white-space: nowrap;">
                                 Copy Path
                             </Button>
@@ -469,6 +472,11 @@
     private void ViewWorld(WorldInfo world)
     {
         Navigation.NavigateTo($"/worlds/{Uri.EscapeDataString(world.Seed)}");
+    }
+
+    private void PlayGame(WorldInfo world)
+    {
+        Navigation.NavigateTo($"/game/{Uri.EscapeDataString(world.Seed)}");
     }
 
     private async Task CopyPath(WorldInfo world)
