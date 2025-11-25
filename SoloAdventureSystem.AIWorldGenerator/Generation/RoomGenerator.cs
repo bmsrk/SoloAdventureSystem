@@ -227,6 +227,8 @@ Return only JSON.";
             VisualPrompt = visualPrompt,
             UiPosition = new UiPosition { X = index % 3, Y = index / 3 }
         };
+        // Add transparency indicator for responsible AI
+        room.BaseDescription += "\n\n[AI-generated content]";
 
         _logger?.LogDebug("? Room {Index} generated: {RoomName}", index + 1, title);
         return room;

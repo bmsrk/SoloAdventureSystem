@@ -117,6 +117,8 @@ Return only JSON.";
             Ideology = ideology,
             Relations = new Dictionary<string, int>()
         };
+        // Add transparency indicator for responsible AI
+        faction.Description += "\n\n[AI-generated content]";
 
         _logger?.LogInformation("? Faction generated: {FactionName}", factionName);
 

@@ -180,6 +180,8 @@ Return only JSON.";
             Behavior = string.IsNullOrWhiteSpace(role) ? "Static" : role,
             Inventory = new List<string>()
         };
+        // Add transparency indicator for responsible AI
+        npc.Description += "\n\n[AI-generated content]";
 
         _logger?.LogDebug("? NPC {Index} generated: {NpcName}", index + 1, name);
         return npc;

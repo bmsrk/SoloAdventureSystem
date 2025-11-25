@@ -31,6 +31,11 @@ A modern server room: The server room bathes in flickering blue light from wall-
 A medieval great hall: Long banners hang from timber beams above a fire-darkened table. Pewter goblets and a cracked salt cellar rim the table's edge, and a damp draft smells of smoke and wet wool. Torches hiss and the murmur of guards keeps the hall alive.
 A supernatural glade: Moonlight paints the clearing silver, and pale mushrooms ring an ancient oak. A child's toy, waterlogged and moss-clad, lies half-buried beneath the roots. The air carries the soft, distant chime of unseen bells and the metallic scent of old rain.
 
+BAD Examples (avoid these):
+- 'A room with some computers and cables.' (too vague, no specifics)
+- 'The room is dark and mysterious. There are old books and strange objects. It feels eerie.' (generic, no concrete details)
+- 'This is a description of the room: The walls are painted blue...' (includes labels or meta-commentary)
+
 Few-shot marker-wrapped examples (exact format expected):
 #TOON
 The server room bathes in flickering blue light from wall-mounted terminals. Black cables snake across white floors, connecting rows of humming mainframes marked with warning labels. The air tastes of ozone and stale coffee.
