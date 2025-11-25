@@ -21,11 +21,23 @@ Requirements:
 - Sentence 2: Key objects and their condition.
 - Sentence 3: Atmosphere — sounds, smells, or feeling.
 
-GOOD Example:
-The server room bathes in flickering blue light from wall-mounted terminals. Black cables snake across white floors, connecting rows of humming mainframes marked with warning labels. The air tastes of ozone and stale coffee.
+Constraints:
+- Do NOT add any extra commentary, labels, or explanations.
+- Do NOT repeat the prompt or include instruction fragments in the output.
+- Return ONLY the requested content between the exact markers '#TOON' and '#ENDTOON' (see OutputSpec).
 
-BAD Example:
-A room with computers. It's dark. There are things here.
+GOOD Examples (different flavors):
+A modern server room: The server room bathes in flickering blue light from wall-mounted terminals. Black cables snake across white floors, connecting rows of humming mainframes marked with warning labels. The air tastes of ozone and stale coffee.
+A medieval great hall: Long banners hang from timber beams above a fire-darkened table. Pewter goblets and a cracked salt cellar rim the table's edge, and a damp draft smells of smoke and wet wool. Torches hiss and the murmur of guards keeps the hall alive.
+A supernatural glade: Moonlight paints the clearing silver, and pale mushrooms ring an ancient oak. A child's toy, waterlogged and moss-clad, lies half-buried beneath the roots. The air carries the soft, distant chime of unseen bells and the metallic scent of old rain.
+
+Few-shot marker-wrapped examples (exact format expected):
+#TOON
+The server room bathes in flickering blue light from wall-mounted terminals. Black cables snake across white floors, connecting rows of humming mainframes marked with warning labels. The air tastes of ozone and stale coffee.
+#ENDTOON
+#TOON
+Long banners hang from timber beams above a fire-darkened table. Pewter goblets and a cracked salt cellar rim the table's edge, and a damp draft smells of smoke and wet wool. Torches hiss and the murmur of guards keeps the hall alive.
+#ENDTOON
 
 Write ONLY the 3-sentence description (no extra commentary).";
 
@@ -37,11 +49,23 @@ Requirements:
 - Sentence 1: Role, background, and current motivation.
 - Sentence 2: A secret, quirk, or defining trait.
 
-GOOD Example:
-Marcus Chen rose from street hacker to corporate security chief, now secretly feeding data to his old crew while hunting them publicly. His left eye glows amber when accessing the net - a reminder of the implant that nearly killed him.
+Constraints:
+- Do NOT add any extra commentary, labels, or explanations.
+- Do NOT repeat the prompt or include instruction fragments in the output.
+- Return ONLY the requested content between the exact markers '#TOON' and '#ENDTOON' (see OutputSpec).
 
-BAD Example:
-A person who works here. They have secrets.
+GOOD Examples (different flavors):
+A streetwise fixer: Marcus Chen rose from street hacker to corporate security chief, now secretly feeding data to his old crew while hunting them publicly. His left eye glows amber when accessing the net - a reminder of the implant that nearly killed him.
+A medieval steward: Edda of Highbridge manages the lord's household accounts and keeps pockets full of whispered debts. She hides a faded locket containing a traitorous letter that could ruin a baron's reputation.
+A haunted whisperer: Brother Ivo speaks to the dead in hushed tones, guiding mourners through visions he claims are warnings. He cannot sleep and sometimes answers questions no one asked.
+
+Few-shot marker-wrapped examples (exact format expected):
+#TOON
+Marcus Chen rose from street hacker to corporate security chief, now secretly feeding data to his old crew while hunting them publicly. His left eye glows amber when accessing the net - a reminder of the implant that nearly killed him.
+#ENDTOON
+#TOON
+Edda of Highbridge manages the lord's household accounts and keeps pockets full of whispered debts. She hides a faded locket containing a traitorous letter that could ruin a baron's reputation.
+#ENDTOON
 
 Write ONLY the 2-sentence biography (no extra commentary).";
 
@@ -54,11 +78,23 @@ Requirements:
 - Sentence 2: Where they operate and their strength.
 - Sentence 3: Their main enemy and the conflict.
 
-GOOD Example:
-The Neon Collective hacks corporate databases to leak secrets, believing information should be free. Operating from the Undercity's data havens, they command a network of 200 elite coders. MegaCorp's black-ops teams hunt them relentlessly, turning the dark web into a battlefield.
+Constraints:
+- Do NOT add any extra commentary, labels, or explanations.
+- Do NOT repeat the prompt or include instruction fragments in the output.
+- Return ONLY the requested content between the exact markers '#TOON' and '#ENDTOON' (see OutputSpec).
 
-BAD Example:
-A group that exists. They do things. They fight others.
+GOOD Examples (different flavors):
+A hacker collective: The Neon Collective hacks corporate databases to leak secrets, believing information should be free. Operating from the Undercity's data havens, they command a network of 200 elite coders. MegaCorp's black-ops teams hunt them relentlessly, turning the dark web into a battlefield.
+A medieval guild: The Ironwrights forge weapons and guard trade routes, honoring pacts older than the crown. Based in the mountain forges, they control ore supplies and levy tolls on merchants. Rising bandit clans and a jealous duke vie to seize their forges.
+A cult of the Tides: The Moonward Order summons storms to reclaim coastal towns in the name of an ancient sea god. Hidden in tide-worn temples, they command dozens of fervent followers and a fleet of ghost-ships. The kingdom's navy and local clergy seek to root them out before the next high tide.
+
+Few-shot marker-wrapped examples (exact format expected):
+#TOON
+The Neon Collective hacks corporate databases to leak secrets, believing information should be free. Operating from the Undercity's data havens, they command a network of 200 elite coders. MegaCorp's black-ops teams hunt them relentlessly, turning the dark web into a battlefield.
+#ENDTOON
+#TOON
+The Ironwrights forge weapons and guard trade routes, honoring pacts older than the crown. Based in the mountain forges, they control ore supplies and levy tolls on merchants. Rising bandit clans and a jealous duke vie to seize their forges.
+#ENDTOON
 
 Write ONLY the 3-sentence faction description (no extra commentary).";
 
@@ -69,27 +105,35 @@ Requirements:
 - Output 1 to 2 sentences.
 - Focus on a specific event, technology, cultural detail, or historical note that makes the world unique.
 
-GOOD Examples:
-The AI Uprising of 2089 killed 4 million when neural implants were hacked, leading to the Neural Safety Act that now requires manual kill-switches in all brain tech.
-Street food vendors use illegal gene-modified ingredients that glow faintly blue - cheaper than real meat but technically contraband.
+Constraints:
+- Do NOT add any extra commentary, labels, or explanations.
+- Do NOT repeat the prompt or include instruction fragments in the output.
+- Return ONLY the requested content between the exact markers '#TOON' and '#ENDTOON' (see OutputSpec).
 
-BAD Example:
-Some stuff happened in the past.
+GOOD Examples (different flavors):
+The AI Uprising of 2089 killed 4 million when neural implants were hacked, leading to the Neural Safety Act that now requires manual kill-switches in all brain tech.
+The Night of Falling Stars in 1342 is remembered as the year the witch-king fell; farmers still leave bread at crossroads to honor the dead.
+An ancient program called the Ledger binds citizens to data-credited identities, and some communes have deleted their ledgers to become invisible.
+
+Few-shot marker-wrapped example (exact format expected):
+#TOON
+The Night of Falling Stars in 1342 is remembered as the year the witch-king fell; farmers still leave bread at crossroads to honor the dead.
+#ENDTOON
 
 Write ONLY the lore entry (no extra commentary).";
 
     // --- Output specifications (explicit constraints) ---
     public static string RoomOutputSpec =>
-        "OUTPUT SPEC: Exactly 3 sentences. Each sentence should be 10-45 words. Include at least one sensory detail (sound/smell/touch) and one concrete object or color. No lists, no markup. Return only the text.\nOUTPUT_FORMAT: TOON table preferred. Example:\nchoices[1]{description}:\n\"A neon-lit alley...\"";
+        "OUTPUT SPEC: Exactly 3 sentences. Each sentence should be 10-45 words. Include at least one sensory detail (sound/smell/touch) and one concrete object or color. No lists, no markup. Return only the text between '#TOON' and '#ENDTOON' on separate lines, with nothing else outside those markers.";
 
     public static string NpcOutputSpec =>
-        "OUTPUT SPEC: Exactly 2 sentences. First sentence: role/background/motivation. Second: secret/quirk/defining trait. Keep length concise (12-40 words per sentence). Return only the text.";
+        "OUTPUT SPEC: Exactly 2 sentences. First sentence: role/background/motivation. Second: secret/quirk/defining trait. Keep length concise (12-40 words per sentence). Return only the text between '#TOON' and '#ENDTOON' on separate lines, with nothing else outside those markers.";
 
     public static string FactionOutputSpec =>
-        "OUTPUT SPEC: Exactly 3 sentences. Include goal, territory/strength, and main enemy/conflict. Use concrete detail and avoid vague language. Return only the text.";
+        "OUTPUT SPEC: Exactly 3 sentences. Include goal, territory/strength, and main enemy/conflict. Use concrete detail and avoid vague language. Return only the text between '#TOON' and '#ENDTOON' on separate lines, with nothing else outside those markers.";
 
     public static string LoreOutputSpec =>
-        "OUTPUT SPEC: 1-2 sentences. Aim for a single concrete detail or event. Keep it evocative and specific. Return only the text.";
+        "OUTPUT SPEC: 1-2 sentences. Aim for a single concrete detail or event. Keep it evocative and specific. Return only the text between '#TOON' and '#ENDTOON' on separate lines, with nothing else outside those markers.";
 
     // --- Builders: produce User prompt combined with OutputSpec for use by adapters ---
     public static string BuildRoomPrompt(string roomName, WorldGenerationOptions options, string atmosphere, int index, int total)
@@ -106,7 +150,11 @@ Write 3 sentences describing this room:";
 
         // Prefer TOON-friendly directive appended to the prompt to encourage structured table output.
         var combined = Combine(RoomDescriptionSystem, user, RoomOutputSpec);
-        combined += "\n\nIMPORTANT: Return ONLY a TOON table wrapped between a single line marker '#TOON' and '#ENDTOON'. Example:\n#TOON\nitems[1]{description}:\n\"A neon-lit alley...\"\n#ENDTOON\nIf you cannot produce TOON, return only the plain text description without explanation.";
+        combined += "\n\nIMPORTANT: Place the exact content requested between the markers '#TOON' and '#ENDTOON' on separate lines.\n" +
+                    "Between these markers include ONLY the requested description text and NOTHING ELSE — no explanations, no examples, no quotes, no labels.\n" +
+                    "If you cannot produce the TOON table format, still return the plain text description but it MUST be wrapped between '#TOON' and '#ENDTOON' (do not omit the markers).\n" +
+                    "Do NOT include any leading or trailing text outside the markers.\n" +
+                    "Example valid output:\n#TOON\nThe server room bathes in flickering blue light...\n#ENDTOON";
         return combined;
     }
 
@@ -124,7 +172,11 @@ Plot: {options.MainPlotPoint}
 Write 2 sentences about {npcName}. Show their role and a defining trait:";
 
         var combined = Combine(NpcBioSystem, user, NpcOutputSpec);
-        combined += "\n\nIMPORTANT: Return ONLY a TOON table wrapped between '#TOON' and '#ENDTOON' with fields {bio,role,quirk}. If TOON not possible, return only the plain 2-sentence bio.";
+        combined += "\n\nIMPORTANT: Place the exact content requested between the markers '#TOON' and '#ENDTOON' on separate lines.\n" +
+                    "Between these markers include ONLY the requested bio text and NOTHING ELSE — no explanations, no examples, no quotes, no labels.\n" +
+                    "If you cannot produce the TOON table format, still return the plain bio but it MUST be wrapped between '#TOON' and '#ENDTOON' (do not omit the markers).\n" +
+                    "Do NOT include any leading or trailing text outside the markers.\n" +
+                    "Example valid output:\n#TOON\nMarcus Chen rose from street hacker to corporate security chief...\n#ENDTOON";
         return combined;
     }
 
@@ -140,7 +192,11 @@ Central Conflict: {options.MainPlotPoint}
 Write 3 sentences about {factionName}. Include their goal, territory, and enemy:";
 
         var combined = Combine(FactionLoreSystem, user, FactionOutputSpec);
-        combined += "\n\nIMPORTANT: Return ONLY a TOON table wrapped between '#TOON' and '#ENDTOON' with fields {description,ideology}. If TOON not possible, return only the plain faction text.";
+        combined += "\n\nIMPORTANT: Place the exact content requested between the markers '#TOON' and '#ENDTOON' on separate lines.\n" +
+                    "Between these markers include ONLY the requested faction text and NOTHING ELSE — no explanations, no examples, no quotes, no labels.\n" +
+                    "If you cannot produce the TOON table format, still return the plain faction text but it MUST be wrapped between '#TOON' and '#ENDTOON' (do not omit the markers).\n" +
+                    "Do NOT include any leading or trailing text outside the markers.\n" +
+                    "Example valid output:\n#TOON\nThe Neon Collective hacks corporate databases to leak secrets...\n#ENDTOON";
         return combined;
     }
 
@@ -155,7 +211,11 @@ Context: {options.MainPlotPoint}
 Write lore entry #{entryNumber} - 1-2 sentences about an interesting detail from this world's history or culture:";
 
         var combined = Combine(WorldLoreSystem, user, LoreOutputSpec);
-        combined += "\n\nIMPORTANT: Return ONLY a TOON table wrapped between '#TOON' and '#ENDTOON' with field {text}. If TOON not possible, return only the plain lore text.";
+        combined += "\n\nIMPORTANT: Place the exact content requested between the markers '#TOON' and '#ENDTOON' on separate lines.\n" +
+                    "Between these markers include ONLY the requested lore text and NOTHING ELSE — no explanations, no examples, no quotes, no labels.\n" +
+                    "If you cannot produce the TOON table format, still return the plain lore text but it MUST be wrapped between '#TOON' and '#ENDTOON' (do not omit the markers).\n" +
+                    "Do NOT include any leading or trailing text outside the markers.\n" +
+                    "Example valid output:\n#TOON\nThe AI Uprising of 2089 killed 4 million...\n#ENDTOON";
         return combined;
     }
 

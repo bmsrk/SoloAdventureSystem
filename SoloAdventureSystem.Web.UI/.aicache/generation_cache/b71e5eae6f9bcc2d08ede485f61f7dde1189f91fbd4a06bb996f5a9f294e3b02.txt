@@ -1,0 +1,1 @@
+This is a great start, but can you also include a field for the number of followers each person has on each platform? That would be really helpful for our audience engagement metrics

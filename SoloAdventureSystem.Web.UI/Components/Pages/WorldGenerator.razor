@@ -1,317 +1,406 @@
 @page "/generate"
 @rendermode InteractiveServer
-@using SoloAdventureSystem.ContentGenerator
+@using System.IO
 @using SoloAdventureSystem.ContentGenerator.Models
 @using SoloAdventureSystem.ContentGenerator.Configuration
 @using SoloAdventureSystem.ContentGenerator.EmbeddedModel
-@using SoloAdventureSystem.ContentGenerator.Adapters
-@using SoloAdventureSystem.Web.UI.Services
-@using SoloAdventureSystem.ContentGenerator.Generation
-@using Microsoft.Extensions.Options
-@inject WorldGenerationService GenerationService
-@inject IOptions<AISettings> AISettings
-@inject ILogger<WorldGenerator> Logger
+@inject SoloAdventureSystem.Web.UI.Services.WorldGenerationService GenerationService
+@inject Microsoft.Extensions.Options.IOptions<AISettings> AISettings
+@inject Microsoft.Extensions.Logging.ILogger<WorldGenerator> Logger
 
-<PageTitle>AI World Generator</PageTitle>
+<PageTitle>AI World Generator (Improved)</PageTitle>
 
-<div style="padding: 1.5rem; max-width: 1200px; margin: 0 auto;">
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
-        <div>
-            <h2 style="margin:0; color:var(--color-text-primary);">AI World Generator</h2>
-            <div style="color:var(--color-text-muted); font-size:0.95rem;">Generate procedural game worlds using local LLM models</div>
+<h3>AI World Generator</h3>
+
+<div style="max-width:900px;">
+    @if (isInitializing || isGenerating)
+    {
+        <div class="modal-overlay-global" @onclick:stopPropagation="true">
+            <div class="modal-box">
+                <div class="modal-header">
+                    <div class="spinner-small"></div>
+                    <div style="margin-left:12px;">
+                        <div style="font-weight:700;">@((isInitializing) ? "Initializing AI Model..." : "Generating World...")</div>
+                        <div style="font-size:0.9rem; color:var(--color-text-secondary);">@hypeMessage</div>
+                    </div>
+                </div>
+
+                <div class="progress-wrapper">
+                    <div class="progress-track">
+                        <div class="progress-fill" style="width:@(progressPercentage)%"></div>
+                    </div>
+                    <div class="progress-meta">@generationProgress (@progressPercentage%)</div>
+                </div>
+
+                <div class="modal-log">
+                    @foreach (var line in GetRecentLogLines(8))
+                    {
+                        <div class="log-line">@line</div>
+                    }
+                </div>
+            </div>
         </div>
-        <div style="display:flex; gap:0.5rem; align-items:center;">
-            @if (!GenerationService.IsInitialized)
+    }
+
+    <div style="margin-bottom:1rem; display:flex; align-items:center; gap:0.75rem;">
+        <label style="margin:0;">Model:</label>
+        <select @bind="selectedModel" disabled="@isInitializing">
+            <option value="tinyllama-q4">TinyLlama</option>
+            <option value="llama-3.2-1b-q4">Llama-3.2</option>
+            <option value="phi-3-mini-q4">Phi-3 Mini</option>
+        </select>
+
+        <button type="button" @onclick="InitializeModel" disabled="@isInitializing" class="btn"> 
+            @if (isInitializing)
             {
-                <select @bind="selectedModel" style="padding:6px 8px; border-radius:6px; border:1px solid var(--color-border-default); background:var(--color-bg-primary); color:var(--color-text-primary);">
-                    <option value="tinyllama-q4">TinyLlama</option>
-                    <option value="llama-3.2-1b-q4">Llama-3.2</option>
-                    <option value="phi-3-mini-q4">Phi-3 Mini</option>
-                </select>
-                <div style="font-size:0.85rem; color:var(--color-text-muted);">@GetModelEstimate(selectedModel)</div>
-                <Button Appearance="outline" OnClick="InitializeModel" Disabled="@isInitializing" Style="padding:6px 10px;">@(isInitializing ? "Init..." : "Init")</Button>
+                <span class="spinner-small"></span>
+                <span style="margin-left:6px;">Initializing...</span>
+            }
+            else if (GenerationService.IsInitialized)
+            {
+                <span>Reinitialize</span>
             }
             else
             {
-                <div style="font-size:0.95rem; color:var(--color-text-primary);">Model: <strong>@selectedModel</strong></div>
+                <span>Initialize</span>
             }
-            <Button Appearance="outline" OnClick="() => showLogPane = !showLogPane">@(showLogPane ? "Hide Logs" : "Show Logs")</Button>
-            <Badge Appearance="@(GenerationService.IsInitialized ? "accent" : "neutral")">@(GenerationService.IsInitialized ? "AI READY" : "AI NOT INITIALIZED")</Badge>
+        </button>
+
+        <div style="margin-left:auto; display:flex; gap:0.5rem; align-items:center;">
+            <div style="font-size:0.9rem;">Status:</div>
+            <div style="padding:6px 10px; border-radius:6px; background:@(GenerationService.IsInitialized ? "#155724" : "#333"); color:white; font-weight:600;">@(GenerationService.IsInitialized ? "AI READY" : "AI NOT INITIALIZED")</div>
         </div>
     </div>
 
-    <div style="display:grid; grid-template-columns: @(showLogPane ? "320px 1fr" : "1fr"); gap:1rem;">
-        @if (showLogPane)
+    @if (isInitializing)
+    {
+        <div style="margin-bottom:0.75rem;">
+            <strong>Initialization:</strong> @initProgress
+        </div>
+    }
+
+    <div style="border:1px solid #ddd; padding:0.75rem; border-radius:6px; margin-bottom:1rem; background:var(--color-bg-secondary);">
+        <div style="display:flex; gap:0.5rem; align-items:center; margin-bottom:0.5rem;">
+            <label style="width:90px;">Name</label>
+            <input @bind="options.Name" />
+        </div>
+        <div style="display:flex; gap:0.5rem; align-items:center; margin-bottom:0.5rem;">
+            <label style="width:90px;">Seed</label>
+            <input type="number" @bind="options.Seed" />
+        </div>
+        <div style="display:flex; gap:0.5rem; align-items:center; margin-bottom:0.5rem;">
+            <label style="width:90px;">Theme</label>
+            <input @bind="options.Theme" />
+        </div>
+        <div style="display:flex; gap:0.5rem; align-items:center; margin-bottom:0.5rem;">
+            <label style="width:90px;">Regions</label>
+            <input type="number" min="3" max="20" @bind="options.Regions" />
+        </div>
+
+        <div style="margin-top:0.5rem; display:flex; gap:0.5rem; align-items:center;">
+            <label style="width:90px;">Preset</label>
+            <select @onchange="OnPresetChanged">
+                <option value="Custom">Custom</option>
+                <option value="NeonCity">NeonCity (Cyberpunk)</option>
+                <option value="EchoHarbor">EchoHarbor (Cosmic Horror)</option>
+                <option value="SummerOf84">SummerOf84 (1980s Mystery)</option>
+                <option value="RetroFuture">RetroFuture (Retro-Futurism)</option>
+                <option value="Wasteland Hope">Wasteland Hope</option>
+                <option value="Medieval Realm">Medieval Realm</option>
+                <option value="Supernatural Glade">Supernatural Glade</option>
+            </select>
+        </div>
+
+        <div style="margin-top:0.75rem; display:flex; gap:0.5rem; align-items:center;">
+            <button type="button" @onclick="GenerateWorld" disabled="@isGenerating" class="btn-primary" title="If the model is not initialized the generator will initialize it automatically.">@(isGenerating ? "Generating..." : "Generate World")</button>
+            <button type="button" @onclick="LogOptions" class="btn">Log Options</button>
+            <div style="margin-left:auto; color:var(--color-text-muted); font-size:0.9rem;">Model: <strong>@selectedModel</strong></div>
+        </div>
+    </div>
+
+    <div style="margin-bottom:1rem;">
+        <strong>Progress:</strong> @generationProgress (@progressPercentage%)
+    </div>
+
+    <div style="margin-bottom:1rem;">
+        <strong>UI Log</strong>
+        <pre id="uilog" style="max-height:200px; overflow:auto; background:#f8f8f8; padding:0.5rem; color:#111;">@uiLog</pre>
+    </div>
+
+    <div>
+        @if (!string.IsNullOrEmpty(exportPath))
         {
-            <aside style="background:var(--color-bg-secondary); padding:0.75rem; border-radius:8px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
-                    <strong style="color:var(--color-text-primary);">Activity Log</strong>
-                    <Button Appearance="ghost" OnClick="ClearUiLog">Clear</Button>
-                </div>
-
-                <div style="font-size:0.85rem; color:var(--color-text-muted); margin-bottom:0.5rem;">Status</div>
-                <div style="font-size:0.9rem; color:var(--color-text-primary); margin-bottom:0.5rem;">Initialization: @initProgress</div>
-                <div style="font-size:0.9rem; color:var(--color-text-primary);">Generation: @generationProgress</div>
-
-                <div style="height:1px; background:var(--color-border-default); margin:0.5rem 0;"></div>
-
-                <div style="font-size:0.85rem; color:var(--color-text-muted); margin-bottom:0.5rem;">Recent Actions</div>
-                <div style="max-height:44vh; overflow:auto; white-space:pre-wrap; font-family:monospace; font-size:0.85rem; color:var(--color-text-secondary); background:var(--color-bg-primary); padding:0.5rem; border-radius:6px;">
-                    @if (string.IsNullOrEmpty(uiLog))
-                    {
-                        <div style="color:var(--color-text-muted);">No log messages yet</div>
-                    }
-                    else
-                    {
-                        @uiLog
-                    }
-                </div>
-            </aside>
+            <div>Exported: <code>@exportPath</code></div>
         }
-
-        <section>
-            <Card Style="padding:1rem;">
-                <EditForm Model="@options" OnValidSubmit="@GenerateWorld">
-                    <div style="display:flex; gap:1rem; align-items:end; margin-bottom:0.75rem;">
-                        <TextField Label="World Name" @bind-Value="options.Name" Style="width:240px;" />
-                        <NumberField Label="Seed" @bind-Value="options.Seed" Style="width:140px;" />
-                        <TextField Label="Theme" @bind-Value="options.Theme" Style="width:180px;" />
-                        <NumberField Label="Regions" @bind-Value="options.Regions" Min="3" Max="20" Style="width:120px;" />
-                    </div>
-
-                    <div style="display:flex; gap:0.5rem; align-items:center; margin-bottom:0.75rem;">
-                        <Button Appearance="accent" Type="submit" Disabled="@isGenerating" Style="padding:8px 16px;">@if (isGenerating) { <span class="spinner-small"></span> } Generate</Button>
-                        <Button Appearance="outline" OnClick="LogOptions" Disabled="@isGenerating">Log</Button>
-                        <Button Appearance="ghost" OnClick="() => showAdvanced = !showAdvanced">@(showAdvanced ? "Hide Advanced" : "Show Advanced")</Button>
-                        <div style="margin-left:auto; color:var(--color-text-muted); font-size:0.9rem;">Model: <strong>@selectedModel</strong></div>
-                    </div>
-
-                    @if (showAdvanced)
-                    {
-                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; margin-bottom:0.5rem;">
-                            <TextField Label="Flavor/Mood" @bind-Value="options.Flavor" />
-                            <TextField Label="Main Plot" @bind-Value="options.MainPlotPoint" />
-                            <TextArea Label="Short Setting Description" @bind-Value="options.Description" Rows="2" />
-                            <div />
-                        </div>
-                    }
-
-                    @if (!string.IsNullOrEmpty(generationProgress))
-                    {
-                        <div style="margin-top:0.5rem;">
-                            <ProgressBar Value="@progressPercentage" Max="100" Style="width:100%; margin-bottom:0.5rem;" />
-                            <div style="font-size:0.9rem; color:var(--color-text-muted);">@generationProgress</div>
-                        </div>
-                    }
-                </EditForm>
-            </Card>
-
-            @if (generatedWorld != null)
-            {
-                <Card Style="margin-top:0.75rem; padding:0.75rem;">
-                    <div style="display:flex; gap:1rem; align-items:center;">
-                        <div>
-                            <div class="stat-value">@generatedWorld.Rooms.Count</div>
-                            <div class="text-muted">Rooms</div>
-                        </div>
-                        <div>
-                            <div class="stat-value">@generatedWorld.Npcs.Count</div>
-                            <div class="text-muted">NPCs</div>
-                        </div>
-                        <div>
-                            <div class="stat-value">@generatedWorld.Factions.Count</div>
-                            <div class="text-muted">Factions</div>
-                        </div>
-                        <div style="margin-left:auto;">
-                            @if (!string.IsNullOrEmpty(exportPath))
-                            {
-                                <div class="message-bar message-bar-success">
-                                    <div class="message-content">Exported: <code>@exportPath</code></div>
-                                </div>
-                            }
-                        </div>
-                    </div>
-                </Card>
-            }
-
-            @if (!string.IsNullOrEmpty(errorMessage))
-            {
-                <div class="message-bar message-bar-error" style="margin-top:0.75rem;">
-                    <div class="message-content">@errorMessage</div>
-                </div>
-            }
-        </section>
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div style="color:red">Error: @errorMessage</div>
+        }
     </div>
 </div>
 
 <style>
 .spinner-small { display:inline-block; width:14px; height:14px; border:2px solid rgba(255,255,255,0.3); border-top:2px solid white; border-radius:50%; animation:spin 1s linear infinite; }
 @@keyframes spin { 0%{transform:rotate(0deg);}100%{transform:rotate(360deg);} }
+.btn { padding:6px 10px; border-radius:6px; border:1px solid #444; background:#222; color:white; }
+.btn-primary { padding:8px 14px; border-radius:6px; border:1px solid #1e90ff; background:#1e90ff; color:white; }
+
+.modal-overlay-global {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-box {
+    background: #222;
+    border-radius: 8px;
+    padding: 1.5rem;
+    max-width: 500px;
+    width: 100%;
+    color: white;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+}
+
+.progress-wrapper {
+    background: #333;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 1rem;
+}
+
+.progress-track {
+    background: #444;
+    height: 8px;
+}
+
+.progress-fill {
+    background: linear-gradient(90deg, rgba(30,144,255,1) 0%, rgba(0,212,255,1) 100%);
+    height: 100%;
+}
+
+.progress-meta {
+    font-size: 0.8rem;
+    text-align: right;
+    margin-top: 2px;
+}
+
+.modal-log {
+    max-height: 200px;
+    overflow-y: auto;
+    background: #111;
+    border-radius: 4px;
+    padding: 0.5rem;
+    margin-top: 1rem;
+}
+
+.log-line {
+    font-family: monospace;
+    font-size: 0.9rem;
+    line-height: 1.2;
+    white-space: pre-wrap;
+}
 </style>
 
 @code {
-    private WorldGenerationOptions options = new()
-    {
-        Name = "MyWorld",
-        Seed = new Random().Next(1, 999999),
-        Theme = "Cyberpunk",
-        Regions = 5,
-        Flavor = "Dark and gritty",
-        Description = "A sprawling megacity",
-        MainPlotPoint = "Uncover the conspiracy",
-        TimePeriod = "2089",
-        PowerStructure = "Corporations and hackers"
-    };
-
     private string selectedModel = "tinyllama-q4";
+    private WorldGenerationOptions options = new WorldGenerationOptions { Name = "MyWorld", Seed = new Random().Next(1, 999999), Theme = "Fantasy", Regions = 5 };
     private bool isInitializing = false;
     private bool isGenerating = false;
-    private string initProgress = "";
-    private string generationProgress = "";
+    private string initProgress = string.Empty;
+    private string generationProgress = string.Empty;
     private int progressPercentage = 0;
-    private string errorMessage = "";
-    private string exportPath = "";
-    private WorldGenerationResult? generatedWorld;
+    private string uiLog = string.Empty;
+    private string errorMessage = string.Empty;
+    private string exportPath = string.Empty;
 
-    private bool showLogPane = true;
-    private bool showAdvanced = false;
+    private string hypeMessage = "Ready to rumble!";
+    private System.Threading.Timer? hypeTimer;
+    private readonly string[] hypeMessages = new[] {
+        "Summoning pixels and possibilities...",
+        "Feeding the neural hamsters...",
+        "Warming up the imagination engines...",
+        "Spinning story threads...",
+        "Mixing lore and mystery...",
+        "Polishing neon skylines...",
+        "Calibrating NPC personalities...",
+        "Sealing the world in bytes..."
+    };
 
-    // Small UI log for the left pane
-    private string uiLog = "";
-
-    protected override async Task OnInitializedAsync()
+    private readonly Dictionary<string, WorldGenerationOptions> Presets = new()
     {
-        await LoadCachedModels();
-        selectedModel = AISettings.Value.LLamaModelKey ?? "tinyllama-q4";
-    }
-
-    private void AppendUiLog(string msg)
-    {
-        uiLog = $"{DateTime.Now:HH:mm:ss} {msg}\n" + uiLog;
-        // keep limited size
-        if (uiLog.Length > 20000) uiLog = uiLog.Substring(0, 20000);
-        StateHasChanged();
-    }
-
-    private void ClearUiLog()
-    {
-        uiLog = "";
-    }
-
-    private async Task GenerateWorld()
-    {
-        try
-        {
-            isGenerating = true; errorMessage = ""; generatedWorld = null; exportPath = ""; progressPercentage = 0;
-            AppendUiLog($"Generate requested: {options.Name} (seed {options.Seed})");
-
-            var progress = new Progress<string>(msg =>
-            {
-                generationProgress = msg;
-                progressPercentage = msg switch
-                {
-                    var m when m.Contains("Starting") => 10,
-                    var m when m.Contains("structure") => 40,
-                    var m when m.Contains("Validating") => 80,
-                    var m when m.Contains("complete") => 100,
-                    _ => progressPercentage
-                };
-                AppendUiLog($"Progress: {msg}");
-            });
-
-            // Ensure AI initialized
-            if (!GenerationService.IsInitialized)
-            {
-                AppendUiLog("Initializing AI adapter...");
-                var dp = new Progress<DownloadProgress>(p => { initProgress = $"{p.PercentComplete}%"; AppendUiLog($"Init: {p.PercentComplete}%"); });
-                await GenerationService.InitializeAsync(dp);
-                AppendUiLog("AI initialized");
-            }
-
-            generatedWorld = await GenerationService.GenerateWorldAsync(options, progress);
-            exportPath = GenerationService.ExportWorld(generatedWorld, options, Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "source", "repos", "SoloAdventureSystem", "content", "worlds"));
-            generationProgress = "Complete";
-            AppendUiLog($"Generation complete. Saved to {exportPath}");
-        }
-        catch (Exception ex)
-        {
-            errorMessage = ex.Message; AppendUiLog($"ERROR: {ex.Message}");
-        }
-        finally
-        {
-            isGenerating = false; StateHasChanged();
-        }
-    }
-
-    private Task LogOptions()
-    {
-        AppendUiLog($"Options: {options.Name} seed={options.Seed} regions={options.Regions}");
-        return Task.CompletedTask;
-    }
-
-    // lightweight helpers copied from previous file to keep functionality
-    private List<ModelCacheInfo> cachedModels = new();
-    private long totalCacheSize = 0;
-
-    private class ModelCacheInfo { public string Key { get; set; } = ""; public CachedModelInfo Value { get; set; } = new(); }
-
-    private async Task LoadCachedModels()
-    {
-        try
-        {
-            var cached = GGUFModelDownloader.GetCachedModels();
-            cachedModels = cached.Select(kvp => new ModelCacheInfo { Key = kvp.Key, Value = kvp.Value }).ToList();
-            totalCacheSize = GGUFModelDownloader.GetTotalCacheSize();
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Failed to load cached models");
-            AppendUiLog($"Failed to load cached models: {ex.Message}");
-        }
-    }
+        { "NeonCity", new WorldGenerationOptions { Name = "NeonCity", Seed = 10001, Theme = "Cyberpunk", Regions = 5, Flavor = "Neon-soaked cyberpunk noir", Description = "A sprawling megacity where AI corporations control everything", MainPlotPoint = "Expose the corporation covering up illegal AI experiments", TimePeriod = "2089", PowerStructure = "Megacorporations, underground hackers, and street gangs" } },
+        { "EchoHarbor", new WorldGenerationOptions { Name = "EchoHarbor", Seed = 10006, Theme = "Cosmic Horror", Regions = 5, Flavor = "Quiet dread with uncanny undertones", Description = "A fogbound coastal town where ancient things stir beneath the waves", MainPlotPoint = "Uncover the ritual that weakens the barrier between worlds", TimePeriod = "Present day", PowerStructure = "Local council, secret cults, and scholarly outsiders" } },
+        { "SummerOf84", new WorldGenerationOptions { Name = "SummerOf84", Seed = 10007, Theme = "Retro 1980s Mystery", Regions = 6, Flavor = "Nostalgic, adventurous, slightly eerie", Description = "Small-town suburbia where a group of kids stumble on a strange otherworldly mystery", MainPlotPoint = "Investigate disappearances and strange happenings tied to a hidden facility", TimePeriod = "Summer, 1984", PowerStructure = "Town council, eccentric locals, a hidden research facility" } },
+        { "RetroFuture", new WorldGenerationOptions { Name = "RetroFuture", Seed = 10005, Theme = "Retro-Futurism", Regions = 5, Flavor = "Vibrant retro-futuristic", Description = "Alternative 1985 where AI emerged twenty years early", MainPlotPoint = "Solve the murder of the famous AI scientist", TimePeriod = "Alternative timeline 1985", PowerStructure = "Tech corporations, detective agencies, and AI rights activists" } },
+        { "Wasteland Hope", new WorldGenerationOptions { Name = "WastelandHope", Seed = 10002, Theme = "Post-Apocalyptic", Regions = 5, Flavor = "Desperate but hopeful", Description = "Scattered communities rebuilding after the nuclear collapse", MainPlotPoint = "Unite the settlements against the warlord threat", TimePeriod = "47 years after the Fall", PowerStructure = "Tribal councils, roaming warlords, and scavenger clans" } },
+        { "Medieval Realm", new WorldGenerationOptions { Name = "Highrealm", Seed = 20001, Theme = "Medieval", Regions = 6, Flavor = "Misty and honor-bound", Description = "Rolling hills dotted with keeps" } },
+        { "Supernatural Glade", new WorldGenerationOptions { Name = "HauntedGlade", Seed = 20002, Theme = "Supernatural", Regions = 4, Flavor = "Ethereal and uncanny", Description = "An ancient forest" } }
+    };
 
     private async Task InitializeModel()
     {
-        if (isInitializing) return;
+        if (isInitializing || GenerationService.IsInitialized) return;
+        isInitializing = true;
+        initProgress = "0%";
+        StartHype();
+        StateHasChanged();
+
         try
         {
-            isInitializing = true;
-            AppendUiLog($"Initializing model: {selectedModel}");
-
-            // Update runtime settings so GenerationService uses selected model
+            // update runtime setting if possible
             try { AISettings.Value.LLamaModelKey = selectedModel; AISettings.Value.Model = selectedModel; } catch { }
 
-            var dp = new Progress<DownloadProgress>(p =>
-            {
+            var dp = new Progress<DownloadProgress>(p => {
                 initProgress = $"{p.PercentComplete}%";
-                AppendUiLog($"Init: {p.PercentComplete}%");
+                generationProgress = $"Model download: {p.PercentComplete}%";
+                progressPercentage = p.PercentComplete;
+                uiLog = $"Init: {p.PercentComplete}% - {p.ProgressSummary}\n" + uiLog;
+                StateHasChanged();
             });
 
             await GenerationService.InitializeAsync(dp);
-            AppendUiLog("AI initialized");
-            await LoadCachedModels();
+            uiLog = $"Initialized model: {selectedModel}\n" + uiLog;
         }
         catch (Exception ex)
         {
-            AppendUiLog($"Init failed: {ex.Message}");
             errorMessage = ex.Message;
+            uiLog = $"Init error: {ex.Message}\n" + uiLog;
         }
         finally
         {
             isInitializing = false;
+            StopHype();
             StateHasChanged();
         }
     }
 
-    private string GetModelEstimate(string modelKey)
+    private void OnPresetChanged(ChangeEventArgs e)
     {
-        // Minimal inline estimates (size / download time on typical connection)
-        return modelKey switch
+        var key = e.Value?.ToString() ?? "Custom";
+        if (key == "Custom") return;
+        if (Presets.TryGetValue(key, out var p))
         {
-            "tinyllama-q4" => "~700 MB — ~1-3 min",
-            "llama-3.2-1b-q4" => "~2 GB — ~3-6 min",
-            "phi-3-mini-q4" => "~2.3 GB — ~4-8 min",
-            _ => "Unknown size",
-        };
+            options.Name = p.Name;
+            options.Seed = p.Seed;
+            options.Theme = p.Theme;
+            options.Regions = p.Regions;
+            options.Flavor = p.Flavor;
+            options.Description = p.Description;
+            options.MainPlotPoint = p.MainPlotPoint;
+            options.TimePeriod = p.TimePeriod;
+            options.PowerStructure = p.PowerStructure;
+            uiLog = $"Preset applied: {key}\n" + uiLog;
+            StateHasChanged();
+        }
+    }
+
+    private void LogOptions()
+    {
+        uiLog = System.Text.Json.JsonSerializer.Serialize(options) + "\n" + uiLog;
+    }
+
+    private async Task GenerateWorld()
+    {
+        if (isGenerating) return;
+
+        // Ensure AI initialized first
+        if (!GenerationService.IsInitialized && !isInitializing)
+        {
+            uiLog = "AI not initialized. Initializing automatically...\n" + uiLog;
+            await InitializeModel();
+        }
+
+        if (!GenerationService.IsInitialized)
+        {
+            errorMessage = "Service not initialized. Call InitializeAsync first.";
+            uiLog = $"Generation error: {errorMessage}\n" + uiLog;
+            return;
+        }
+
+        isGenerating = true;
+        errorMessage = string.Empty;
+        progressPercentage = 0;
+        generationProgress = "Starting";
+        StartHype();
+        uiLog = $"Starting generation: {options.Name}\n" + uiLog;
+
+        try
+        {
+            var progress = new Progress<string>(msg => {
+                generationProgress = msg;
+                // parse percentage like 'XX%'
+                try
+                {
+                    var m = System.Text.RegularExpressions.Regex.Match(msg ?? string.Empty, "(\\d{1,3})%");
+                    if (m.Success && int.TryParse(m.Groups[1].Value, out var pct))
+                    {
+                        progressPercentage = Math.Clamp(pct, 0, 100);
+                    }
+                    else
+                    {
+                        // slowly advance progress when messages arrive
+                        progressPercentage = Math.Min(98, progressPercentage + 8);
+                    }
+                }
+                catch { }
+                uiLog = msg + "\n" + uiLog;
+                StateHasChanged();
+            });
+
+            var result = await GenerationService.GenerateWorldAsync(options, progress);
+
+            // export
+            var outDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "source", "repos", "SoloAdventureSystem", "content", "worlds");
+            exportPath = GenerationService.ExportWorld(result, options, outDir);
+            uiLog = $"Generation finished, saved to {exportPath}\n" + uiLog;
+            progressPercentage = 100;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+            uiLog = $"Generation error: {ex.Message}\n" + uiLog;
+        }
+        finally
+        {
+            isGenerating = false;
+            StopHype();
+            StateHasChanged();
+        }
+    }
+
+    private void StartHype()
+    {
+        hypeMessage = hypeMessages[0];
+        var idx = 0;
+        hypeTimer = new System.Threading.Timer(_ => {
+            idx = (idx + 1) % hypeMessages.Length;
+            hypeMessage = hypeMessages[idx];
+            InvokeAsync(StateHasChanged);
+        }, null, 1000, 2500);
+    }
+
+    private void StopHype()
+    {
+        try { hypeTimer?.Change(System.Threading.Timeout.Infinite, System.Threading.Timeout.Infinite); hypeTimer?.Dispose(); hypeTimer = null; } catch { }
+        hypeMessage = "Ready";
+    }
+
+    private IEnumerable<string> GetRecentLogLines(int count)
+    {
+        if (string.IsNullOrEmpty(uiLog)) return Enumerable.Empty<string>();
+        var lines = uiLog.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+        return lines.Take(count);
     }
 }

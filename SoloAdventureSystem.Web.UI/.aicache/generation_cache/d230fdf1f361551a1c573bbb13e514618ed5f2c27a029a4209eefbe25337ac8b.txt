@@ -1,0 +1,1 @@
+If you cannot produce a dialogue choice, output "NPC_NAME: Edda, NPC_BIO: Edda of Highbridge, NPC_LOCATION: Long banners hang from timber, NPC_FACTION: The Collective, NPC_SKILLS: Social, NPC_FORMAT: Exact example (two choices

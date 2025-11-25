@@ -1,0 +1,1 @@
+Hey, thanks for providing the example script with the required fields. Can you also add an example for the "Daemon:npc2|Loyalty" effect, please? And maybe some explanation on how to use it for the "Leave" choice

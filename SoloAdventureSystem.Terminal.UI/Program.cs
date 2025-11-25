@@ -50,6 +50,12 @@ class Program
         services.AddSingleton<IImageAdapter, SimpleImageAdapter>();
         services.AddSingleton<WorldValidator>();
         services.AddSingleton<WorldExporter>();
+
+        // Resilience policy for generation
+        services.AddSingleton<IGenerationPolicy, ResilienceGenerationPolicy>();
+
+        // Register the real MaINAdapter for LLM generation (use appsettings AI configuration)
+        services.AddSingleton<ILocalSLMAdapter, MaINAdapter>();
         
         // Add UI services
         services.AddTransient<WorldGeneratorUI>();

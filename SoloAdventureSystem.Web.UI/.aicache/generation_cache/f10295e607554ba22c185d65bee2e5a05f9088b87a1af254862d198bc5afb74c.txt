@@ -1,0 +1,1 @@
+This looks great! Can you add some examples of how the NPC would respond to each choice, and include a brief explanation of the consequences for the player's actions in each case? Also, could you add an example of how the NPC could use the "leave" choice, and explain how it would impact the player's relationship with the NPC in the future

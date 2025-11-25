@@ -1,4 +1,4 @@
-﻿@page "/worlds/{seed}"
+﻿@page "/worlds/{id}"
 @rendermode InteractiveServer
 @using System.IO
 @using System.IO.Compression
@@ -59,6 +59,9 @@
                     <Button Appearance="neutral" OnClick="DownloadWorld">
                         Download
                     </Button>
+                    <Button Appearance="neutral" OnClick="ToggleRawJson">
+                        Toggle Raw JSON
+                    </Button>
                 </div>
             </div>
         </div>
@@ -90,7 +93,7 @@
                 <div style="text-align: center; padding: 1.5rem;">
                     <div class="stat-icon-large">L</div>
                     <div class="stat-value">@world.LoreEntries.Count</div>
-                    <div class="text-muted">Lore Entries</div>
+                    <div class="text-muted">Lore</div>
                 </div>
             </Card>
         </div>
@@ -883,15 +886,16 @@
 
 @code {
     [Parameter]
-    public string Seed { get; set; } = "";
-    
-    private WorldData? world;
+    public string id { get; set; } = "";
+
+    private WorldModel? world;
     private bool isLoading = true;
     private string activeTab = "overview";
     private string searchQuery = "";
     private string filterType = "all";
     private string successMessage = "";
     private string rawJson = "";
+    private bool showRawJson = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -901,40 +905,39 @@
     private async Task LoadWorld()
     {
         isLoading = true;
-        
+
         try
         {
             var worldsPath = GetWorldsDirectory();
-            var files = Directory.GetFiles(worldsPath, $"*_{Seed}.zip");
-            
+            var files = Directory.GetFiles(worldsPath, $"*_{id}.zip");
+            if (files.Length == 0)
+            {
+                // fallback: try any file containing the id or matching by name
+                files = Directory.GetFiles(worldsPath, $"*{id}*.zip");
+            }
+
             if (files.Length > 0)
             {
                 var filePath = files[0];
-                
                 using var zip = ZipFile.OpenRead(filePath);
-                
-                // Read world.json for metadata
                 var worldEntry = zip.GetEntry("world.json");
                 if (worldEntry != null)
                 {
                     using var stream = worldEntry.Open();
                     using var reader = new StreamReader(stream);
-                    rawJson = await reader.ReadToEndAsync();
-                    
-                    var worldMetadata = JsonSerializer.Deserialize<WorldJsonModel>(rawJson, new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    });
-                    
+                    var json = await reader.ReadToEndAsync();
+                    rawJson = json; // store raw JSON so lore extraction works later
+                    var worldMetadata = JsonSerializer.Deserialize<WorldJsonModel>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                     if (worldMetadata != null)
                     {
-                        world = new WorldData
+                        world = new WorldModel
                         {
                             World = worldMetadata,
                             Rooms = new List<RoomModel>(),
                             Npcs = new List<NpcModel>(),
                             Factions = new List<FactionModel>(),
-                            LoreEntries = new List<string>()
+                            LoreEntries = new List<string>(),
+                            StoryNodes = new List<StoryNode>()
                         };
                     }
                 }
@@ -989,24 +992,24 @@
                     }
                 }
                 
-                // Try to read lore from world.json if available
+                // Try to read lore from world.json if available (rawJson set earlier)
                 if (!string.IsNullOrEmpty(rawJson))
                 {
                     try
                     {
-                        var fullWorld = JsonSerializer.Deserialize<WorldData>(rawJson, new JsonSerializerOptions
+                        var fullWorld = JsonSerializer.Deserialize<WorldModel>(rawJson, new JsonSerializerOptions
                         {
                             PropertyNameCaseInsensitive = true
                         });
-                        
+
                         if (fullWorld?.LoreEntries != null && fullWorld.LoreEntries.Any())
                         {
                             world.LoreEntries = fullWorld.LoreEntries;
                         }
                     }
-                    catch
+                    catch (Exception ex)
                     {
-                        // Lore might not be in world.json, that's ok
+                        Console.WriteLine($"Warning: failed to parse lore from world.json: {ex.Message}");
                     }
                 }
                 
@@ -1282,10 +1285,10 @@
     private void DownloadWorld()
     {
         var worldsPath = GetWorldsDirectory();
-        var files = Directory.GetFiles(worldsPath, $"*_{Seed}.zip");
+        var files = Directory.GetFiles(worldsPath, $"*_{id}.zip");
         if (files.Length > 0)
         {
-            Navigation.NavigateTo($"/download/{Seed}", true);
+            Navigation.NavigateTo($"/download/{id}", true);
         }
     }
 
@@ -1298,6 +1301,12 @@
         StateHasChanged();
     }
 
+    private void ToggleRawJson()
+    {
+        showRawJson = !showRawJson;
+        StateHasChanged();
+    }
+
     private string GetWorldsDirectory()
     {
         return Path.Combine(
@@ -1305,7 +1314,7 @@
             "source", "repos", "SoloAdventureSystem", "content", "worlds");
     }
 
-    private class WorldData
+    private class WorldModel
     {
         public WorldJsonModel World { get; set; } = new();
         public List<RoomModel> Rooms { get; set; } = new();

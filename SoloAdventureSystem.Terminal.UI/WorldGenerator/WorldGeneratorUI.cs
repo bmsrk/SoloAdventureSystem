@@ -38,7 +38,7 @@ public class WorldGeneratorUI : IDisposable
     private Label _statusLabel = null!;
 
     // Cached adapters to avoid re-downloading models
-    private MaINAdapter? _cachedAdapter;
+    private ILocalSLMAdapter? _cachedAdapter;
     private string? _cachedModelKey;
     private CancellationTokenSource? _cancellationTokenSource;
 
@@ -63,8 +63,8 @@ public class WorldGeneratorUI : IDisposable
     {
         if (_cachedAdapter != null)
         {
-            _logger?.LogInformation("Disposing cached MaIN.NET adapter to free memory...");
-            _cachedAdapter.Dispose();
+            _logger?.LogInformation("Disposing cached SLM adapter to free memory...");
+            if (_cachedAdapter is IDisposable disp) disp.Dispose();
             _cachedAdapter = null;
             _cachedModelKey = null;
         }
@@ -297,7 +297,7 @@ public class WorldGeneratorUI : IDisposable
 
             Log($"Provider: LLamaSharp, Model: {model}");
 
-            // Initialize MaIN.NET adapter (with caching)
+            // Initialize SLM adapter (with caching) via DI
             ILocalSLMAdapter slmAdapter;
             try
             {
@@ -307,7 +307,7 @@ public class WorldGeneratorUI : IDisposable
                 // Check if we can reuse cached adapter
                 if (_cachedAdapter != null && _cachedModelKey == model)
                 {
-                    Log("Using cached MaIN.NET adapter...");
+                    Log("Using cached SLM adapter...");
                     slmAdapter = _cachedAdapter;
                 }
                 else
@@ -316,16 +316,22 @@ public class WorldGeneratorUI : IDisposable
                     if (_cachedAdapter != null)
                     {
                         Log("Model changed, disposing old adapter...");
-                        _cachedAdapter.Dispose();
+                        if (_cachedAdapter is IDisposable disp) disp.Dispose();
                         _cachedAdapter = null;
                     }
 
                     UpdateStatus("Checking model...", 5);
-                    Log("Initializing MaIN.NET adapter...");
-                    _logger?.LogInformation("?? Creating new MaIN.NET adapter for model: {Model}", model);
+                    Log("Resolving SLM adapter from DI container...");
+                    _logger?.LogInformation("Creating/resolving SLM adapter for model: {Model}", model);
                     
-                    var adapter = new MaINAdapter(_settings, _logger as ILogger<MaINAdapter>);
-                    
+                    // Resolve the configured adapter (MaINAdapter registered in Program.cs)
+                    var adapter = _services.GetRequiredService<ILocalSLMAdapter>();
+
+                    // Update options so adapter uses the selected model key on initialization
+                    _settings.Value.Provider = "LLamaSharp";
+                    _settings.Value.Model = model;
+                    _settings.Value.LLamaModelKey = model;
+
                     var progress = new Progress<DownloadProgress>(p =>
                     {
                         var pct = p.PercentComplete;
@@ -338,24 +344,24 @@ public class WorldGeneratorUI : IDisposable
                     });
 
                     Log("Downloading/loading model (this may take a while)...");
-                    _logger?.LogInformation("?? Model download/load starting...");
+                    _logger?.LogInformation("Model download/load starting...");
                     
                     await adapter.InitializeAsync(progress);
                     
                     Log("Model loaded successfully!");
-                    _logger?.LogInformation("? Model initialization complete");
+                    _logger?.LogInformation("Model initialization complete");
                     
                     // Cache the adapter
                     _cachedAdapter = adapter;
                     _cachedModelKey = model;
-                    _logger?.LogInformation("?? Adapter cached for reuse (model: {Model})", model);
+                    _logger?.LogInformation("Adapter cached for reuse (model: {Model})", model);
                     slmAdapter = adapter;
                 }
             }
             catch (Exception ex)
             {
-                Log($"MaIN.NET initialization failed: {ex.Message}");
-                _logger.LogError(ex, "MaIN.NET initialization failed");
+                Log($"SLM initialization failed: {ex.Message}");
+                _logger.LogError(ex, "SLM initialization failed");
                 throw;
             }
 

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using SoloAdventureSystem.ContentGenerator.Adapters;
 using SoloAdventureSystem.ContentGenerator.Models;
@@ -15,11 +16,13 @@ public class NpcGenerator : IContentGenerator<List<NpcModel>>
 {
     private readonly ILocalSLMAdapter _slm;
     private readonly ILogger<NpcGenerator>? _logger;
+    private readonly SoloAdventureSystem.ContentGenerator.Parsing.IStructuredOutputParser _structuredParser;
 
-    public NpcGenerator(ILocalSLMAdapter slm, ILogger<NpcGenerator>? logger = null)
+    public NpcGenerator(ILocalSLMAdapter slm, ILogger<NpcGenerator>? logger = null, SoloAdventureSystem.ContentGenerator.Parsing.IStructuredOutputParser? structuredParser = null)
     {
         _slm = slm ?? throw new ArgumentNullException(nameof(slm));
         _logger = logger;
+        _structuredParser = structuredParser ?? new SoloAdventureSystem.ContentGenerator.Parsing.JsonStructuredOutputParser();
     }
 
     public List<NpcModel> Generate(WorldGenerationContext context)
@@ -55,79 +58,194 @@ public class NpcGenerator : IContentGenerator<List<NpcModel>>
         return npcs;
     }
 
-    private NpcModel GenerateNpc(
+    // Made internal to support deterministic per-NPC testing. Optional overrideSeed lets tests
+    // generate an NPC with a specific seed rather than relying on context-derived seed.
+    internal NpcModel GenerateNpc(
         WorldGenerationContext context, 
         int index, 
         FactionModel faction,
-        RoomModel room)
+        RoomModel room,
+        int? overrideSeed = null)
     {
         var npcId = $"npc{index + 1}";
-        var npcSeed = context.GetSeedFor("NPC", index);
-        var npcName = ProceduralNames.GenerateNpcName(npcSeed);
+        // Use context.Random for per-run randomness; removing global seed exposure
+        var npcSeed = overrideSeed ?? context.Random.Next();
 
-        _logger?.LogDebug("Generating NPC {Index}/{Total}: {NpcName}", 
-            index + 1, context.Rooms.Count, npcName);
+        _logger?.LogDebug("Generating NPC {Index}/{Total} (seed {Seed})", index + 1, context.Rooms.Count, npcSeed);
 
-        string npcBioRaw;
-        try
-        {
-            var npcPrompt = PromptTemplates.BuildNpcPrompt(
-                npcName,
-                context.Options,
-                room.Title,
-                faction.Name);
-            npcBioRaw = _slm.GenerateNpcBio(npcPrompt, npcSeed);
-        }
-        catch (Exception ex)
-        {
-            throw new InvalidOperationException(
-                $"Failed to generate bio for NPC {index + 1} ({npcName}). Error: {ex.Message}", ex);
-        }
-
-        string finalBio = string.Empty;
+        string name = string.Empty;
+        string bioRaw = string.Empty;
         string role = string.Empty;
         string trait = string.Empty;
 
-        try
+        // Try AI prompt to generate structured NPC with name and bio
+        for (int attempt = 0; attempt < 3; attempt++)
         {
-            var parsed = ToonCodec.Deserialize<Dictionary<string, object>>(npcBioRaw);
-            if (parsed == null)
+            try
             {
-                var parsedList = ToonCodec.Deserialize<List<Dictionary<string, object>>>(npcBioRaw);
-                if (parsedList != null && parsedList.Count > 0) parsed = parsedList[0];
-            }
+                string prompt;
+                if (attempt == 0)
+                {
+                    prompt = PromptTemplates.BuildNpcPrompt(string.Empty, context.Options, room.Title, faction.Name);
+                }
+                else
+                {
+                    prompt = $@"Produce a short JSON object with fields: name (short), bio (2 sentences), role (optional), trait (optional).
+Context: World={context.Options.Name}, Room={room.Title}, Faction={faction.Name}, Theme={context.Options.Theme}
+Return only JSON.";
+                }
 
-            if (parsed != null)
+                bioRaw = _slm.GenerateNpcBio(prompt, npcSeed + attempt);
+
+                // Sanitize AI output before parsing or using it
+                bioRaw = SanitizeGeneratedText(bioRaw);
+
+                try
+                {
+                    Dictionary<string, object>? parsed = null;
+                    try
+                    {
+                        _structuredParser.TryParse<Dictionary<string, object>>(bioRaw, out parsed);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger?.LogDebug(ex, "Structured parser threw for NPC output on attempt {Attempt}", attempt + 1);
+                        parsed = null;
+                    }
+
+                    if (parsed != null)
+                    {
+                        if (parsed.TryGetValue("name", out var n) && n != null) name = n.ToString() ?? string.Empty;
+                        if (parsed.TryGetValue("bio", out var b) && b != null) bioRaw = b.ToString() ?? string.Empty;
+                        if (parsed.TryGetValue("role", out var r) && r != null) role = r.ToString() ?? string.Empty;
+                        if (parsed.TryGetValue("trait", out var t) && t != null) trait = t.ToString() ?? string.Empty;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger?.LogDebug(ex, "Structured parse failed for NPC output on attempt {Attempt}", attempt + 1);
+                }
+
+                if (!string.IsNullOrWhiteSpace(bioRaw)) break;
+            }
+            catch (Exception ex)
             {
-                if (parsed.TryGetValue("bio", out var bio) && bio != null) finalBio = bio.ToString() ?? string.Empty;
-                if (string.IsNullOrWhiteSpace(finalBio) && parsed.TryGetValue("description", out var desc) && desc != null) finalBio = desc.ToString() ?? string.Empty;
-                if (parsed.TryGetValue("role", out var r) && r != null) role = r.ToString() ?? string.Empty;
-                if (parsed.TryGetValue("trait", out var tr) && tr != null) trait = tr.ToString() ?? string.Empty;
+                _logger?.LogWarning(ex, "Failed to generate NPC bio on attempt {Attempt}", attempt + 1);
             }
         }
-        catch (Exception ex)
+
+        if (string.IsNullOrWhiteSpace(bioRaw))
         {
-            _logger?.LogDebug(ex, "Structured parse failed for NPC output; falling back to raw text");
+            throw new InvalidOperationException($"Failed to generate non-empty bio for NPC index {index + 1}");
         }
 
-        if (string.IsNullOrWhiteSpace(finalBio)) finalBio = npcBioRaw;
+        // Ensure bio is cleaned up for in-game display
+        bioRaw = NormalizeWhitespace(bioRaw);
+
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            // Improved fallback: try to extract a likely proper name from the bio using regex
+            var extracted = ExtractNameFromBio(bioRaw);
+            if (!string.IsNullOrWhiteSpace(extracted))
+            {
+                name = extracted;
+            }
+            else
+            {
+                // Ultimate fallback: use generic NPC id
+                name = $"NPC{index + 1}";
+            }
+        }
 
         var npc = new NpcModel
         {
             Id = npcId,
-            Name = npcName,
-            Description = finalBio,
+            Name = name,
+            Description = bioRaw + (string.IsNullOrWhiteSpace(trait) ? string.Empty : " " + trait),
             FactionId = faction.Id,
             Hostility = "Neutral",
             Attributes = new NpcAttributes(),
-            Behavior = "Static",
+            Behavior = string.IsNullOrWhiteSpace(role) ? "Static" : role,
             Inventory = new List<string>()
         };
 
-        if (!string.IsNullOrWhiteSpace(role)) npc.Behavior = role;
-        if (!string.IsNullOrWhiteSpace(trait)) npc.Description = npc.Description + " " + trait;
-
-        _logger?.LogDebug("? NPC {Index} generated: {NpcName}", index + 1, npcName);
+        _logger?.LogDebug("? NPC {Index} generated: {NpcName}", index + 1, name);
         return npc;
+    }
+
+    // Basic sanitization to remove prompt artifacts and normalize whitespace
+    private static string SanitizeGeneratedText(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return string.Empty;
+
+        // Remove common instruction fragments that may leak into output
+        var lines = text.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+        var kept = new List<string>();
+        foreach (var raw in lines)
+        {
+            var line = raw.Trim();
+            if (string.IsNullOrWhiteSpace(line)) continue;
+
+            // Skip lines that look like instructions or UI hints
+            var lower = line.ToLowerInvariant();
+            if (lower.StartsWith("could you") || lower.StartsWith("please") || lower.StartsWith("return only") || lower.StartsWith("produce") || lower.StartsWith("example"))
+                continue;
+
+            kept.Add(line);
+        }
+
+        var joined = string.Join(" ", kept);
+        var cleaned = NormalizeWhitespace(joined);
+
+        // Remove TOON markers and hashtag tokens
+        try
+        {
+            cleaned = System.Text.RegularExpressions.Regex.Replace(cleaned, "(?i)\\b#?TOON\\b", "");
+            cleaned = System.Text.RegularExpressions.Regex.Replace(cleaned, "(?i)\\b#?ENDTOON\\b", "");
+            cleaned = System.Text.RegularExpressions.Regex.Replace(cleaned, "#\\w+", "");
+            // Remove (s) plural markers like a(s) -> a
+            cleaned = System.Text.RegularExpressions.Regex.Replace(cleaned, "\\(s\\)", "");
+
+            // Dedupe repeated short sentences/fragments
+            var sentences = System.Text.RegularExpressions.Regex.Split(cleaned, "(?<=[\\.!?])\\s+");
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var parts = new List<string>();
+            foreach (var s in sentences)
+            {
+                var t = s.Trim();
+                if (string.IsNullOrEmpty(t)) continue;
+                var key = System.Text.RegularExpressions.Regex.Replace(t.ToLowerInvariant(), "[\\p{P}\\s]+", " ").Trim();
+                if (!seen.Contains(key)) { parts.Add(t); seen.Add(key); }
+            }
+            if (parts.Count > 0) cleaned = string.Join(" ", parts);
+            cleaned = NormalizeWhitespace(cleaned);
+        }
+        catch { }
+
+        return cleaned;
+    }
+
+    private static string NormalizeWhitespace(string s)
+    {
+        if (string.IsNullOrEmpty(s)) return s;
+        var outStr = Regex.Replace(s, "\\s+", " ").Trim();
+        return outStr;
+    }
+
+    // Try to find a human-like name (one or two capitalized words) in the bio
+    private static string? ExtractNameFromBio(string bio)
+    {
+        if (string.IsNullOrWhiteSpace(bio)) return null;
+
+        // Look for patterns like 'Marcus Chen' or single capitalized name 'Marcus'
+        var nameMatch = Regex.Match(bio, "\\b([A-Z][a-z]{1,20}(?: [A-Z][a-z]{1,20})?)\\b");
+        if (nameMatch.Success)
+        {
+            var candidate = nameMatch.Groups[1].Value;
+            if (candidate.Length <= 20) return candidate;
+            return candidate.Substring(0, 20).Trim();
+        }
+
+        return null;
     }
 }

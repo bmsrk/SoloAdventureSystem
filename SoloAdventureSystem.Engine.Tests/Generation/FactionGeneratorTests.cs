@@ -54,12 +54,12 @@ public class FactionGeneratorTests
     }
 
     [Fact]
-    public void Generate_CallsSlmWithCorrectSeed()
+    public void Generate_CallsSlmWithSomeSeed()
     {
         // Arrange
-        var context = CreateTestContext(seed: 12345);
+        var context = CreateTestContext();
         _mockSlm
-            .Setup(s => s.GenerateFactionFlavor(It.IsAny<string>(), 12345))
+            .Setup(s => s.GenerateFactionFlavor(It.IsAny<string>(), It.IsAny<int>()))
             .Returns("Test description");
 
         // Act
@@ -67,7 +67,7 @@ public class FactionGeneratorTests
 
         // Assert
         _mockSlm.Verify(
-            s => s.GenerateFactionFlavor(It.IsAny<string>(), 12345),
+            s => s.GenerateFactionFlavor(It.IsAny<string>(), It.IsAny<int>()),
             Times.Once);
     }
 
@@ -90,7 +90,7 @@ public class FactionGeneratorTests
     public void Generate_UsesProceduralNameGeneration()
     {
         // Arrange
-        var context = CreateTestContext(seed: 999);
+        var context = CreateTestContext();
         _mockSlm
             .Setup(s => s.GenerateFactionFlavor(It.IsAny<string>(), It.IsAny<int>()))
             .Returns("Description");
@@ -98,7 +98,7 @@ public class FactionGeneratorTests
         // Act
         var result = _generator.Generate(context);
 
-        // Assert - Name should be procedurally generated based on seed
+        // Assert - Name should be procedurally generated based on randomness
         Assert.NotEmpty(result[0].Name);
         Assert.NotEqual("faction1", result[0].Name); // Should not be ID
     }
@@ -126,12 +126,11 @@ public class FactionGeneratorTests
             Times.AtLeastOnce);
     }
 
-    private static WorldGenerationContext CreateTestContext(int seed = 123)
+    private static WorldGenerationContext CreateTestContext()
     {
         return new WorldGenerationContext(new WorldGenerationOptions
         {
             Name = "TestWorld",
-            Seed = seed,
             Theme = "TestTheme",
             Regions = 5
         });

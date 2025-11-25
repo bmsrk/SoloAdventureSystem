@@ -33,12 +33,6 @@ class Program
             getDefaultValue: () => "CLIWorld");
         nameOption.AddAlias("-n");
 
-        var seedOption = new Option<int>(
-            name: "--seed",
-            description: "Random seed for generation",
-            getDefaultValue: () => new Random().Next(1, 999999));
-        seedOption.AddAlias("-s");
-
         var themeOption = new Option<string>(
             name: "--theme",
             description: "World theme",
@@ -76,7 +70,6 @@ class Program
         verboseOption.AddAlias("-v");
 
         generateCommand.AddOption(nameOption);
-        generateCommand.AddOption(seedOption);
         generateCommand.AddOption(themeOption);
         generateCommand.AddOption(regionsOption);
         generateCommand.AddOption(providerOption);
@@ -85,10 +78,10 @@ class Program
         generateCommand.AddOption(verboseOption);
 
         // Set handler
-        generateCommand.SetHandler(async (string name, int seed, string theme, int regions, string provider, string model, string? output, bool verbose) =>
+        generateCommand.SetHandler(async (string name, string theme, int regions, string provider, string model, string? output, bool verbose) =>
         {
-            await GenerateWorldAsync(name, seed, theme, regions, provider, model, output, verbose);
-        }, nameOption, seedOption, themeOption, regionsOption, providerOption, modelOption, outputOption, verboseOption);
+            await GenerateWorldAsync(name, theme, regions, provider, model, output, verbose);
+        }, nameOption, themeOption, regionsOption, providerOption, modelOption, outputOption, verboseOption);
 
         rootCommand.AddCommand(generateCommand);
 
@@ -105,7 +98,7 @@ class Program
         return await rootCommand.InvokeAsync(args);
     }
 
-    static async Task GenerateWorldAsync(string name, int seed, string theme, int regions, string provider, string model, string? outputDir, bool verbose)
+    static async Task GenerateWorldAsync(string name, string theme, int regions, string provider, string model, string? outputDir, bool verbose)
     {
         Console.WriteLine("??????????????????????????????????????????????????????????????????");
         Console.WriteLine("?          SoloAdventureSystem - World Generator CLI            ?");
@@ -115,7 +108,6 @@ class Program
         // Display configuration
         Console.WriteLine("?? Configuration:");
         Console.WriteLine($"   Name:     {name}");
-        Console.WriteLine($"   Seed:     {seed}");
         Console.WriteLine($"   Theme:    {theme}");
         Console.WriteLine($"   Regions:  {regions}");
         Console.WriteLine($"   Provider: {provider}");
@@ -155,6 +147,8 @@ class Program
 
             // Add services
             services.AddSingleton<IImageAdapter, SimpleImageAdapter>();
+            // Register structured output parser for parsing LLM structured responses
+            services.AddSingleton<SoloAdventureSystem.ContentGenerator.Parsing.IStructuredOutputParser, SoloAdventureSystem.ContentGenerator.Parsing.JsonStructuredOutputParser>();
             services.AddSingleton<WorldValidator>();
             services.AddSingleton<WorldExporter>();
 
@@ -172,7 +166,8 @@ class Program
             {
                 var settings = serviceProvider.GetRequiredService<IOptions<AISettings>>();
                 var logger = serviceProvider.GetRequiredService<ILogger<MaINAdapter>>();
-                var adapter = new MaINAdapter(settings, logger);
+                var parser = serviceProvider.GetService<SoloAdventureSystem.ContentGenerator.Parsing.IStructuredOutputParser>();
+                var adapter = new MaINAdapter(settings, logger, null, parser);
 
                 Console.WriteLine("?? Checking model availability and initializing MaIN adapter...");
                 var progress = new Progress<DownloadProgress>(p =>
@@ -211,7 +206,6 @@ class Program
             var options = new WorldGenerationOptions
             {
                 Name = name,
-                Seed = seed,
                 Theme = theme,
                 Regions = regions,
                 NpcDensity = "medium"
@@ -238,7 +232,10 @@ class Program
             // Export
             Console.WriteLine("?? Exporting world...");
             var exporter = serviceProvider.GetRequiredService<WorldExporter>();
-            var tempDir = Path.Combine(Path.GetTempPath(), $"World_{name}_{seed}");
+
+            // Use timestamp id for filenames instead of seed
+            var id = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
+            var tempDir = Path.Combine(Path.GetTempPath(), $"World_{name}_{id}");
             if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
             Directory.CreateDirectory(tempDir);
 
@@ -246,8 +243,8 @@ class Program
 
             // Zip
             var zipPath = outputDir != null
-                ? Path.Combine(outputDir, $"World_{name}_{seed}.zip")
-                : PathHelper.GetWorldZipPath(name, seed);
+                ? Path.Combine(outputDir, $"World_{name}_{id}.zip")
+                : PathHelper.GetWorldZipPath(name, id);
 
             var zipDir = Path.GetDirectoryName(zipPath);
             if (!string.IsNullOrEmpty(zipDir) && !Directory.Exists(zipDir))
@@ -295,12 +292,6 @@ class Program
             Console.WriteLine();
             Console.WriteLine("? Error during world generation:");
             Console.WriteLine($"   {ex.Message}");
-            if (verbose)
-            {
-                Console.WriteLine();
-                Console.WriteLine("Stack trace:");
-                Console.WriteLine(ex.StackTrace);
-            }
             Console.ResetColor();
             Environment.Exit(1);
         }

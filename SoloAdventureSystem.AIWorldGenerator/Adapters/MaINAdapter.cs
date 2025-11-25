@@ -1,5 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -9,7 +13,7 @@ using SoloAdventureSystem.ContentGenerator.Generation;
 using LLama;
 using LLama.Common;
 using System.Text.Json;
-using SoloAdventureSystem.ContentGenerator.Generation;
+using SoloAdventureSystem.ContentGenerator.Parsing;
 
 namespace SoloAdventureSystem.ContentGenerator.Adapters;
 
@@ -23,20 +27,25 @@ public class MaINAdapter : ILocalSLMAdapter, IDisposable
     private readonly ILogger<MaINAdapter>? _logger;
     private readonly AISettings _settings;
     private readonly IGenerationPolicy _policy;
+    private readonly SoloAdventureSystem.ContentGenerator.Parsing.IStructuredOutputParser _structuredParser;
     private bool _isInitialized;
     private LLamaWeights? _weights;
     private LLamaContext? _context;
+    // Holds last raw generation (before cleaning) to allow structured parsing of original model output
+    private string? _lastRawGenerated;
     // Prevent repeated fallback attempts
     private bool _attemptedTinyLlamaFallback = false;
 
     public MaINAdapter(
         IOptions<AISettings> settings, 
         ILogger<MaINAdapter>? logger = null,
-        IGenerationPolicy? policy = null)
+        IGenerationPolicy? policy = null,
+        SoloAdventureSystem.ContentGenerator.Parsing.IStructuredOutputParser? structuredParser = null)
     {
         _logger = logger;
         _settings = settings.Value;
         _policy = policy ?? new ResilienceGenerationPolicy(logger as ILogger<ResilienceGenerationPolicy>);
+        _structuredParser = structuredParser ?? new SoloAdventureSystem.ContentGenerator.Parsing.JsonStructuredOutputParser();
     }
 
     /// <summary>
@@ -113,11 +122,9 @@ public class MaINAdapter : ILocalSLMAdapter, IDisposable
 
         if (!string.IsNullOrWhiteSpace(raw))
         {
-            // Try TOON decode
             try
             {
-                var parsed = ToonCodec.Deserialize<T>(raw);
-                if (parsed != null)
+                if (_structuredParser.TryParse<T>(raw, out var parsed))
                 {
                     result = parsed;
                     return true;
@@ -125,70 +132,17 @@ public class MaINAdapter : ILocalSLMAdapter, IDisposable
             }
             catch (Exception ex)
             {
-                _logger?.LogDebug(ex, "TOON decode failed, will try JSON fallback");
-            }
-
-            // If TOON failed, try to detect embedded JSON
-            if (raw.StartsWith("#json\n", StringComparison.OrdinalIgnoreCase))
-            {
-                try
-                {
-                    var json = raw.Substring(6);
-                    result = JsonSerializer.Deserialize<T>(json);
-                    if (result != null) return true;
-                }
-                catch (Exception ex)
-                {
-                    _logger?.LogDebug(ex, "Embedded JSON parse failed");
-                }
-            }
-
-            // As a repair attempt, try to extract first JSON object or array from the text
-            try
-            {
-                var firstJson = ExtractJsonFromText(raw);
-                if (!string.IsNullOrWhiteSpace(firstJson))
-                {
-                    result = JsonSerializer.Deserialize<T>(firstJson);
-                    if (result != null) return true;
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogDebug(ex, "Heuristic JSON extraction failed");
+                _logger?.LogDebug(ex, "Structured parser threw an exception");
             }
         }
 
         return false;
     }
 
+    // Legacy helper retained for backward compatibility; prefer IStructuredOutputParser
     private static string? ExtractJsonFromText(string text)
     {
-        if (string.IsNullOrWhiteSpace(text)) return null;
-        int start = text.IndexOf('{');
-        int startArr = text.IndexOf('[');
-        if (start == -1 && startArr == -1) return null;
-
-        if (start == -1 || (startArr >= 0 && startArr < start)) start = startArr;
-
-        int depth = 0;
-        bool inString = false;
-        for (int i = start; i < text.Length; i++)
-        {
-            var c = text[i];
-            if (c == '"') inString = !inString;
-            if (inString) continue;
-            if (c == '{' || c == '[') depth++;
-            if (c == '}' || c == ']')
-            {
-                depth--;
-                if (depth == 0)
-                {
-                    return text.Substring(start, i - start + 1);
-                }
-            }
-        }
-
+        // Deprecated: structured parser handles extraction. Keep compatibility by returning null.
         return null;
     }
 
@@ -281,6 +235,47 @@ public class MaINAdapter : ILocalSLMAdapter, IDisposable
         // Final normalization: collapse excessive whitespace and trim
         result = Regex.Replace(result, "\\s+", " ").Trim();
 
+        // Post-processing: remove TOON/ENDTOON markers and hashtag artifacts, then dedupe repeated sentences/fragments
+        try
+        {
+            // Remove explicit TOON markers (case-insensitive) and standalone tokens like '#TOON' or 'TOON'
+            result = Regex.Replace(result, "(?i)\\b#?ENDTOON\\b", "");
+            result = Regex.Replace(result, "(?i)\\b#?TOON\\b", "");
+
+            // Remove remaining hashtag tokens (likely prompt artifacts) but keep normal words with # inside as rare case
+            result = Regex.Replace(result, "#\\w+", "");
+
+            // Split into sentences (keep punctuation) and dedupe consecutive or repeated sentences
+            var sentences = Regex.Split(result, "(?<=[\\.!?])\\s+");
+            var seen = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var ordered = new System.Collections.Generic.List<string>();
+            foreach (var s in sentences)
+            {
+                var trimmed = s.Trim();
+                if (string.IsNullOrEmpty(trimmed)) continue;
+
+                // Collapse repeated short fragments (e.g., model repeating same phrase many times)
+                // Use a normalized key by lowercasing and trimming punctuation
+                var norm = Regex.Replace(trimmed.ToLowerInvariant(), "[\\p{P}\\s]+", " ").Trim();
+                if (string.IsNullOrWhiteSpace(norm)) continue;
+
+                if (!seen.Contains(norm))
+                {
+                    ordered.Add(trimmed);
+                    seen.Add(norm);
+                }
+            }
+
+            if (ordered.Count > 0)
+            {
+                result = string.Join(" ", ordered);
+            }
+
+            // Final cleanup of any leftover excessive whitespace
+            result = Regex.Replace(result, "\\s+", " ").Trim();
+        }
+        catch { }
+
         return result;
     }
 
@@ -304,8 +299,34 @@ public class MaINAdapter : ILocalSLMAdapter, IDisposable
             throw new InvalidOperationException("Model not initialized");
         }
 
+        // Try generation cache first (deterministic by prompt + seed + model key)
         try
         {
+            var cacheRoot = _settings.CacheDirectory ?? ".aicache";
+            var genCacheDir = Path.Combine(cacheRoot, "generation_cache");
+            Directory.CreateDirectory(genCacheDir);
+
+            using var sha = SHA256.Create();
+            var keyBytes = Encoding.UTF8.GetBytes($"{_settings.LLamaModelKey}|{seed}|{prompt}");
+            var hash = sha.ComputeHash(keyBytes);
+            var hashHex = string.Concat(hash.Select(b => b.ToString("x2")));
+            var cacheFile = Path.Combine(genCacheDir, hashHex + ".txt");
+
+            if (File.Exists(cacheFile))
+            {
+                try
+                {
+                    var cached = await File.ReadAllTextAsync(cacheFile);
+                    _logger?.LogDebug("Returning cached generation for seed {Seed}", seed);
+                    return cached;
+                }
+                catch (Exception ex)
+                {
+                    _logger?.LogWarning(ex, "Failed to read generation cache file {File}", cacheFile);
+                }
+            }
+
+            // Proceed to generate and then save to cache
             // Create executor for text generation
             var executor = new StatelessExecutor(_weights, _context.Params);
 
@@ -318,7 +339,6 @@ public class MaINAdapter : ILocalSLMAdapter, IDisposable
 
             // Generate text
             var result = new System.Text.StringBuilder();
-            
             await foreach (var text in executor.InferAsync(prompt, inferenceParams))
             {
                 result.Append(text);
@@ -326,8 +346,9 @@ public class MaINAdapter : ILocalSLMAdapter, IDisposable
 
             var generated = result.ToString().Trim();
 
-            // Keep raw output for diagnostics
+            // Keep raw output for diagnostics (before cleaning)
             var rawGenerated = generated;
+            _lastRawGenerated = rawGenerated;
 
             // Clean up the output
             var cleaned = CleanOutput(generated);
@@ -342,6 +363,16 @@ public class MaINAdapter : ILocalSLMAdapter, IDisposable
                 cleaned = light;
             }
 
+            // Save to cache (best-effort)
+            try
+            {
+                await File.WriteAllTextAsync(cacheFile, cleaned);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, "Failed to write generation cache file {File}", cacheFile);
+            }
+
             return cleaned;
         }
         catch (Exception ex)
@@ -354,6 +385,14 @@ public class MaINAdapter : ILocalSLMAdapter, IDisposable
     private string Generate(string prompt, int seed, int maxTokens = 150)
     {
         return GenerateAsync(prompt, seed, maxTokens).GetAwaiter().GetResult();
+    }
+
+    // Synchronous access to last raw generation; forces a generation and returns raw un-cleaned text
+    public string GenerateRaw(string prompt, int seed, int maxTokens = 150)
+    {
+        // Ensure we perform generation to populate _lastRawGenerated
+        GenerateAsync(prompt, seed, maxTokens).GetAwaiter().GetResult();
+        return _lastRawGenerated ?? string.Empty;
     }
 
     /// <summary>
@@ -439,7 +478,7 @@ public class MaINAdapter : ILocalSLMAdapter, IDisposable
         EnsureInitialized();
 
         // Attempt to generate structured TOON/JSON Room object
-        if (TryGenerateStructured<Dictionary<string, object>>( () => Generate(context, seed, GenerationLimits.RoomDescriptionTokens), out var parsed))
+        if (TryGenerateStructured<Dictionary<string, object>>( () => GenerateRaw(context, seed, GenerationLimits.RoomDescriptionTokens), out var parsed))
         {
             // Map parsed dictionary to a readable description string
             try
@@ -476,7 +515,7 @@ public class MaINAdapter : ILocalSLMAdapter, IDisposable
     {
         EnsureInitialized();
 
-        if (TryGenerateStructured<Dictionary<string, object>>(() => Generate(context, seed, GenerationLimits.NpcBioTokens), out var parsed))
+        if (TryGenerateStructured<Dictionary<string, object>>(() => GenerateRaw(context, seed, GenerationLimits.NpcBioTokens), out var parsed))
         {
             try
             {
@@ -501,7 +540,7 @@ public class MaINAdapter : ILocalSLMAdapter, IDisposable
     {
         EnsureInitialized();
 
-        if (TryGenerateStructured<Dictionary<string, object>>(() => Generate(context, seed, GenerationLimits.FactionLoreTokens), out var parsed))
+        if (TryGenerateStructured<Dictionary<string, object>>(() => GenerateRaw(context, seed, GenerationLimits.FactionLoreTokens), out var parsed))
         {
             try
             {
@@ -533,7 +572,7 @@ public class MaINAdapter : ILocalSLMAdapter, IDisposable
             var itemSeed = seed + i;
 
             // Try structured decode for single lore entry
-            if (TryGenerateStructured<Dictionary<string, object>>(() => Generate(context, itemSeed, GenerationLimits.LoreEntryTokens), out var parsed))
+            if (TryGenerateStructured<Dictionary<string, object>>(() => GenerateRaw(context, itemSeed, GenerationLimits.LoreEntryTokens), out var parsed))
             {
                 if (parsed != null && parsed.TryGetValue("text", out var t) && t != null)
                 {
@@ -574,7 +613,7 @@ public class MaINAdapter : ILocalSLMAdapter, IDisposable
         EnsureInitialized();
 
         // Try structured parse as a list of choice objects
-        if (TryGenerateStructured<List<Dictionary<string, object>>>(() => Generate(prompt, seed, GenerationLimits.DialogueTokens), out var parsedList))
+        if (TryGenerateStructured<List<Dictionary<string, object>>>(() => GenerateRaw(prompt, seed, GenerationLimits.DialogueTokens), out var parsedList))
         {
             try
             {

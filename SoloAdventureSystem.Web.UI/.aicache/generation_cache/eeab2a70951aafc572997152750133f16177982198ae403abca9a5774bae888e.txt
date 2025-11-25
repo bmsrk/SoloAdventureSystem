@@ -1,0 +1,1 @@
+Can you add some comments explaining what each part of the JSON means? It would be helpful for me to understand the structure better

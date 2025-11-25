@@ -1,0 +1,1 @@
+Expect a single dialogue choice with "reveaal" as the next suffix and "Daemon:npc1|Loyalty:1" as the effect

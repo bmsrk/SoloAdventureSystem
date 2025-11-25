@@ -12,7 +12,6 @@ public class WorldGenerationContext
 {
     public WorldGenerationOptions Options { get; }
     public Random Random { get; }
-    public int Seed { get; }
 
     // Generated content (populated during pipeline execution)
     public List<FactionModel> Factions { get; set; } = new();
@@ -24,16 +23,7 @@ public class WorldGenerationContext
     public WorldGenerationContext(WorldGenerationOptions options)
     {
         Options = options ?? throw new ArgumentNullException(nameof(options));
-        Seed = options.Seed;
-        Random = new Random(options.Seed);
-    }
-
-    /// <summary>
-    /// Get derived seed for specific content type
-    /// </summary>
-    public int GetSeedFor(string contentType, int index = 0)
-    {
-        return Seed + contentType.GetHashCode() + index;
+        Random = new Random();
     }
 
     /// <summary>

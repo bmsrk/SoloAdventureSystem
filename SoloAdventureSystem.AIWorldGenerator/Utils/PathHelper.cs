@@ -66,11 +66,12 @@ public static class PathHelper
     /// <summary>
     /// Gets the full path for a world zip file in the shared worlds directory.
     /// Sanitizes world name to prevent path traversal and handle invalid characters.
+    /// Uses a provided id (timestamp or GUID) for uniqueness.
     /// </summary>
     /// <param name="worldName">The name of the world</param>
-    /// <param name="seed">The world generation seed</param>
+    /// <param name="id">An identifier (timestamp/GUID) to make filename unique</param>
     /// <returns>Full path to the world ZIP file</returns>
-    public static string GetWorldZipPath(string worldName, int seed)
+    public static string GetWorldZipPath(string worldName, string id)
     {
         // Sanitize world name - remove invalid path characters
         var invalidChars = Path.GetInvalidFileNameChars();
@@ -93,7 +94,15 @@ public static class PathHelper
         sanitizedName = sanitizedName.Trim().Trim('.');
         
         var worldsDir = GetSharedWorldsDirectory();
-        return Path.Combine(worldsDir, $"World_{sanitizedName}_{seed}.zip");
+        return Path.Combine(worldsDir, $"World_{sanitizedName}_{id}.zip");
+    }
+
+    /// <summary>
+    /// Compatibility overload which accepts an integer seed/id.
+    /// </summary>
+    public static string GetWorldZipPath(string worldName, int seed)
+    {
+        return GetWorldZipPath(worldName, seed.ToString());
     }
     
     /// <summary>

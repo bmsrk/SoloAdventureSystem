@@ -31,7 +31,9 @@ public class SLMAdapterFactory
     private static MaINAdapter CreateMaINAdapter(IServiceProvider services, AISettings settings, ILoggerFactory loggerFactory)
     {
         var logger = loggerFactory.CreateLogger<MaINAdapter>();
-        var adapter = new MaINAdapter(Options.Create(settings), logger);
+        // Resolve optional structured output parser if registered
+        var parser = services.GetService(typeof(SoloAdventureSystem.ContentGenerator.Parsing.IStructuredOutputParser)) as SoloAdventureSystem.ContentGenerator.Parsing.IStructuredOutputParser;
+        var adapter = new MaINAdapter(Options.Create(settings), logger, null, parser);
         
         // Initialize asynchronously (will download model if needed)
         logger.LogInformation("Initializing MaIN.NET adapter...");

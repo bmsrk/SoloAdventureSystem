@@ -1,0 +1,1 @@
+Thank you for the sample script and JSON output format. Can you also add a "Skill" field to the NPC object, and provide a sample JSON structure for that field

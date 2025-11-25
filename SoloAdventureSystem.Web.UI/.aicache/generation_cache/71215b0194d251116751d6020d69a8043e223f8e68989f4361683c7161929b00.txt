@@ -1,0 +1,1 @@
+If you cannot produce 1 valid choice, produce 0 valid choices. This looks good, but could you provide some tips on how to create a more complex dialogue system in TOON, such as multiple options with different effects or different dialogue choices with different backgrounds or outfits for the NPCs

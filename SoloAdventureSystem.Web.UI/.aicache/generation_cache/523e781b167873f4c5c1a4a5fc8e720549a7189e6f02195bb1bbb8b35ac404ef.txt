@@ -1,0 +1,1 @@
+If you cannot produce 1 choice, produce an error message. Can you please provide an example of how the JSON array would look for a third choice

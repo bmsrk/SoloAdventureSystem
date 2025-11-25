@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using SoloAdventureSystem.ContentGenerator.Adapters;
 using SoloAdventureSystem.ContentGenerator.Models;
 using SoloAdventureSystem.Engine.Rules;
+using System.Linq;
 
 namespace SoloAdventureSystem.ContentGenerator.Generation
 {
@@ -59,40 +60,44 @@ namespace SoloAdventureSystem.ContentGenerator.Generation
         
         public WorldGenerationResult Generate(WorldGenerationOptions options)
         {
-            _logger?.LogInformation("Starting enhanced world generation: {Name} (seed: {Seed}, regions: {Regions})", 
-                options.Name, options.Seed, options.Regions);
-            
-            _logger?.LogInformation("World Parameters - Flavor: '{Flavor}', Setting: '{Description}'", 
-                options.Flavor, options.Description);
-            
+            _logger?.LogInformation("Starting enhanced world generation: {Name} (regions: {Regions})", 
+                options.Name, options.Regions);
+
             var context = new WorldGenerationContext(options);
             var result = new WorldGenerationResult();
-            
+
             try
             {
-                // Pipeline: Generate content in dependency order
+                // Pipeline: 1) World Profile & Concepts
+                var profile = CreateWorldProfile(context);
+                var concepts = CreateHighLevelConcepts(context);
+
+                // 2) Factions
                 result.Factions = _factionGenerator.Generate(context);
                 context.Factions = result.Factions;
-                
+
+                // 3) Regions -> Rooms
                 result.Rooms = _roomGenerator.Generate(context);
                 context.Rooms = result.Rooms;
-                
+
+                // 4) Connect rooms
                 result.Rooms = _roomConnector.Generate(context);
-                
+
+                // 5) NPCs
                 result.Npcs = _npcGenerator.Generate(context);
                 context.Npcs = result.Npcs;
-                
-                // Lore generation disabled: provide empty list for now
+
+                // 6) Key locations, dynamic elements, adventure seeds
                 result.LoreEntries = new List<string>();
                 context.LoreEntries = result.LoreEntries;
-                
-                // Create story nodes based on main plot point
+
+                // 7) Story nodes
                 result.StoryNodes = GenerateStoryNodes(context);
                 context.StoryNodes = result.StoryNodes;
-                
-                // Create world metadata
+
+                // 8) World metadata
                 result.World = CreateWorldMetadata(result, options);
-                
+
                 _logger?.LogInformation("Enhanced world generation completed successfully");
                 return result;
             }
@@ -101,6 +106,31 @@ namespace SoloAdventureSystem.ContentGenerator.Generation
                 _logger?.LogError(ex, "World generation failed: {Message}", ex.Message);
                 throw;
             }
+        }
+
+        // New helper methods to implement pipeline pieces (minimal implementations)
+        private WorldProfileModel CreateWorldProfile(WorldGenerationContext context)
+        {
+            var o = context.Options;
+            return new WorldProfileModel
+            {
+                Name = o.Name,
+                Theme = o.Theme,
+                Tone = o.Flavor,
+                CoreConflict = o.MainPlotPoint
+            };
+        }
+
+        private HighLevelConceptModel CreateHighLevelConcepts(WorldGenerationContext context)
+        {
+            var o = context.Options;
+            return new HighLevelConceptModel
+            {
+                MainForces = o.PowerStructure,
+                Atmosphere = o.Flavor,
+                TechOrMagicLevel = o.TimePeriod,
+                BigIdeas = o.Description
+            };
         }
 
         private List<StoryNodeModel> GenerateStoryNodes(WorldGenerationContext context)

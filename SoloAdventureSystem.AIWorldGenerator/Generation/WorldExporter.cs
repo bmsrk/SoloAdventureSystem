@@ -57,7 +57,7 @@ namespace SoloAdventureSystem.ContentGenerator.Generation
                 }
             }
             // Write system files
-            File.WriteAllText(Path.Combine(outputDir, "system", "seed.txt"), options.Seed.ToString());
+            // NOTE: seed.txt removed intentionally — generation should not rely on persisted seed
             File.WriteAllText(Path.Combine(outputDir, "system", "generatorVersion.txt"), "1.0.0");
             // Write map placeholder
             File.WriteAllText(Path.Combine(outputDir, "map", "map.png"), ""); // TODO: Replace with actual image or sample asset

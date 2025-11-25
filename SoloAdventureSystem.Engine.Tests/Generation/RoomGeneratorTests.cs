@@ -232,12 +232,11 @@ public class RoomGeneratorTests
             Times.AtLeastOnce);
     }
 
-    private static WorldGenerationContext CreateTestContext(int regions = 5, int seed = 123)
+    private static WorldGenerationContext CreateTestContext(int regions = 5)
     {
         return new WorldGenerationContext(new WorldGenerationOptions
         {
             Name = "TestWorld",
-            Seed = seed,
             Theme = "TestTheme",
             Regions = regions
         });

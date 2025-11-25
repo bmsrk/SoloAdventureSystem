@@ -145,6 +145,32 @@ class WorldBatchGenerator
                 MainPlotPoint = "Solve the murder of the famous AI scientist",
                 TimePeriod = "Alternative timeline 1985",
                 PowerStructure = "Tech corporations, detective agencies, and AI rights activists"
+            },
+            // New: Cosmic Horror setting
+            new WorldGenerationOptions
+            {
+                Name = "EchoHarbor",
+                Seed = 10006,
+                Theme = "Cosmic Horror",
+                Regions = 5,
+                Flavor = "Quiet dread with uncanny undertones",
+                Description = "A fogbound coastal town where ancient things stir beneath the waves",
+                MainPlotPoint = "Uncover the ritual that weakens the barrier between worlds",
+                TimePeriod = "Present day",
+                PowerStructure = "Local council, secret cults, and scholarly outsiders"
+            },
+            // New: 1980s kids / Stranger-Things style
+            new WorldGenerationOptions
+            {
+                Name = "SummerOf84",
+                Seed = 10007,
+                Theme = "Retro 1980s Mystery",
+                Regions = 6,
+                Flavor = "Nostalgic, adventurous, slightly eerie",
+                Description = "Small-town suburbia where a group of kids stumble on a strange otherworldly mystery",
+                MainPlotPoint = "Investigate disappearances and strange happenings tied to a hidden facility",
+                TimePeriod = "Summer, 1984",
+                PowerStructure = "Town council, eccentric locals, a hidden research facility"
             }
         };
 

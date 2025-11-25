@@ -39,7 +39,8 @@ public class DialogueGenerator
             return nodes;
         }
 
-        var seedBase = _context.GetSeedFor("dialogue", 0);
+        // Use per-run randomness via context.Random; deterministic seed exposure removed
+        var seedBase = _context.Random.Next();
 
         for (int i = 0; i < _context.Npcs.Count; i++)
         {
@@ -277,8 +278,17 @@ public class DialogueGenerator
         {
             if (string.IsNullOrWhiteSpace(json)) return null;
 
-            // Extract JSON array substring if the model returned extra text or commentary
-            var trimmed = json.Trim();
+            // Pre-clean common artifacts before attempting JSON extraction
+            var cleanedJsonText = json ?? string.Empty;
+            try
+            {
+                cleanedJsonText = System.Text.RegularExpressions.Regex.Replace(cleanedJsonText, "(?i)\\b#?TOON\\b", "");
+                cleanedJsonText = System.Text.RegularExpressions.Regex.Replace(cleanedJsonText, "(?i)\\b#?ENDTOON\\b", "");
+                cleanedJsonText = System.Text.RegularExpressions.Regex.Replace(cleanedJsonText, "#\\w+", "");
+            }
+            catch { }
+
+            var trimmed = cleanedJsonText.Trim();
             var startIdx = trimmed.IndexOf('[');
             var endIdx = trimmed.LastIndexOf(']');
             if (startIdx >= 0 && endIdx > startIdx)
@@ -294,18 +304,17 @@ public class DialogueGenerator
                 }
             }
 
-            var choices = System.Text.Json.JsonSerializer.Deserialize<List<ChoiceDto>>(json, new System.Text.Json.JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            });
+            // Try to deserialize; allow for fields named 'label' or 'text' or 'option'
+            var options = new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var choices = System.Text.Json.JsonSerializer.Deserialize<List<ChoiceDto>>(json, options);
 
             if (choices == null || choices.Count == 0) return null;
 
             var result = new List<StoryChoice>();
             foreach (var c in choices)
             {
-                // Trim and validate label
-                var label = c.label?.Trim() ?? string.Empty;
+                // Trim and validate label (accept several possible fields)
+                var label = (c.label ?? c.text ?? c.option)?.Trim() ?? string.Empty;
                 if (string.IsNullOrEmpty(label))
                 {
                     // skip empty labels
@@ -313,13 +322,26 @@ public class DialogueGenerator
                 }
 
                 // Sanitize next suffix (allow alphanum and underscore)
-                var suffix = (c.nextSuffix ?? string.Empty).Trim();
-                if (!string.IsNullOrEmpty(suffix))
+                var nextCandidate = (c.nextSuffix ?? c.next ?? string.Empty).Trim();
+                string next;
+                if (string.IsNullOrEmpty(nextCandidate))
                 {
-                    // remove unsafe characters
-                    suffix = System.Text.RegularExpressions.Regex.Replace(suffix, "[^a-zA-Z0-9_\\-]", string.Empty);
+                    next = $"dialogue_{npcId}_end";
                 }
-                var next = string.IsNullOrEmpty(suffix) ? $"dialogue_{npcId}_end" : $"dialogue_{npcId}_" + suffix;
+                else
+                {
+                    // If candidate looks like a full id (starts with dialogue_) use as-is
+                    if (nextCandidate.StartsWith("dialogue_", StringComparison.OrdinalIgnoreCase))
+                    {
+                        next = System.Text.RegularExpressions.Regex.Replace(nextCandidate, "[^a-zA-Z0-9_\\-]", "").Trim();
+                    }
+                    else
+                    {
+                        // sanitize short suffix and prefix with npc id
+                        var suffix = System.Text.RegularExpressions.Regex.Replace(nextCandidate, "[^a-zA-Z0-9_\\-]", "").Trim();
+                        next = string.IsNullOrEmpty(suffix) ? $"dialogue_{npcId}_end" : $"dialogue_{npcId}_" + suffix;
+                    }
+                }
 
                 // Skill check mapping with safety bounds
                 SkillCheckModel? sc = null;
@@ -372,7 +394,11 @@ public class DialogueGenerator
 
     private class ChoiceDto
     {
+        // accept multiple possible field names that model might output
         public string? label { get; set; }
+        public string? text { get; set; }
+        public string? option { get; set; }
+        public string? next { get; set; }
         public string? nextSuffix { get; set; }
         public SkillCheckDto? skill_check { get; set; }
         public List<string>? effects { get; set; }

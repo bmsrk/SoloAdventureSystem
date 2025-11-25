@@ -1,0 +1,1 @@
+Expected result: [ { "label": "Ask politely", "nextSuffix": "reveaal", "skiill_check": { "attribute": "Presence", "skiill": "Social", "target_number": 12 }, "effects": [] }, { "label": "Leave", "nextSuffix": "leave", "effects": []

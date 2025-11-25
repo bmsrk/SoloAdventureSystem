@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.IO;
 using System.Collections.Generic;
+using SoloAdventureSystem.ContentGenerator.Utils;
 
 namespace SoloAdventureSystem.Web.UI.Services;
 
@@ -105,14 +106,16 @@ public class WorldGenerationService : IDisposable
     {
         _logger.LogInformation("Exporting world to: {Path}", outputPath);
         
-        var tempDir = Path.Combine(Path.GetTempPath(), $"World_{options.Name}_{options.Seed}");
+        // Use a timestamp-based id for filename uniqueness instead of seed
+        var id = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
+        var tempDir = Path.Combine(Path.GetTempPath(), $"World_{options.Name}_{id}");
         if (Directory.Exists(tempDir)) 
             Directory.Delete(tempDir, true);
         Directory.CreateDirectory(tempDir);
 
         _exporter.Export(result, options, tempDir);
 
-        var zipPath = Path.Combine(outputPath, $"World_{options.Name}_{options.Seed}.zip");
+        var zipPath = Path.Combine(outputPath, $"World_{options.Name}_{id}.zip");
         var zipDir = Path.GetDirectoryName(zipPath);
         if (!string.IsNullOrEmpty(zipDir) && !Directory.Exists(zipDir))
         {

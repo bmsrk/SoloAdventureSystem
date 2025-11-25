@@ -21,6 +21,9 @@ builder.Services.AddSingleton<WorldExporter>();
 builder.Services.AddSingleton<ILocalSLMAdapter, MaINAdapter>();
 builder.Services.AddSingleton<WorldGenerationService>();
 
+// Register file validator for Manage Worlds UI
+builder.Services.AddSingleton<WorldFileValidator>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

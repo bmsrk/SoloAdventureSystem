@@ -1,0 +1,1 @@
+The JSON structure should be consistent with the given text, and the skill_check and effects fields should be optional

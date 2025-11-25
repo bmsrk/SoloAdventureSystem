@@ -1,0 +1,1 @@
+This looks like a great start for my NPC dialogue generator script. However, can you please provide some more examples of dialogue choices with different responses and their corresponding effects? It would be great to have a bit more variety in the options for the NPCs

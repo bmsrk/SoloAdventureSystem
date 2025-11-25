@@ -3,7 +3,6 @@ namespace SoloAdventureSystem.ContentGenerator.Models
     public class WorldGenerationOptions
     {
         public string Name { get; set; } = "Test";
-        public int Seed { get; set; } = 12345;
         public string Theme { get; set; } = "Default";
         public int Regions { get; set; } = 3;
         public string NpcDensity { get; set; } = "medium";
@@ -35,5 +34,12 @@ namespace SoloAdventureSystem.ContentGenerator.Models
         /// Dominant factions or power structures (e.g., "Megacorps vs. Street Gangs", "AI Overlords and Human Rebels")
         /// </summary>
         public string PowerStructure { get; set; } = "Corporations, hackers, and underground resistance";
+
+        /// <summary>
+        /// Legacy seed value. Kept for backward compatibility but generation now uses internal randomness
+        /// and this field is no longer required for deterministic runs.
+        /// </summary>
+        [System.Obsolete("Seed property is deprecated and will be removed in a future release; generation now uses internal randomness.")]
+        public int Seed { get; set; } = 0;
     }
 }

@@ -1,0 +1,1 @@
+Explanation: This example uses TOON's NPC, Edda. Edda is a TOON character that manages Long Banters, a popular nightclub in Highbridge. Edda's dialogue choices are two choices, and they are both "Ask politely" and "Leave". Edda's dialogue choices are formatted exactly as shown
