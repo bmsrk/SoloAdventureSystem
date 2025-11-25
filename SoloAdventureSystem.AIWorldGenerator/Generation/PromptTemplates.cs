@@ -143,20 +143,23 @@ Write ONLY the lore entry (no extra commentary).";
     // --- Builders: produce User prompt combined with OutputSpec for use by adapters ---
     public static string BuildRoomPrompt(string roomName, WorldGenerationOptions options, string atmosphere, int index, int total)
     {
+        // Add unique room identifier to prevent cache collisions and ensure variety
+        var uniqueId = Guid.NewGuid().ToString().Substring(0, 8);
         var user = $@"Room Name: {roomName}
-World: {options.Description}
-Mood: {options.Flavor}
-Time: {options.TimePeriod}
-Context: {options.MainPlotPoint}
+ World: {options.Description}
+ Mood: {options.Flavor}
+ Time: {options.TimePeriod}
+ Context: {options.MainPlotPoint}
+ Unique ID: {uniqueId}
 
-Room {index + 1} of {total}. Make it {atmosphere.ToLower()}.
+ Room {index + 1} of {total}. Make it {atmosphere.ToLower()}. 
 
-Write 3 sentences describing this room:";
+ Write 3 sentences describing this room:";
 
         // Prefer TOON-friendly directive appended to the prompt to encourage structured table output.
         var combined = Combine(RoomDescriptionSystem, user, RoomOutputSpec);
         combined += "\n\nIMPORTANT: Place the exact content requested between the markers '#TOON' and '#ENDTOON' on separate lines.\n" +
-                    "Between these markers include ONLY the requested description text and NOTHING ELSE — no explanations, no examples, no quotes, no labels.\n" +
+                    "Between these markers include ONLY the requested description text and NOTHING ELSE ? no explanations, no examples, no quotes, no labels.\n" +
                     "If you cannot produce the TOON table format, still return the plain text description but it MUST be wrapped between '#TOON' and '#ENDTOON' (do not omit the markers).\n" +
                     "Do NOT include any leading or trailing text outside the markers.\n" +
                     "Example valid output:\n#TOON\nThe server room bathes in flickering blue light...\n#ENDTOON";
@@ -240,7 +243,7 @@ Write lore entry #{entryNumber} - 1-2 sentences about an interesting detail from
     }
 
     [Obsolete("Use BuildFactionPrompt with WorldGenerationOptions instead")]
-    public static string BuildFactionPrompt(string factionName, string theme, int worldSeed)
+    public static string BuildFactionPrompt(String factionName, string theme, int worldSeed)
     {
         var options = new WorldGenerationOptions { Theme = theme };
         return BuildFactionPrompt(factionName, options);

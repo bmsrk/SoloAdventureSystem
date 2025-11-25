@@ -1,0 +1,1 @@
+If you want to include the NPC's name, location, and faction in the JSON, you must include all 3 fields. Otherwise, include only the NPC's name, location, and faction. You must include the skills and effects in the JSON, but the format of the JSON can vary

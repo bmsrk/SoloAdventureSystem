@@ -106,27 +106,27 @@ Return only JSON.";
                 var raw = _slm.GenerateRaw(roomPrompt, roomSeed + attempt);
 
                 // Try structured parsing against raw output first
-                Dictionary<string, object>? source = null;
+                Dictionary<string, object>? parsed = null;
                 try
                 {
                     if (!string.IsNullOrWhiteSpace(raw))
                     {
-                        _structuredParser.TryParse<Dictionary<string, object>>(raw, out source);
+                        _structuredParser.TryParse<Dictionary<string, object>>(raw, out parsed);
                     }
                 }
                 catch (Exception ex)
                 {
                     _logger?.LogDebug(ex, "Structured parser threw for raw room output on attempt {Attempt}", attempt + 1);
-                    source = null;
+                    parsed = null;
                 }
 
-                if (source != null)
+                if (parsed != null)
                 {
-                    if (source.TryGetValue("title", out var t) && t != null) title = t.ToString() ?? string.Empty;
-                    if (source.TryGetValue("description", out var d) && d != null) descriptionRaw = d.ToString() ?? string.Empty;
+                    if (parsed.TryGetValue("title", out var t) && t != null) title = t.ToString() ?? string.Empty;
+                    if (parsed.TryGetValue("description", out var d) && d != null) descriptionRaw = d.ToString() ?? string.Empty;
 
                     // items/exits optional (handle JsonElement cases defensively)
-                    if (source.TryGetValue("items", out var itms) && itms != null)
+                    if (parsed.TryGetValue("items", out var itms) && itms != null)
                     {
                         if (itms is System.Text.Json.JsonElement jeItems && jeItems.ValueKind == System.Text.Json.JsonValueKind.Array)
                         {
@@ -140,7 +140,7 @@ Return only JSON.";
                         }
                     }
 
-                    if (source.TryGetValue("exits", out var exs) && exs != null)
+                    if (parsed.TryGetValue("exits", out var exs) && exs != null)
                     {
                         if (exs is System.Text.Json.JsonElement jeExs && jeExs.ValueKind == System.Text.Json.JsonValueKind.Object)
                         {
@@ -194,17 +194,56 @@ Return only JSON.";
         // If no title provided by AI, derive short title from first sentence (fallback)
         if (string.IsNullOrWhiteSpace(title))
         {
-            var firstSentence = descriptionRaw.Split(new[] {'.','!','?'}, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? string.Empty;
-            // Remove prompt-like trailing fragments from title
-            firstSentence = Regex.Replace(firstSentence, "(Could you|Please|Return only).*", "", RegexOptions.IgnoreCase);
-            // Clean common artifacts like hashtags, TOON markers, and (s)
-            firstSentence = Regex.Replace(firstSentence, "(?i)\\b#?TOON\\b", "");
-            firstSentence = Regex.Replace(firstSentence, "(?i)\\b#?ENDTOON\\b", "");
-            firstSentence = Regex.Replace(firstSentence, "#\\w+", "");
-            firstSentence = Regex.Replace(firstSentence, "\\(s\\)", "");
-            title = firstSentence.Length > 0 ? (firstSentence.Length <= 30 ? firstSentence : firstSentence.Substring(0, 30).Trim()) : $"Room {index + 1}";
-            title = title.Trim();
+            // Use a helper to create a compact title from the description (prefer 2-4 words)
+            string GenerateTitleFrom(string desc)
+            {
+                if (string.IsNullOrWhiteSpace(desc)) return $"Room {index + 1}";
+                // take first full sentence, then first 3-4 words
+                var first = desc.Split(new[] {'.','!','?'}, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? desc;
+                first = Regex.Replace(first, "(Could you|Please|Return only).*", "", RegexOptions.IgnoreCase).Trim();
+                // remove artifacts
+                first = Regex.Replace(first, "(?i)\\b#?TOON\\b", "");
+                first = Regex.Replace(first, "(?i)\\b#?ENDTOON\\b", "");
+                first = Regex.Replace(first, "#\\w+", "");
+                first = Regex.Replace(first, "\\(s\\)", "");
+                var words = first.Split(new[] {' ', '\t'}, StringSplitOptions.RemoveEmptyEntries).Take(4).ToArray();
+                if (words.Length == 0) return $"Room {index + 1}";
+                var candidate = string.Join(' ', words);
+                // Capitalize each word
+                candidate = string.Join(' ', candidate.Split(' ').Select(w => char.ToUpperInvariant(w[0]) + (w.Length > 1 ? w.Substring(1) : string.Empty)));
+                // Append room number for uniqueness if title is generic
+                if (candidate.Length < 10 || candidate.Contains("Room", StringComparison.OrdinalIgnoreCase))
+                {
+                    candidate += $" {index + 1}";
+                }
+                return candidate;
+            }
+
+            title = GenerateTitleFrom(descriptionRaw);
         }
+
+        // Ensure description length is acceptable; if too short or too few sentences, try one expansion attempt
+        string CleanDescription(string raw) => SanitizeGeneratedText(raw);
+        var cleanedDescription = CleanDescription(descriptionRaw);
+        int sentenceCount = Regex.Split(cleanedDescription, "(?<=[\\.!?])\\s+").Where(s => !string.IsNullOrWhiteSpace(s)).Count();
+        if (cleanedDescription.Length < 120 || sentenceCount < 2)
+        {
+            try
+            {
+                // Ask the model to expand the short description into 3 sentences while preserving details
+                var expandPrompt = $@"Expand the following room description to exactly 3 vivid sentences, preserving details and tone. Return only the expanded description.\n\nOriginal: {cleanedDescription}";
+                var expanded = _slm.GenerateRoomDescription(expandPrompt, roomSeed + 9999);
+                expanded = CleanDescription(expanded);
+                if (!string.IsNullOrWhiteSpace(expanded) && expanded.Length > cleanedDescription.Length)
+                {
+                    cleanedDescription = expanded;
+                }
+            }
+            catch { /* best-effort, keep original */ }
+        }
+
+        // Use final cleanedDescription as descriptionRaw to store in model
+        descriptionRaw = cleanedDescription;
 
         string visualPrompt;
         try
@@ -228,8 +267,7 @@ Return only JSON.";
             VisualPrompt = visualPrompt,
             UiPosition = new UiPosition { X = index % 3, Y = index / 3 }
         };
-        // Add transparency indicator for responsible AI
-        room.BaseDescription += "\n\n[AI-generated content]";
+        // Note: do not append per-room AI markers here; disclaimer is shown in the UI header
 
         _logger?.LogDebug("? Room {Index} generated: {RoomName}", index + 1, title);
         return room;

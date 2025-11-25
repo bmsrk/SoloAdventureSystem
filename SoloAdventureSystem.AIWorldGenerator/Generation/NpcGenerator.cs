@@ -181,8 +181,7 @@ Return only JSON.";
             Behavior = string.IsNullOrWhiteSpace(role) ? "Static" : role,
             Inventory = new List<string>()
         };
-        // Add transparency indicator for responsible AI
-        npc.Description += "\n\n[AI-generated content]";
+        // Note: do not append per-NPC AI markers here; disclaimer is shown in the UI header
 
         _logger?.LogDebug("? NPC {Index} generated: {NpcName}", index + 1, name);
         return npc;

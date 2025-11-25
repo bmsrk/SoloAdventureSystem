@@ -1,0 +1,1 @@
+NPC_NAME: Edda NPC_BIO: Edda of Highbridge manage the lord's household accounts and NPC_SKILLS: Social Hey, can you provide more information on how to input the dialogue choices in the JSON array

@@ -1,0 +1,1 @@
+If you cannot produce any choices, do not produce any JSON at all

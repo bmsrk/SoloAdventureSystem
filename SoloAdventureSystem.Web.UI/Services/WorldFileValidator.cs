@@ -20,6 +20,11 @@ namespace SoloAdventureSystem.Web.UI.Services
         public int OverallScore { get; set; }
         public List<string> Errors { get; set; } = new();
         public List<string> Warnings { get; set; } = new();
+        // New: batch test metrics
+        public int UniquenessScore { get; set; } // 0-100: how unique titles/descriptions are
+        public int TitlePresenceScore { get; set; } // 0-100: percentage of entities with proper titles
+        public List<string> BatchErrors { get; set; } = new(); // Errors from batch analysis
+        public List<string> BatchWarnings { get; set; } = new(); // Warnings from batch analysis
     }
 
     public class WorldFileValidator
@@ -135,6 +140,43 @@ namespace SoloAdventureSystem.Web.UI.Services
             if (!hasGeneric) score += 10;
 
             return Math.Clamp(score, 0, 100);
+        }
+
+        /// <summary>
+        /// Calculates uniqueness score (0-100) based on how many titles/descriptions are duplicates.
+        /// Lower duplicates = higher score.
+        /// </summary>
+        private static int CalculateUniquenessScore(List<string> titles, List<string> descriptions)
+        {
+            if (titles.Count == 0 && descriptions.Count == 0) return 0;
+
+            var titleDuplicates = titles.GroupBy(t => t.ToLowerInvariant().Trim()).Count(g => g.Count() > 1);
+            var descDuplicates = descriptions.GroupBy(d => d.ToLowerInvariant().Trim()).Count(g => g.Count() > 1);
+
+            var totalItems = titles.Count + descriptions.Count;
+            var totalDuplicates = titleDuplicates + descDuplicates;
+
+            // Score: 100 - (duplicates * penalty), clamped
+            var penalty = totalItems > 0 ? (totalDuplicates * 100.0 / totalItems) : 0;
+            return Math.Clamp(100 - (int)penalty, 0, 100);
+        }
+
+        /// <summary>
+        /// Calculates title presence score (0-100) based on percentage of entities with non-generic titles.
+        /// </summary>
+        private static int CalculateTitlePresenceScore(List<string> titles)
+        {
+            if (titles.Count == 0) return 0;
+
+            var goodTitles = titles.Count(t =>
+                !string.IsNullOrWhiteSpace(t) &&
+                t.Length > 3 &&
+                !t.ToLowerInvariant().Contains("room") &&
+                !t.ToLowerInvariant().Contains("npc") &&
+                !t.ToLowerInvariant().StartsWith("room ") &&
+                !t.ToLowerInvariant().StartsWith("npc "));
+
+            return (int)((goodTitles * 100.0) / titles.Count);
         }
 
         /// <summary>
@@ -342,6 +384,10 @@ namespace SoloAdventureSystem.Web.UI.Services
                 var npcEntries = zip.Entries.Where(e => e.FullName.StartsWith("npcs/") && e.FullName.EndsWith(".json")).ToList();
                 var factionEntries = zip.Entries.Where(e => e.FullName.StartsWith("factions/") && e.FullName.EndsWith(".json")).ToList();
 
+                // Collect data for uniqueness and title checks
+                var allTitles = new List<string>();
+                var allDescriptions = new List<string>();
+
                 // Analyze room quality
                 var roomScores = new List<int>();
                 foreach (var rEntry in roomEntries)
@@ -352,13 +398,21 @@ namespace SoloAdventureSystem.Web.UI.Services
                         using var sr = new StreamReader(s);
                         var json = await sr.ReadToEndAsync();
                         using var doc = JsonDocument.Parse(json);
+                        var title = "";
+                        var desc = "";
+                        if (doc.RootElement.TryGetProperty("Title", out var titleProp) && titleProp.ValueKind == JsonValueKind.String)
+                        {
+                            title = titleProp.GetString() ?? "";
+                        }
                         if (doc.RootElement.TryGetProperty("BaseDescription", out var descProp) && descProp.ValueKind == JsonValueKind.String)
                         {
-                            var desc = descProp.GetString() ?? "";
+                            desc = descProp.GetString() ?? "";
                             // Remove AI-generated indicator for scoring
                             desc = desc.Replace("[AI-generated content]", "").Trim();
                             roomScores.Add(ScoreRoomDescription(desc));
                         }
+                        allTitles.Add(title);
+                        allDescriptions.Add(desc);
                     }
                     catch { }
                 }
@@ -374,13 +428,21 @@ namespace SoloAdventureSystem.Web.UI.Services
                         using var sr = new StreamReader(s);
                         var json = await sr.ReadToEndAsync();
                         using var doc = JsonDocument.Parse(json);
+                        var title = "";
+                        var desc = "";
+                        if (doc.RootElement.TryGetProperty("Name", out var titleProp) && titleProp.ValueKind == JsonValueKind.String)
+                        {
+                            title = titleProp.GetString() ?? "";
+                        }
                         if (doc.RootElement.TryGetProperty("Description", out var descProp) && descProp.ValueKind == JsonValueKind.String)
                         {
-                            var desc = descProp.GetString() ?? "";
+                            desc = descProp.GetString() ?? "";
                             // Remove AI-generated indicator for scoring
                             desc = desc.Replace("[AI-generated content]", "").Trim();
                             npcScores.Add(ScoreNpcBio(desc));
                         }
+                        allTitles.Add(title);
+                        allDescriptions.Add(desc);
                     }
                     catch { }
                 }
@@ -396,20 +458,42 @@ namespace SoloAdventureSystem.Web.UI.Services
                         using var sr = new StreamReader(s);
                         var json = await sr.ReadToEndAsync();
                         using var doc = JsonDocument.Parse(json);
+                        var title = "";
+                        var desc = "";
+                        if (doc.RootElement.TryGetProperty("Name", out var titleProp) && titleProp.ValueKind == JsonValueKind.String)
+                        {
+                            title = titleProp.GetString() ?? "";
+                        }
                         if (doc.RootElement.TryGetProperty("Description", out var descProp) && descProp.ValueKind == JsonValueKind.String)
                         {
-                            var desc = descProp.GetString() ?? "";
+                            desc = descProp.GetString() ?? "";
                             // Remove AI-generated indicator for scoring
                             desc = desc.Replace("[AI-generated content]", "").Trim();
                             factionScores.Add(ScoreFactionDescription(desc));
                         }
+                        allTitles.Add(title);
+                        allDescriptions.Add(desc);
                     }
                     catch { }
                 }
                 result.FactionScore = factionScores.Any() ? (int)factionScores.Average() : 0;
 
+                // Calculate new batch metrics
+                result.UniquenessScore = CalculateUniquenessScore(allTitles, allDescriptions);
+                result.TitlePresenceScore = CalculateTitlePresenceScore(allTitles);
+
+                // Add batch warnings/errors
+                if (result.UniquenessScore < 50)
+                {
+                    result.BatchWarnings.Add($"Low uniqueness score ({result.UniquenessScore}): Many duplicate titles or descriptions detected.");
+                }
+                if (result.TitlePresenceScore < 80)
+                {
+                    result.BatchWarnings.Add($"Low title presence ({result.TitlePresenceScore}%): Some entities have generic or missing titles.");
+                }
+
                 // Recalculate overall score with quality metrics
-                var metrics = new List<int> { result.RoomScore, result.NpcScore, result.FactionScore, result.ConsistencyScore };
+                var metrics = new List<int> { result.RoomScore, result.NpcScore, result.FactionScore, result.ConsistencyScore, result.UniquenessScore, result.TitlePresenceScore };
                 result.OverallScore = (int)Math.Round(metrics.Average());
 
                 // Persist updated result
@@ -426,6 +510,60 @@ namespace SoloAdventureSystem.Web.UI.Services
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Batch validates all world ZIP files in a directory.
+        /// Returns a list of validation results and summary statistics.
+        /// </summary>
+        public async Task<List<WorldValidationResult>> BatchValidateWorldsAsync(string worldsDirectory, IProgress<string>? progress = null)
+        {
+            var results = new List<WorldValidationResult>();
+            if (!Directory.Exists(worldsDirectory))
+            {
+                progress?.Report("Directory not found: " + worldsDirectory);
+                return results;
+            }
+
+            var zipFiles = Directory.GetFiles(worldsDirectory, "*.zip");
+            progress?.Report($"Found {zipFiles.Length} world files to validate");
+
+            for (int i = 0; i < zipFiles.Length; i++)
+            {
+                var zipPath = zipFiles[i];
+                progress?.Report($"Validating {i + 1}/{zipFiles.Length}: {Path.GetFileName(zipPath)}");
+
+                try
+                {
+                    var result = await ValidateWorldFileWithQualityAsync(zipPath);
+                    results.Add(result);
+                }
+                catch (Exception ex)
+                {
+                    var errorResult = new WorldValidationResult
+                    {
+                        WorldPath = zipPath,
+                        WorldName = Path.GetFileNameWithoutExtension(zipPath),
+                        Errors = new List<string> { $"Validation failed: {ex.Message}" },
+                        OverallScore = 0
+                    };
+                    results.Add(errorResult);
+                }
+            }
+
+            progress?.Report($"Batch validation complete: {results.Count} worlds processed");
+
+            // Summary statistics
+            var validResults = results.Where(r => r.Errors.Count == 0).ToList();
+            if (validResults.Any())
+            {
+                var avgOverall = validResults.Average(r => r.OverallScore);
+                var avgUniqueness = validResults.Average(r => r.UniquenessScore);
+                var avgTitlePresence = validResults.Average(r => r.TitlePresenceScore);
+                progress?.Report($"Summary: Avg Overall Score: {avgOverall:F1}, Avg Uniqueness: {avgUniqueness:F1}, Avg Title Presence: {avgTitlePresence:F1}%");
+            }
+
+            return results;
         }
     }
 }

@@ -62,6 +62,23 @@
                                 {
                                     <Badge Appearance="neutral">Not validated</Badge>
                                 }
+                                @if (world.Validation != null)
+                                {
+                                    <Badge Appearance="@(world.Validation.OverallScore >= 80 ? "success" : world.Validation.OverallScore >= 50 ? "accent" : "error")">Score: @world.Validation.OverallScore</Badge>
+                                    <span style="color:var(--color-text-muted); margin-left:0.5rem;">Last validated: @world.Validation.ValidatedAt.ToLocalTime().ToString("g")</span>
+                                    @if (world.Validation.UniquenessScore < 80)
+                                    {
+                                        <Badge Appearance="warning">Uniq: @world.Validation.UniquenessScore</Badge>
+                                    }
+                                    @if (world.Validation.TitlePresenceScore < 90)
+                                    {
+                                        <Badge Appearance="warning">Titles: @world.Validation.TitlePresenceScore%</Badge>
+                                    }
+                                }
+                                else
+                                {
+                                    <Badge Appearance="neutral">Not validated</Badge>
+                                }
                             </div>
 
                             <div style="display: flex; gap: 2rem; margin-bottom: 0.75rem;">
@@ -114,6 +131,8 @@
                                 Copy Path
                             </Button>
                             <Button Appearance="primary" OnClick="@(() => RunValidation(world))" Style="white-space: nowrap;">Run Validation</Button>
+                            <Button Appearance="primary" OnClick="@(() => RunValidation(world))" Style="white-space: nowrap;">Run Validation</Button>
+                            <Button Appearance="info" OnClick="@(() => RunBatchValidation())" Style="white-space: nowrap;">Batch Validate All</Button>
                             <Button Appearance="danger" OnClick="@(() => ConfirmDelete(world))" Style="white-space: nowrap;">
                                 Delete
                             </Button>
@@ -283,6 +302,24 @@
         catch (Exception ex)
         {
             ShowSuccess($"Validation failed: {ex.Message}");
+        }
+    }
+
+    private async Task RunBatchValidation()
+    {
+        try
+        {
+            ShowSuccess("Running batch validation...");
+            var results = await FileValidator.BatchValidateWorldsAsync(GetWorldsDirectory());
+            // Reload to pick up updated validation files
+            await LoadWorlds();
+            var validCount = results.Count(r => r.Errors.Count == 0);
+            var avgScore = results.Where(r => r.Errors.Count == 0).Average(r => r.OverallScore);
+            ShowSuccess($"Batch validation complete: {validCount}/{results.Count} worlds valid, Avg Score: {avgScore:F1}");
+        }
+        catch (Exception ex)
+        {
+            ShowSuccess($"Batch validation failed: {ex.Message}");
         }
     }
 
