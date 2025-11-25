@@ -274,7 +274,7 @@
         try
         {
             ShowSuccess($"Running validation for {world.Name}...");
-            var result = await FileValidator.ValidateWorldFileAsync(world.FilePath);
+            var result = await FileValidator.ValidateWorldFileWithQualityAsync(world.FilePath);
             world.Validation = result;
             // persist loaded validation is handled by validator; update UI and save
             await LoadWorlds();
