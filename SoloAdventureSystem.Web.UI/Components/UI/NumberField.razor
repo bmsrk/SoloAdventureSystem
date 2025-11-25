@@ -18,8 +18,19 @@
     [Parameter]
     public string? Label { get; set; }
     
+    private int _value;
+    
     [Parameter]
-    public int Value { get; set; }
+    public int Value
+    {
+        get => _value;
+        set
+        {
+            if (_value == value) return;
+            _value = value;
+            _ = ValueChanged.InvokeAsync(value);
+        }
+    }
     
     [Parameter]
     public EventCallback<int> ValueChanged { get; set; }

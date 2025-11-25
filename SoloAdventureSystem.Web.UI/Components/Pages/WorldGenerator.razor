@@ -241,6 +241,19 @@
                             <span>Generate World</span>
                         }
                     </Button>
+
+                    <!-- Debug: log current options without generating -->
+                    <div style="margin-top:0.5rem; display:flex; gap:0.5rem;">
+                        <Button Appearance="outline" OnClick="LogOptions" Disabled="@(isGenerating)" Style="padding:8px 12px;">
+                            Log Options
+                        </Button>
+                        @if (!string.IsNullOrEmpty(lastLoggedOptions))
+                        {
+                            <div class="message-bar message-bar-info" style="margin:0; align-items:center;">
+                                <div class="message-content" style="padding:0.25rem 0.5rem;">Last logged: @lastLoggedOptions</div>
+                            </div>
+                        }
+                    </div>
                 </EditForm>
 
                 @if (!string.IsNullOrEmpty(generationProgress))
@@ -382,6 +395,9 @@
         public CachedModelInfo Value { get; set; } = new();
     }
 
+    // Debug UI hint
+    private string lastLoggedOptions = "";
+
     protected override async Task OnInitializedAsync()
     {
         await LoadCachedModels();
@@ -514,6 +530,10 @@
             progressPercentage = 0;
             StateHasChanged();
 
+            // Log the options being used for generation to server logs (helps debug binding issues)
+            Logger.LogInformation("[WorldGenerator] GenerateWorld invoked. Options => Name={Name}, Seed={Seed}, Theme={Theme}, Regions={Regions}, Flavor={Flavor}, Description={Description}, MainPlotPoint={MainPlotPoint}, TimePeriod={TimePeriod}, PowerStructure={PowerStructure}",
+                options.Name, options.Seed, options.Theme, options.Regions, options.Flavor, options.Description, options.MainPlotPoint, options.TimePeriod, options.PowerStructure);
+
             var progress = new Progress<string>(msg =>
             {
                 generationProgress = msg;
@@ -546,6 +566,29 @@
         finally
         {
             isGenerating = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LogOptions()
+    {
+        // Log to server and update small UI hint so you can confirm the action from the browser
+        try
+        {
+            Logger.LogInformation("[WorldGenerator][Debug] Current options: Name={Name}, Seed={Seed}, Theme={Theme}, Regions={Regions}, Flavor={Flavor}, Description={Description}, MainPlotPoint={MainPlotPoint}, TimePeriod={TimePeriod}, PowerStructure={PowerStructure}",
+                options.Name, options.Seed, options.Theme, options.Regions, options.Flavor, options.Description, options.MainPlotPoint, options.TimePeriod, options.PowerStructure);
+
+            lastLoggedOptions = $"{options.Name} (seed {options.Seed})";
+            // keep the message visible briefly
+            StateHasChanged();
+            await Task.Delay(2500);
+            lastLoggedOptions = "";
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to log options");
+            errorMessage = $"Failed to log options: {ex.Message}";
             StateHasChanged();
         }
     }
