@@ -26,6 +26,8 @@ public class MaINAdapter : ILocalSLMAdapter, IDisposable
     private bool _isInitialized;
     private LLamaWeights? _weights;
     private LLamaContext? _context;
+    // Prevent repeated fallback attempts
+    private bool _attemptedTinyLlamaFallback = false;
 
     public MaINAdapter(
         IOptions<AISettings> settings, 
@@ -386,6 +388,46 @@ public class MaINAdapter : ILocalSLMAdapter, IDisposable
             catch (Exception ex)
             {
                 _logger?.LogDebug(ex, "Direct retry failed for {OperationName}", operationName);
+            }
+        }
+        
+        // If still empty, attempt an automatic recovery: switch to tinyllama if not already tried
+        if (string.IsNullOrWhiteSpace(text) && !_attemptedTinyLlamaFallback)
+        {
+            try
+            {
+                // Only attempt if current model isn't tinyllama
+                if (!string.Equals(_settings.LLamaModelKey, "tinyllama-q4", StringComparison.OrdinalIgnoreCase))
+                {
+                    _attemptedTinyLlamaFallback = true;
+                    _logger?.LogWarning("Empty generation detected for {OperationName}. Attempting auto-recovery by switching to TinyLlama and reinitializing.", operationName);
+
+                    // Dispose current context and weights to force reload
+                    DisposeContextAndWeights();
+
+                    // Update settings to tinyllama key
+                    try
+                    {
+                        _settings.LLamaModelKey = "tinyllama-q4";
+                        _settings.Model = "tinyllama-q4";
+                    }
+                    catch { /* best-effort update */ }
+
+                    // Reinitialize (will download/load tinyllama if needed)
+                    InitializeAsync().GetAwaiter().GetResult();
+
+                    // Try a direct generation once more
+                    _logger?.LogInformation("Retrying generation with TinyLlama for {OperationName}", operationName);
+                    var recovery = Generate(prompt, seed + 2, maxTokens);
+                    if (!string.IsNullOrWhiteSpace(recovery))
+                    {
+                        return recovery;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, "Auto-recovery attempt failed");
             }
         }
 

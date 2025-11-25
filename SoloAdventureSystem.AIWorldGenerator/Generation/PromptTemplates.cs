@@ -80,7 +80,7 @@ Write ONLY the lore entry (no extra commentary).";
 
     // --- Output specifications (explicit constraints) ---
     public static string RoomOutputSpec =>
-        "OUTPUT SPEC: Exactly 3 sentences. Each sentence should be 10-45 words. Include at least one sensory detail (sound/smell/touch) and one concrete object or color. No lists, no markup. Return only the text.";
+        "OUTPUT SPEC: Exactly 3 sentences. Each sentence should be 10-45 words. Include at least one sensory detail (sound/smell/touch) and one concrete object or color. No lists, no markup. Return only the text.\nOUTPUT_FORMAT: TOON table preferred. Example:\nchoices[1]{description}:\n\"A neon-lit alley...\"";
 
     public static string NpcOutputSpec =>
         "OUTPUT SPEC: Exactly 2 sentences. First sentence: role/background/motivation. Second: secret/quirk/defining trait. Keep length concise (12-40 words per sentence). Return only the text.";
@@ -104,7 +104,10 @@ Room {index + 1} of {total}. Make it {atmosphere.ToLower()}.
 
 Write 3 sentences describing this room:";
 
-        return Combine(RoomDescriptionSystem, user, RoomOutputSpec);
+        // Prefer TOON-friendly directive appended to the prompt to encourage structured table output.
+        var combined = Combine(RoomDescriptionSystem, user, RoomOutputSpec);
+        combined += "\n\nIMPORTANT: Return ONLY a TOON table wrapped between a single line marker '#TOON' and '#ENDTOON'. Example:\n#TOON\nitems[1]{description}:\n\"A neon-lit alley...\"\n#ENDTOON\nIf you cannot produce TOON, return only the plain text description without explanation.";
+        return combined;
     }
 
     public static string BuildNpcPrompt(string npcName, WorldGenerationOptions options, string roomContext, string factionName)
@@ -120,7 +123,9 @@ Plot: {options.MainPlotPoint}
 
 Write 2 sentences about {npcName}. Show their role and a defining trait:";
 
-        return Combine(NpcBioSystem, user, NpcOutputSpec);
+        var combined = Combine(NpcBioSystem, user, NpcOutputSpec);
+        combined += "\n\nIMPORTANT: Return ONLY a TOON table wrapped between '#TOON' and '#ENDTOON' with fields {bio,role,quirk}. If TOON not possible, return only the plain 2-sentence bio.";
+        return combined;
     }
 
     public static string BuildFactionPrompt(string factionName, WorldGenerationOptions options)
@@ -134,7 +139,9 @@ Central Conflict: {options.MainPlotPoint}
 
 Write 3 sentences about {factionName}. Include their goal, territory, and enemy:";
 
-        return Combine(FactionLoreSystem, user, FactionOutputSpec);
+        var combined = Combine(FactionLoreSystem, user, FactionOutputSpec);
+        combined += "\n\nIMPORTANT: Return ONLY a TOON table wrapped between '#TOON' and '#ENDTOON' with fields {description,ideology}. If TOON not possible, return only the plain faction text.";
+        return combined;
     }
 
     public static string BuildLorePrompt(string worldName, WorldGenerationOptions options, int entryNumber)
@@ -147,7 +154,9 @@ Context: {options.MainPlotPoint}
 
 Write lore entry #{entryNumber} - 1-2 sentences about an interesting detail from this world's history or culture:";
 
-        return Combine(WorldLoreSystem, user, LoreOutputSpec);
+        var combined = Combine(WorldLoreSystem, user, LoreOutputSpec);
+        combined += "\n\nIMPORTANT: Return ONLY a TOON table wrapped between '#TOON' and '#ENDTOON' with field {text}. If TOON not possible, return only the plain lore text.";
+        return combined;
     }
 
     // Backwards-compatible obsolete overloads

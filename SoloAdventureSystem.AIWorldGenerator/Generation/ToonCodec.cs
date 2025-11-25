@@ -1,149 +1,121 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace SoloAdventureSystem.ContentGenerator.Generation;
 
 /// <summary>
-/// Minimal TOON codec implementation tailored for this project.
-/// - Tries to encode uniform arrays of objects as TOON tables.
-/// - For complex objects falls back to embedding compact JSON prefixed with "#json\n".
-/// - Decoder supports the simple table form and the JSON fallback.
-/// This is a small, self-contained implementation to avoid external dependencies.
+/// TOON parser implementation (read-only) with JSON fallback.
+/// - Parses TOON tables and returns typed objects via JSON intermediary.
+/// - Supports quoted fields, escaped quotes, numeric/bool/null/datetime parsing,
+///   and JSON literals inside cells.
+/// - Recognizes `#json\n` prefix to parse raw JSON directly.
 /// </summary>
-public static class ToonCodec
+public static class ToonParser
 {
-    public static string Serialize<T>(T obj)
+    private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true, WriteIndented = false };
+
+    /// <summary>
+    /// Try to parse the input text as a TOON table or JSON and deserialize to T.
+    /// Returns true if parsing + deserialization succeeded.
+    /// </summary>
+    public static bool TryParse<T>(string input, out T? result)
     {
-        if (obj == null) return string.Empty;
+        result = default;
+        if (string.IsNullOrWhiteSpace(input)) return false;
 
-        // If obj is a list/array of uniform objects, attempt table encoding
-        if (obj is System.Collections.IEnumerable enumerable && !(obj is string))
+        var text = input.Trim();
+
+        // Allow explicit TOON markers: lines between #TOON and #ENDTOON
+        if (text.IndexOf("#TOON", StringComparison.OrdinalIgnoreCase) >= 0)
         {
-            var items = enumerable.Cast<object>().ToList();
-            if (items.Count == 0)
+            var start = text.IndexOf("#TOON", StringComparison.OrdinalIgnoreCase);
+            var end = text.IndexOf("#ENDTOON", StringComparison.OrdinalIgnoreCase);
+            if (start >= 0 && end > start)
             {
-                return "#json\n[]";
-            }
-
-            // Try to extract property names from first item
-            var first = items[0];
-            var props = first.GetType().GetProperties()
-                .Where(p => IsSimpleType(p.PropertyType))
-                .Select(p => p.Name)
-                .ToList();
-
-            if (props.Count > 0 && items.All(it => it.GetType().GetProperties().Select(p => p.Name).Count() == first.GetType().GetProperties().Length))
-            {
-                // Build TOON table header: name[N]{fields}:
-                var headerName = "items";
-                var sb = new StringBuilder();
-                sb.AppendLine($"{headerName}[{items.Count}]{{{string.Join(',', props)}}}:\n");
-                foreach (var it in items)
-                {
-                    var values = props.Select(pn => SerializeSimpleValue(it.GetType().GetProperty(pn)?.GetValue(it))).ToArray();
-                    sb.AppendLine("  " + string.Join(',', values));
-                }
-
-                return sb.ToString().TrimEnd();
+                var inner = text.Substring(start + 5, end - (start + 5));
+                text = inner.Trim();
             }
         }
 
-        // Fallback: embed compact JSON with marker
-        var json = JsonSerializer.Serialize(obj, new JsonSerializerOptions { WriteIndented = false });
-        return "#json\n" + json;
-    }
-
-    public static T? Deserialize<T>(string toon)
-    {
-        if (string.IsNullOrWhiteSpace(toon)) return default;
-
-        toon = toon.Trim();
-        if (toon.StartsWith("#json\n", StringComparison.OrdinalIgnoreCase))
+        // JSON marker shortcut
+        if (text.StartsWith("#json\n", StringComparison.OrdinalIgnoreCase))
         {
-            var json = toon.Substring(6);
-            return JsonSerializer.Deserialize<T>(json);
-        }
-
-        // Attempt to parse simple table format
-        // Header: name[N]{field1,field2,...}:
-        var lines = toon.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).Select(l => l.Trim()).ToList();
-        if (lines.Count == 0) return default;
-
-        var header = lines[0];
-        var headerMatch = System.Text.RegularExpressions.Regex.Match(header, "^(?<name>[a-zA-Z0-9_]+)\\[(?<n>\\d+)\\]\\{(?<fields>[^}]+)\\}:?$");
-        if (!headerMatch.Success)
-        {
-            // Not a table we can parse, try JSON parse of whole text
+            var json = text.Substring(6);
             try
             {
-                return JsonSerializer.Deserialize<T>(toon);
+                result = JsonSerializer.Deserialize<T>(json, JsonOptions);
+                return result != null;
             }
             catch
             {
-                return default;
+                return false;
             }
         }
 
-        var fields = headerMatch.Groups["fields"].Value.Split(',').Select(s => s.Trim()).ToArray();
-        var itemLines = lines.Skip(1).Where(l => !string.IsNullOrWhiteSpace(l)).ToList();
+        // Normalize lines and drop comment lines starting with '#'
+        var rawLines = text.Split(new[] { '\r', '\n' }, StringSplitOptions.None).Select(l => l.TrimEnd()).ToList();
+        var lines = rawLines.Where(l => !string.IsNullOrWhiteSpace(l) && !l.TrimStart().StartsWith("#")).Select(l => l.Trim()).ToList();
+        if (lines.Count == 0) return false;
+
+        // Header pattern: name[N]{field1,field2,...}:
+        var header = lines[0];
+        var m = Regex.Match(header, "^(?<name>[A-Za-z0-9_]+)\\[(?<n>\\d+)\\]\\{(?<fields>[^}]+)\\}:?$");
+        if (!m.Success)
+        {
+            // Not a table — try full-text JSON
+            try
+            {
+                result = JsonSerializer.Deserialize<T>(text, JsonOptions);
+                return result != null;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        var fields = m.Groups["fields"].Value.Split(',').Select(s => s.Trim()).ToArray();
+        var rowLines = lines.Skip(1).Where(l => !string.IsNullOrWhiteSpace(l)).ToList();
 
         var list = new List<Dictionary<string, object?>>();
-        foreach (var l in itemLines)
+        foreach (var row in rowLines)
         {
-            // remove leading indentation
-            var row = l.TrimStart();
-            // split by commas but keep quoted commas
-            var values = SplitCsvRow(row).ToArray();
-            var dict = new Dictionary<string, object?>();
+            var cols = SplitRow(row).ToArray();
+            var dict = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
             for (int i = 0; i < fields.Length; i++)
             {
-                var val = i < values.Length ? Unquote(values[i]) : string.Empty;
+                var raw = i < cols.Length ? cols[i] : string.Empty;
+                var unq = Unquote(raw?.Trim() ?? string.Empty);
+                var val = ParseValue(unq);
                 dict[fields[i]] = val;
             }
             list.Add(dict);
         }
 
-        // Convert list of dictionaries to JSON then to target type
-        var jsonList = JsonSerializer.Serialize(list);
+        // Convert to JSON then to target type
         try
         {
-            return JsonSerializer.Deserialize<T>(jsonList);
+            var jsonList = JsonSerializer.Serialize(list, JsonOptions);
+            result = JsonSerializer.Deserialize<T>(jsonList, JsonOptions);
+            return result != null;
         }
         catch
         {
-            return default;
+            result = default;
+            return false;
         }
     }
 
-    private static bool IsSimpleType(Type t)
+    private static IEnumerable<string> SplitRow(string row)
     {
-        return t.IsPrimitive || t == typeof(string) || t == typeof(decimal) || t == typeof(DateTime) || (Nullable.GetUnderlyingType(t) != null && IsSimpleType(Nullable.GetUnderlyingType(t)));
-    }
-
-    private static string SerializeSimpleValue(object? v)
-    {
-        if (v == null) return string.Empty;
-        if (v is string s)
-        {
-            // Escape commas and newlines by quoting
-            if (s.Contains(',') || s.Contains('\n') || s.Contains('\r') || s.Contains('"'))
-            {
-                var esc = s.Replace("\"", "\"\"");
-                return '"' + esc + '"';
-            }
-            return s;
-        }
-
-        if (v is DateTime dt) return dt.ToString("o");
-        if (v is bool b) return b ? "true" : "false";
-        return Convert.ToString(v, System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
-    }
-
-    private static IEnumerable<string> SplitCsvRow(string row)
-    {
+        if (string.IsNullOrEmpty(row)) yield break;
         var sb = new StringBuilder();
         bool inQuotes = false;
         for (int i = 0; i < row.Length; i++)
@@ -153,9 +125,8 @@ public static class ToonCodec
             {
                 if (inQuotes && i + 1 < row.Length && row[i + 1] == '"')
                 {
-                    // escaped quote
                     sb.Append('"');
-                    i++; // skip next
+                    i++; // skip escaped quote
                 }
                 else
                 {
@@ -177,11 +148,57 @@ public static class ToonCodec
 
     private static string Unquote(string s)
     {
-        if (s.Length >= 2 && s.StartsWith('"') && s.EndsWith('"'))
+        if (string.IsNullOrEmpty(s)) return string.Empty;
+        s = s.Trim();
+        if (s.Length >= 2 && s[0] == '"' && s[^1] == '"')
         {
             var inner = s.Substring(1, s.Length - 2);
+            // replace doubled quotes "" with single quote "
             return inner.Replace("\"\"", "\"");
         }
         return s;
+    }
+
+    private static object? ParseValue(string s)
+    {
+        if (s == null) return string.Empty;
+        s = s.Trim();
+        if (s.Length == 0) return string.Empty;
+
+        // JSON object/array literal
+        if ((s.StartsWith("{") && s.EndsWith("}")) || (s.StartsWith("[") && s.EndsWith("]")))
+        {
+            try
+            {
+                return JsonSerializer.Deserialize<object>(s, JsonOptions);
+            }
+            catch
+            {
+                // fall through
+            }
+        }
+
+        if (string.Equals(s, "null", StringComparison.OrdinalIgnoreCase)) return null;
+        if (string.Equals(s, "true", StringComparison.OrdinalIgnoreCase)) return true;
+        if (string.Equals(s, "false", StringComparison.OrdinalIgnoreCase)) return false;
+
+        if (long.TryParse(s, NumberStyles.Integer, CultureInfo.InvariantCulture, out var li)) return li;
+        if (double.TryParse(s, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out var dv)) return dv;
+        if (DateTime.TryParse(s, null, DateTimeStyles.RoundtripKind, out var dt)) return dt;
+
+        return s;
+    }
+}
+
+/// <summary>
+/// Compatibility wrapper to match previous API name `ToonCodec.Deserialize<T>` used elsewhere in the codebase.
+/// This delegates to `ToonParser` and returns default(T) on failure.
+/// </summary>
+public static class ToonCodec
+{
+    public static T? Deserialize<T>(string input)
+    {
+        if (ToonParser.TryParse(input, out T? res)) return res;
+        return default;
     }
 }

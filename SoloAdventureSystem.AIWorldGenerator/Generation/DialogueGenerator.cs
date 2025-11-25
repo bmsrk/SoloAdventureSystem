@@ -143,6 +143,24 @@ public class DialogueGenerator
                 };
             }
 
+            // If generated choices exist, ensure the first choice does not immediately end the dialogue when possible
+            if (generatedChoices != null && generatedChoices.Count > 1)
+            {
+                bool firstIsEnd = generatedChoices[0].Next != null && generatedChoices[0].Next.EndsWith("_end", StringComparison.OrdinalIgnoreCase);
+                if (firstIsEnd)
+                {
+                    // find first non-end choice and move it to front
+                    var idx = generatedChoices.FindIndex(1, c => !(c.Next != null && c.Next.EndsWith("_end", StringComparison.OrdinalIgnoreCase)));
+                    if (idx >= 1)
+                    {
+                        var item = generatedChoices[idx];
+                        generatedChoices.RemoveAt(idx);
+                        generatedChoices.Insert(0, item);
+                        _logger?.LogDebug("Reordered dialogue choices for NPC {Npc} to avoid immediate end on first option", npcName);
+                    }
+                }
+            }
+
             // Build nodes using choices (guarded by npc id)
             var intro = new StoryNodeModel
             {

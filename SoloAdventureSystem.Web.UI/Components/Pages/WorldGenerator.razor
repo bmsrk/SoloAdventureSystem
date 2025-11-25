@@ -14,265 +14,102 @@
 
 <PageTitle>AI World Generator</PageTitle>
 
-<div style="padding: 2rem; max-width: 1400px; margin: 0 auto;">
-    <div style="text-align: center; margin-bottom: 2rem;">
-        <h1 class="display-4" style="font-weight: 700; color: var(--color-text-primary);">AI World Generator</h1>
-        <p class="lead" style="color: var(--color-text-secondary);">Generate procedural game worlds using local LLM models</p>
+<div style="padding: 1.5rem; max-width: 1200px; margin: 0 auto;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
+        <div>
+            <h2 style="margin:0; color:var(--color-text-primary);">AI World Generator</h2>
+            <div style="color:var(--color-text-muted); font-size:0.95rem;">Generate procedural game worlds using local LLM models</div>
+        </div>
+        <div style="display:flex; gap:0.5rem; align-items:center;">
+            @if (!GenerationService.IsInitialized)
+            {
+                <select @bind="selectedModel" style="padding:6px 8px; border-radius:6px; border:1px solid var(--color-border-default); background:var(--color-bg-primary); color:var(--color-text-primary);">
+                    <option value="tinyllama-q4">TinyLlama</option>
+                    <option value="llama-3.2-1b-q4">Llama-3.2</option>
+                    <option value="phi-3-mini-q4">Phi-3 Mini</option>
+                </select>
+                <div style="font-size:0.85rem; color:var(--color-text-muted);">@GetModelEstimate(selectedModel)</div>
+                <Button Appearance="outline" OnClick="InitializeModel" Disabled="@isInitializing" Style="padding:6px 10px;">@(isInitializing ? "Init..." : "Init")</Button>
+            }
+            else
+            {
+                <div style="font-size:0.95rem; color:var(--color-text-primary);">Model: <strong>@selectedModel</strong></div>
+            }
+            <Button Appearance="outline" OnClick="() => showLogPane = !showLogPane">@(showLogPane ? "Hide Logs" : "Show Logs")</Button>
+            <Badge Appearance="@(GenerationService.IsInitialized ? "accent" : "neutral")">@(GenerationService.IsInitialized ? "AI READY" : "AI NOT INITIALIZED")</Badge>
+        </div>
     </div>
 
-    @if (!GenerationService.IsInitialized)
-    {
-        <Card Style="margin-bottom: 2rem;">
-            <div style="padding: 1.5rem;">
-                <h4 style="color: var(--color-text-primary); margin-bottom: 1rem;">Select AI Model</h4>
-                
-                <!-- Model Management Section -->
-                <div style="margin-bottom: 2rem; padding: 1rem; background: var(--color-bg-secondary); border-radius: 8px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                        <h5 style="color: var(--color-text-primary); margin: 0;">Model Management</h5>
-                        <Button Appearance="outline" 
-                                OnClick="LoadCachedModels"
-                                Style="padding: 4px 8px;">
-                            ?? Refresh
-                        </Button>
-                    </div>
-                    
-                    @if (cachedModels.Count > 0)
+    <div style="display:grid; grid-template-columns: @(showLogPane ? "320px 1fr" : "1fr"); gap:1rem;">
+        @if (showLogPane)
+        {
+            <aside style="background:var(--color-bg-secondary); padding:0.75rem; border-radius:8px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+                    <strong style="color:var(--color-text-primary);">Activity Log</strong>
+                    <Button Appearance="ghost" OnClick="ClearUiLog">Clear</Button>
+                </div>
+
+                <div style="font-size:0.85rem; color:var(--color-text-muted); margin-bottom:0.5rem;">Status</div>
+                <div style="font-size:0.9rem; color:var(--color-text-primary); margin-bottom:0.5rem;">Initialization: @initProgress</div>
+                <div style="font-size:0.9rem; color:var(--color-text-primary);">Generation: @generationProgress</div>
+
+                <div style="height:1px; background:var(--color-border-default); margin:0.5rem 0;"></div>
+
+                <div style="font-size:0.85rem; color:var(--color-text-muted); margin-bottom:0.5rem;">Recent Actions</div>
+                <div style="max-height:44vh; overflow:auto; white-space:pre-wrap; font-family:monospace; font-size:0.85rem; color:var(--color-text-secondary); background:var(--color-bg-primary); padding:0.5rem; border-radius:6px;">
+                    @if (string.IsNullOrEmpty(uiLog))
                     {
-                        <div style="margin-bottom: 1rem;">
-                            <div class="small" style="color: var(--color-text-muted); margin-bottom: 0.5rem;">
-                                Cached Models (@cachedModels.Count) - Total: @FormatFileSize(totalCacheSize)
-                            </div>
-                            
-                            @foreach (var model in cachedModels)
-                            {
-                                <div style="display: flex; justify-content: space-between; align-items: center; 
-                                          padding: 0.5rem; margin-bottom: 0.5rem; background: var(--color-bg-primary); 
-                                          border-radius: 4px;">
-                                    <div>
-                                        <strong style="color: var(--color-text-primary);">@model.Key</strong>
-                                        <div class="small" style="color: var(--color-text-muted);">
-                                            @FormatFileSize(model.Value.SizeBytes) - Modified: @model.Value.LastModified.ToString("yyyy-MM-dd HH:mm")
-                                        </div>
-                                    </div>
-                                    <Button Appearance="secondary" 
-                                            OnClick="() => DeleteModel(model.Key)"
-                                            Style="padding: 4px 8px; font-size: 0.8rem;">
-                                        ??? Delete
-                                    </Button>
-                                </div>
-                            }
-                            
-                            <div style="margin-top: 1rem, text-align: center;">
-                                <Button Appearance="outline" 
-                                        OnClick="DeleteAllModels"
-                                        Style="padding: 6px 12px;">
-                                    ??? Delete All Cached Models
-                                </Button>
-                            </div>
-                        </div>
+                        <div style="color:var(--color-text-muted);">No log messages yet</div>
                     }
                     else
                     {
-                        <div style="text-align: center; color: var(--color-text-muted); padding: 1rem;">
-                            No cached models found. Models will be downloaded when first used.
-                        </div>
+                        @uiLog
                     }
                 </div>
-                
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
-                    <!-- TinyLlama -->
-                    <div class="model-card @(selectedModel == "tinyllama-q4" ? "selected" : "")" 
-                         @onclick='() => SelectModel("tinyllama-q4")'>
-                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
-                            <h5 style="color: var(--color-text-primary);">TinyLlama</h5>
-                            <span class="model-badge badge-speed-fast">FASTEST</span>
-                        </div>
-                        <div style="margin-bottom: 0.75rem;">
-                            <div class="small" style="color: var(--color-text-muted);">SIZE</div>
-                            <div class="h4" style="color: var(--color-text-primary);">~700 MB</div>
-                        </div>
-                        <div style="margin-bottom: 0.75rem;">
-                            <div class="small" style="color: var(--color-text-muted);">DOWNLOAD</div>
-                            <div style="color: var(--color-text-primary);">2-5 minutes</div>
-                        </div>
-                        <div style="margin-bottom: 0.75rem;">
-                            <div class="small" style="color: var,--color-text-muted);">SPEED</div>
-                            <div style="color: var,--color-text-primary);">30-45 seconds</div>
-                        </div>
-                        <span class="model-badge badge-quality-good">Good Quality</span>
-                    </div>
+            </aside>
+        }
 
-                    <!-- Llama-3.2 -->
-                    <div class="model-card @(selectedModel == "llama-3.2-1b-q4" ? "selected" : "")" 
-                         @onclick='() => SelectModel("llama-3.2-1b-q4")'>
-                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
-                            <h5 style="color: var(--color-text-primary);">Llama 3.2</h5>
-                            <span class="model-badge badge-speed-medium">BALANCED</span>
-                        </div>
-                        <div style="margin-bottom: 0.75rem;">
-                            <div class="small" style="color: var(--color-text-muted);">SIZE</div>
-                            <div class="h4" style="color: var(--color-text-primary);">~2 GB</div>
-                        </div>
-                        <div style="margin-bottom: 0.75rem;">
-                            <div class="small" style="color: var,--color-text-muted);">DOWNLOAD</div>
-                            <div style="color: var(--color-text-primary);">4-8 minutes</div>
-                        </div>
-                        <div style="margin-bottom: 0.75rem;">
-                            <div class="small" style="color: var,--color-text-muted);">SPEED</div>
-                            <div style="color: var(--color-text-primary);">1-2 minutes</div>
-                        </div>
-                        <span class="model-badge badge-quality-best">Excellent</span>
-                    </div>
-
-                    <!-- Phi-3 Mini -->
-                    <div class="model-card @(selectedModel == "phi-3-mini-q4" ? "selected" : "")" 
-                         @onclick='() => SelectModel("phi-3-mini-q4")'>
-                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
-                            <h5 style="color: var(--color-text-primary);">Phi-3 Mini</h5>
-                            <span class="model-badge badge-quality-best">BEST</span>
-                        </div>
-                        <div style="margin-bottom: 0.75rem;">
-                            <div class="small" style="color: var,--color-text-muted);">SIZE</div>
-                            <div class="h4" style="color: var,--color-text-primary);">~2.3 GB</div>
-                        </div>
-                        <div style="margin-bottom: 0.75rem;">
-                            <div class="small" style="color: var,--color-text-muted);">DOWNLOAD</div>
-                            <div style="color: var(--color-text-primary);">5-10 minutes</div>
-                        </div>
-                        <div style="margin-bottom: 0.75rem;">
-                            <div class="small" style="color: var,--color-text-muted);">SPEED</div>
-                            <div style="color: var(--color-text-primary);">1-2 minutes</div>
-                        </div>
-                        <span class="model-badge badge-quality-best">Best Quality</span>
-                    </div>
-                </div>
-
-                <div style="text-align: center; margin-bottom: 1.5rem;">
-                    <Button Appearance="accent" 
-                            OnClick="InitializeAI" 
-                            Disabled="@(isInitializing || string.IsNullOrEmpty(selectedModel))"
-                            Style="padding: 12px 32px; width: auto;">
-                        @if (isInitializing)
-                        {
-                            <span class="spinner-small"></span>
-                            <span style="margin-left: 8px;">Initializing...</span>
-                        }
-                        else
-                        {
-                            <span>Initialize @selectedModel</span>
-                        }
-                    </Button>
-                </div>
-
-                @if (!string.IsNullOrEmpty(initProgress))
-                {
-                    <div class="message-bar message-bar-info">
-                        <div class="message-icon">?</div>
-                        <div class="message-content">
-                            <strong>Progress:</strong> <span>@initProgress</span>
-                        </div>
-                    </div>
-                }
-
-                <div class="message-bar message-bar-info">
-                    <div class="message-icon">?</div>
-                    <div class="message-content">
-                        <strong>GPU Acceleration:</strong>
-                        <Badge Appearance="@(AISettings.Value.UseGPU ? "accent" : "neutral")" Style="margin-left: 8px;">
-                            @(AISettings.Value.UseGPU ? "ENABLED" : "DISABLED")
-                        </Badge>
-                        @if (AISettings.Value.UseGPU)
-                        {
-                            <div class="small" style="margin-top: 8px;">Using CUDA for faster generation</div>
-                        }
-                    </div>
-                </div>
-            </div>
-        </Card>
-    }
-    else
-    {
-        <Card Style="margin-bottom: 2rem;">
-            <div style="padding: 1.5rem;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                    <h4 style="color: var(--color-text-primary); margin: 0;">World Configuration</h4>
-                    <div style="display: flex; gap: 0.5rem;">
-                        <Badge Appearance="accent">AI READY</Badge>
-                        <Badge Appearance="neutral">@selectedModel</Badge>
-                    </div>
-                </div>
-
+        <section>
+            <Card Style="padding:1rem;">
                 <EditForm Model="@options" OnValidSubmit="@GenerateWorld">
-                    <h6 style="color: var(--color-text-primary); margin-bottom: 1rem;">Basic Settings</h6>
-                    
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-                        <TextField Label="World Name" @bind-Value="options.Name" />
-                        <NumberField Label="Random Seed" @bind-Value="options.Seed" />
+                    <div style="display:flex; gap:1rem; align-items:end; margin-bottom:0.75rem;">
+                        <TextField Label="World Name" @bind-Value="options.Name" Style="width:240px;" />
+                        <NumberField Label="Seed" @bind-Value="options.Seed" Style="width:140px;" />
+                        <TextField Label="Theme" @bind-Value="options.Theme" Style="width:180px;" />
+                        <NumberField Label="Regions" @bind-Value="options.Regions" Min="3" Max="20" Style="width:120px;" />
                     </div>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem;">
-                        <TextField Label="Theme" @bind-Value="options.Theme" />
-                        <NumberField Label="Regions" @bind-Value="options.Regions" Min="3" Max="20" />
+                    <div style="display:flex; gap:0.5rem; align-items:center; margin-bottom:0.75rem;">
+                        <Button Appearance="accent" Type="submit" Disabled="@isGenerating" Style="padding:8px 16px;">@if (isGenerating) { <span class="spinner-small"></span> } Generate</Button>
+                        <Button Appearance="outline" OnClick="LogOptions" Disabled="@isGenerating">Log</Button>
+                        <Button Appearance="ghost" OnClick="() => showAdvanced = !showAdvanced">@(showAdvanced ? "Hide Advanced" : "Show Advanced")</Button>
+                        <div style="margin-left:auto; color:var(--color-text-muted); font-size:0.9rem;">Model: <strong>@selectedModel</strong></div>
                     </div>
 
-                    <h6 style="color: var(--color-text-primary); margin-bottom: 1rem;">Advanced Settings</h6>
+                    @if (showAdvanced)
+                    {
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; margin-bottom:0.5rem;">
+                            <TextField Label="Flavor/Mood" @bind-Value="options.Flavor" />
+                            <TextField Label="Main Plot" @bind-Value="options.MainPlotPoint" />
+                            <TextArea Label="Short Setting Description" @bind-Value="options.Description" Rows="2" />
+                            <div />
+                        </div>
+                    }
 
-                    <TextField Label="Flavor/Mood" @bind-Value="options.Flavor" Style="margin-bottom: 1rem;" />
-                    <TextArea Label="Setting Description" @bind-Value="options.Description" Rows="2" Style="margin-bottom: 1rem;" />
-                    <TextField Label="Main Plot Point" @bind-Value="options.MainPlotPoint" Style="margin-bottom: 1rem;" />
-
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
-                        <TextField Label="Time Period" @bind-Value="options.TimePeriod" />
-                        <TextField Label="Power Structure" @bind-Value="options.PowerStructure" />
-                    </div>
-
-                    <Button Appearance="accent" 
-                            Type="submit" 
-                            Disabled="@isGenerating"
-                            Style="width: 100%; padding: 14px;">
-                        @if (isGenerating)
-                        {
-                            <span class="spinner-small"></span>
-                            <span style="margin-left: 8px;">Generating...</span>
-                        }
-                        else
-                        {
-                            <span>Generate World</span>
-                        }
-                    </Button>
-
-                    <!-- Debug: log current options without generating -->
-                    <div style="margin-top:0.5rem; display:flex; gap:0.5rem;">
-                        <Button Appearance="outline" OnClick="LogOptions" Disabled="@(isGenerating)" Style="padding:8px 12px;">
-                            Log Options
-                        </Button>
-                        @if (!string.IsNullOrEmpty(lastLoggedOptions))
-                        {
-                            <div class="message-bar message-bar-info" style="margin:0; align-items:center;">
-                                <div class="message-content" style="padding:0.25rem 0.5rem;">Last logged: @lastLoggedOptions</div>
-                            </div>
-                        }
-                    </div>
+                    @if (!string.IsNullOrEmpty(generationProgress))
+                    {
+                        <div style="margin-top:0.5rem;">
+                            <ProgressBar Value="@progressPercentage" Max="100" Style="width:100%; margin-bottom:0.5rem;" />
+                            <div style="font-size:0.9rem; color:var(--color-text-muted);">@generationProgress</div>
+                        </div>
+                    }
                 </EditForm>
+            </Card>
 
-                @if (!string.IsNullOrEmpty(generationProgress))
-                {
-                    <div style="margin-top: 1.5rem;">
-                        <ProgressBar Value="@progressPercentage" Max="100" Style="width: 100%; margin-bottom: 1rem;" />
-                        <div style="color: var(--color-text-primary);"><strong>Status:</strong> @generationProgress</div>
-                    </div>
-                }
-            </div>
-        </Card>
-
-        @if (generatedWorld != null)
-        {
-            <Card Style="margin-bottom: 2rem;">
-                <div style="padding: 1.5rem;">
-                    <h4 style="color: var(--color-text-primary); margin-bottom: 1.5rem;">Generation Complete</h4>
-                    
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 2rem; text-align: center; margin-bottom: 1.5rem;">
+            @if (generatedWorld != null)
+            {
+                <Card Style="margin-top:0.75rem; padding:0.75rem;">
+                    <div style="display:flex; gap:1rem; align-items:center;">
                         <div>
                             <div class="stat-value">@generatedWorld.Rooms.Count</div>
                             <div class="text-muted">Rooms</div>
@@ -285,80 +122,31 @@
                             <div class="stat-value">@generatedWorld.Factions.Count</div>
                             <div class="text-muted">Factions</div>
                         </div>
-                        <div>
-                            <div class="stat-value">@generatedWorld.LoreEntries.Count</div>
-                            <div class="text-muted">Lore</div>
-                        </div>
-                    </div>
-
-                    @if (!string.IsNullOrEmpty(exportPath))
-                    {
-                        <div class="message-bar message-bar-success">
-                            <div class="message-icon">?</div>
-                            <div class="message-content">
-                                <h6 style="margin: 0 0 0.5rem 0;">Exported Successfully</h6>
-                                <code style="background: var(--color-bg-primary); padding: 4px 8px; border-radius: 4px; display: block; margin-bottom: 0.5rem;">@exportPath</code>
-                                <div class="small">@FormatFileSize(new FileInfo(exportPath).Length)</div>
-                            </div>
-                        </div>
-                    }
-                </div>
-            </Card>
-
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 1rem;">
-                <Card>
-                    <div style="padding: 1.5rem;">
-                        <h5 style="color: var(--color-text-primary); margin-bottom: 1rem;">First Room</h5>
-                        <div class="preview-card">
-                            <h6>@generatedWorld.Rooms[0].Title</h6>
-                            <p>@generatedWorld.Rooms[0].BaseDescription</p>
+                        <div style="margin-left:auto;">
+                            @if (!string.IsNullOrEmpty(exportPath))
+                            {
+                                <div class="message-bar message-bar-success">
+                                    <div class="message-content">Exported: <code>@exportPath</code></div>
+                                </div>
+                            }
                         </div>
                     </div>
                 </Card>
+            }
 
-                @if (generatedWorld.Npcs.Count > 0)
-                {
-                    <Card>
-                        <div style="padding: 1.5rem;">
-                            <h5 style="color: var(--color-text-primary); margin-bottom: 1rem;">First NPC</h5>
-                            <div class="preview-card">
-                                <h6>@generatedWorld.Npcs[0].Name</h6>
-                                <p>@generatedWorld.Npcs[0].Description</p>
-                            </div>
-                        </div>
-                    </Card>
-                }
-            </div>
-        }
-
-        @if (!string.IsNullOrEmpty(errorMessage))
-        {
-            <div class="message-bar message-bar-error">
-                <div class="message-icon">?</div>
-                <div class="message-content">
-                    <h5 style="margin: 0 0 0.5rem 0;">Error</h5>
-                    <p style="margin: 0;">@errorMessage</p>
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="message-bar message-bar-error" style="margin-top:0.75rem;">
+                    <div class="message-content">@errorMessage</div>
                 </div>
-            </div>
-        }
-    }
+            }
+        </section>
+    </div>
 </div>
 
 <style>
-.spinner-small {
-    display: inline-block;
-    width: 16px;
-    height: 16px;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-top: 2px solid white;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
+.spinner-small { display:inline-block; width:14px; height:14px; border:2px solid rgba(255,255,255,0.3); border-top:2px solid white; border-radius:50%; animation:spin 1s linear infinite; }
+@@keyframes spin { 0%{transform:rotate(0deg);}100%{transform:rotate(360deg);} }
 </style>
 
 @code {
@@ -384,19 +172,12 @@
     private string errorMessage = "";
     private string exportPath = "";
     private WorldGenerationResult? generatedWorld;
-    
-    // Model management
-    private List<ModelCacheInfo> cachedModels = new();
-    private long totalCacheSize = 0;
 
-    private class ModelCacheInfo
-    {
-        public string Key { get; set; } = "";
-        public CachedModelInfo Value { get; set; } = new();
-    }
+    private bool showLogPane = true;
+    private bool showAdvanced = false;
 
-    // Debug UI hint
-    private string lastLoggedOptions = "";
+    // Small UI log for the left pane
+    private string uiLog = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -404,135 +185,25 @@
         selectedModel = AISettings.Value.LLamaModelKey ?? "tinyllama-q4";
     }
 
-    private void SelectModel(string model)
+    private void AppendUiLog(string msg)
     {
-        selectedModel = model;
+        uiLog = $"{DateTime.Now:HH:mm:ss} {msg}\n" + uiLog;
+        // keep limited size
+        if (uiLog.Length > 20000) uiLog = uiLog.Substring(0, 20000);
         StateHasChanged();
     }
 
-    private async Task LoadCachedModels()
+    private void ClearUiLog()
     {
-        try
-        {
-            var cached = GGUFModelDownloader.GetCachedModels();
-            cachedModels = cached.Select(kvp => new ModelCacheInfo { Key = kvp.Key, Value = kvp.Value }).ToList();
-            totalCacheSize = GGUFModelDownloader.GetTotalCacheSize();
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Failed to load cached models");
-            errorMessage = $"Failed to load model cache: {ex.Message}";
-        }
-    }
-
-    private async Task DeleteModel(string modelKey)
-    {
-        try
-        {
-            GGUFModelDownloader.DeleteModel(modelKey);
-            Logger.LogInformation("Deleted cached model: {ModelKey}", modelKey);
-            
-            // If this was the currently selected model, show a message
-            if (selectedModel == modelKey)
-            {
-                errorMessage = $"Deleted model '{modelKey}'. Select a different model to continue.";
-            }
-            
-            await LoadCachedModels(); // Refresh the list
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Failed to delete model {ModelKey}", modelKey);
-            errorMessage = $"Failed to delete model '{modelKey}': {ex.Message}";
-            StateHasChanged();
-        }
-    }
-
-    private async Task DeleteAllModels()
-    {
-        try
-        {
-            var modelsDir = GGUFModelDownloader.GetModelCacheDirectory();
-            if (Directory.Exists(modelsDir))
-            {
-                var modelFiles = Directory.GetFiles(modelsDir, "*.gguf");
-                foreach (var file in modelFiles)
-                {
-                    File.Delete(file);
-                }
-                
-                Logger.LogInformation("Deleted all cached models ({Count} files)", modelFiles.Length);
-                errorMessage = $"Deleted all cached models ({modelFiles.Length} files). Models will be re-downloaded when needed.";
-                
-                await LoadCachedModels(); // Refresh the list
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Failed to delete all models");
-            errorMessage = $"Failed to delete all models: {ex.Message}";
-            StateHasChanged();
-        }
-    }
-
-    private async Task InitializeAI()
-    {
-        try
-        {
-            isInitializing = true;
-            errorMessage = "";
-            initProgress = $"Starting initialization...";
-            StateHasChanged();
-
-            AISettings.Value.LLamaModelKey = selectedModel;
-            AISettings.Value.Model = selectedModel;
-
-            var progress = new Progress<DownloadProgress>(p =>
-            {
-                if (p.PercentComplete % 5 == 0 || p.PercentComplete == 100)
-                {
-                    var downloadedMB = p.DownloadedBytes / 1024.0 / 1024.0;
-                    var totalMB = p.TotalBytes / 1024.0 / 1024.0;
-                    var speedMB = p.SpeedBytesPerSecond / 1024.0 / 1024.0;
-                    initProgress = $"Downloading: {downloadedMB:F0}/{totalMB:F0} MB ({p.PercentComplete}%) - {speedMB:F1} MB/s";
-                    InvokeAsync(StateHasChanged);
-                }
-            });
-
-            await GenerationService.InitializeAsync(progress);
-            initProgress = $"Initialized successfully";
-            
-            // Refresh cached models after initialization (in case a new one was downloaded)
-            await LoadCachedModels();
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Failed to initialize AI");
-            errorMessage = $"Failed to initialize: {ex.Message}";
-            initProgress = "";
-        }
-        finally
-        {
-            isInitializing = false;
-            StateHasChanged();
-        }
+        uiLog = "";
     }
 
     private async Task GenerateWorld()
     {
         try
         {
-            isGenerating = true;
-            errorMessage = "";
-            generatedWorld = null;
-            exportPath = "";
-            progressPercentage = 0;
-            StateHasChanged();
-
-            // Log the options being used for generation to server logs (helps debug binding issues)
-            Logger.LogInformation("[WorldGenerator] GenerateWorld invoked. Options => Name={Name}, Seed={Seed}, Theme={Theme}, Regions={Regions}, Flavor={Flavor}, Description={Description}, MainPlotPoint={MainPlotPoint}, TimePeriod={TimePeriod}, PowerStructure={PowerStructure}",
-                options.Name, options.Seed, options.Theme, options.Regions, options.Flavor, options.Description, options.MainPlotPoint, options.TimePeriod, options.PowerStructure);
+            isGenerating = true; errorMessage = ""; generatedWorld = null; exportPath = ""; progressPercentage = 0;
+            AppendUiLog($"Generate requested: {options.Name} (seed {options.Seed})");
 
             var progress = new Progress<string>(msg =>
             {
@@ -545,64 +216,102 @@
                     var m when m.Contains("complete") => 100,
                     _ => progressPercentage
                 };
-                InvokeAsync(StateHasChanged);
+                AppendUiLog($"Progress: {msg}");
             });
 
+            // Ensure AI initialized
+            if (!GenerationService.IsInitialized)
+            {
+                AppendUiLog("Initializing AI adapter...");
+                var dp = new Progress<DownloadProgress>(p => { initProgress = $"{p.PercentComplete}%"; AppendUiLog($"Init: {p.PercentComplete}%"); });
+                await GenerationService.InitializeAsync(dp);
+                AppendUiLog("AI initialized");
+            }
+
             generatedWorld = await GenerationService.GenerateWorldAsync(options, progress);
-
-            var outputDir = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                "source", "repos", "SoloAdventureSystem", "content", "worlds");
-
-            exportPath = GenerationService.ExportWorld(generatedWorld, options, outputDir);
+            exportPath = GenerationService.ExportWorld(generatedWorld, options, Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "source", "repos", "SoloAdventureSystem", "content", "worlds"));
             generationProgress = "Complete";
+            AppendUiLog($"Generation complete. Saved to {exportPath}");
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to generate world");
-            errorMessage = $"Failed to generate: {ex.Message}";
-            generationProgress = "";
+            errorMessage = ex.Message; AppendUiLog($"ERROR: {ex.Message}");
         }
         finally
         {
-            isGenerating = false;
-            StateHasChanged();
+            isGenerating = false; StateHasChanged();
         }
     }
 
-    private async Task LogOptions()
+    private Task LogOptions()
     {
-        // Log to server and update small UI hint so you can confirm the action from the browser
+        AppendUiLog($"Options: {options.Name} seed={options.Seed} regions={options.Regions}");
+        return Task.CompletedTask;
+    }
+
+    // lightweight helpers copied from previous file to keep functionality
+    private List<ModelCacheInfo> cachedModels = new();
+    private long totalCacheSize = 0;
+
+    private class ModelCacheInfo { public string Key { get; set; } = ""; public CachedModelInfo Value { get; set; } = new(); }
+
+    private async Task LoadCachedModels()
+    {
         try
         {
-            Logger.LogInformation("[WorldGenerator][Debug] Current options: Name={Name}, Seed={Seed}, Theme={Theme}, Regions={Regions}, Flavor={Flavor}, Description={Description}, MainPlotPoint={MainPlotPoint}, TimePeriod={TimePeriod}, PowerStructure={PowerStructure}",
-                options.Name, options.Seed, options.Theme, options.Regions, options.Flavor, options.Description, options.MainPlotPoint, options.TimePeriod, options.PowerStructure);
-
-            lastLoggedOptions = $"{options.Name} (seed {options.Seed})";
-            // keep the message visible briefly
-            StateHasChanged();
-            await Task.Delay(2500);
-            lastLoggedOptions = "";
-            StateHasChanged();
+            var cached = GGUFModelDownloader.GetCachedModels();
+            cachedModels = cached.Select(kvp => new ModelCacheInfo { Key = kvp.Key, Value = kvp.Value }).ToList();
+            totalCacheSize = GGUFModelDownloader.GetTotalCacheSize();
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to log options");
-            errorMessage = $"Failed to log options: {ex.Message}";
+            Logger.LogError(ex, "Failed to load cached models");
+            AppendUiLog($"Failed to load cached models: {ex.Message}");
+        }
+    }
+
+    private async Task InitializeModel()
+    {
+        if (isInitializing) return;
+        try
+        {
+            isInitializing = true;
+            AppendUiLog($"Initializing model: {selectedModel}");
+
+            // Update runtime settings so GenerationService uses selected model
+            try { AISettings.Value.LLamaModelKey = selectedModel; AISettings.Value.Model = selectedModel; } catch { }
+
+            var dp = new Progress<DownloadProgress>(p =>
+            {
+                initProgress = $"{p.PercentComplete}%";
+                AppendUiLog($"Init: {p.PercentComplete}%");
+            });
+
+            await GenerationService.InitializeAsync(dp);
+            AppendUiLog("AI initialized");
+            await LoadCachedModels();
+        }
+        catch (Exception ex)
+        {
+            AppendUiLog($"Init failed: {ex.Message}");
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isInitializing = false;
             StateHasChanged();
         }
     }
 
-    private string FormatFileSize(long bytes)
+    private string GetModelEstimate(string modelKey)
     {
-        string[] sizes = { "B", "KB", "MB", "GB" };
-        double len = bytes;
-        int order = 0;
-        while (len >= 1024 && order < sizes.Length - 1)
+        // Minimal inline estimates (size / download time on typical connection)
+        return modelKey switch
         {
-            order++;
-            len /= 1024;
-        }
-        return $"{len:0.##} {sizes[order]}";
+            "tinyllama-q4" => "~700 MB — ~1-3 min",
+            "llama-3.2-1b-q4" => "~2 GB — ~3-6 min",
+            "phi-3-mini-q4" => "~2.3 GB — ~4-8 min",
+            _ => "Unknown size",
+        };
     }
 }
