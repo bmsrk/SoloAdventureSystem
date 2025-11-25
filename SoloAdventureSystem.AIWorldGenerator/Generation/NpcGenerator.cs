@@ -95,35 +95,47 @@ Context: World={context.Options.Name}, Room={room.Title}, Faction={faction.Name}
 Return only JSON.";
                 }
 
-                bioRaw = _slm.GenerateNpcBio(prompt, npcSeed + attempt);
+                // Request raw output and attempt structured parse locally (avoid double-cleaning)
+                var raw = _slm.GenerateRaw(prompt, npcSeed + attempt);
 
-                // Sanitize AI output before parsing or using it
-                bioRaw = SanitizeGeneratedText(bioRaw);
-
+                // Try structured parsing against raw output first
+                Dictionary<string, object>? parsed = null;
                 try
                 {
-                    Dictionary<string, object>? parsed = null;
-                    try
+                    if (!string.IsNullOrWhiteSpace(raw))
                     {
-                        _structuredParser.TryParse<Dictionary<string, object>>(bioRaw, out parsed);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger?.LogDebug(ex, "Structured parser threw for NPC output on attempt {Attempt}", attempt + 1);
-                        parsed = null;
-                    }
-
-                    if (parsed != null)
-                    {
-                        if (parsed.TryGetValue("name", out var n) && n != null) name = n.ToString() ?? string.Empty;
-                        if (parsed.TryGetValue("bio", out var b) && b != null) bioRaw = b.ToString() ?? string.Empty;
-                        if (parsed.TryGetValue("role", out var r) && r != null) role = r.ToString() ?? string.Empty;
-                        if (parsed.TryGetValue("trait", out var t) && t != null) trait = t.ToString() ?? string.Empty;
+                        _structuredParser.TryParse<Dictionary<string, object>>(raw, out parsed);
                     }
                 }
                 catch (Exception ex)
                 {
-                    _logger?.LogDebug(ex, "Structured parse failed for NPC output on attempt {Attempt}", attempt + 1);
+                    _logger?.LogDebug(ex, "Structured parser threw for raw NPC output on attempt {Attempt}", attempt + 1);
+                    parsed = null;
+                }
+
+                if (parsed != null)
+                {
+                    if (parsed.TryGetValue("name", out var n) && n != null) name = n.ToString() ?? string.Empty;
+                    if (parsed.TryGetValue("bio", out var b) && b != null) bioRaw = b.ToString() ?? string.Empty;
+                    if (parsed.TryGetValue("role", out var r) && r != null) role = r.ToString() ?? string.Empty;
+                    if (parsed.TryGetValue("trait", out var t) && t != null) trait = t.ToString() ?? string.Empty;
+                }
+                else
+                {
+                    // Structured parse failed - fall back to cleaned text from adapter
+                    // Log raw output for debugging (trim large content)
+                    try
+                    {
+                        var dbg = string.IsNullOrWhiteSpace(raw) ? "(empty)" : (raw.Length > 800 ? raw.Substring(0, 800) + "..." : raw);
+                        _logger?.LogDebug("Raw generation (NPC attempt {Attempt}): {Raw}", attempt + 1, dbg);
+                    }
+                    catch { }
+
+                    // Use cleaned/legacy method to obtain bio
+                    bioRaw = _slm.GenerateNpcBio(prompt, npcSeed + attempt);
+
+                    // Apply improved light sanitization to cleaned text
+                    bioRaw = SanitizeGeneratedText(bioRaw);
                 }
 
                 if (!string.IsNullOrWhiteSpace(bioRaw)) break;
@@ -177,6 +189,13 @@ Return only JSON.";
     private static string SanitizeGeneratedText(string text)
     {
         if (string.IsNullOrWhiteSpace(text)) return string.Empty;
+
+        // Quick normalization: remove repeated prompt artifact tokens like '# #' sequences and solitary hashes
+        text = Regex.Replace(text, @"#\s*#", " ", RegexOptions.Compiled);
+        text = Regex.Replace(text, @"\s#\s", " ", RegexOptions.Compiled);
+
+        // Remove leading instruction markers like '#json', leading quote, or code fences (```json)
+        text = Regex.Replace(text, @"^\s*(?:#json\n|""|```json|```)\.*", "", RegexOptions.IgnoreCase);
 
         // Remove common instruction fragments that may leak into output
         var lines = text.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);

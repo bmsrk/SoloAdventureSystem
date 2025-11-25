@@ -66,10 +66,11 @@ public class DialogueGenerator
                 try
                 {
                     var prompt = BuildDialoguePrompt(npc, npcName, factionName, roomName, npcSkills);
-                    var json = _slm.GenerateDialogue(prompt, seed);
-                    rawJson = json ?? string.Empty;
+                    // Use raw output for parsing to preserve JSON structure
+                    var raw = _slm.GenerateRaw(prompt, seed);
+                    rawJson = raw ?? string.Empty;
                     // Expect JSON array of choices with label, nextSuffix, skillCheck (optional), effects
-                    generatedChoices = ParseChoicesFromJson(json, npc.Id);
+                    generatedChoices = ParseChoicesFromJson(raw, npc.Id);
                 }
                 catch (Exception ex)
                 {
@@ -86,10 +87,11 @@ public class DialogueGenerator
                         try
                         {
                             var altPrompt = BuildShortDialoguePrompt(npcName, npc.Description, factionName, roomName, npcSkills, attempt);
-                            var altJson = _slm.GenerateDialogue(altPrompt, seed + attempt);
+                            // Use raw output for retries as well
+                            var altRaw = _slm.GenerateRaw(altPrompt, seed + attempt);
                             // append attempt output to rawJson for debugging
-                            rawJson += "\n---retry-" + attempt + "---\n" + (altJson ?? string.Empty);
-                            generatedChoices = ParseChoicesFromJson(altJson, npc.Id);
+                            rawJson += "\n---retry-" + attempt + "---\n" + (altRaw ?? string.Empty);
+                            generatedChoices = ParseChoicesFromJson(altRaw, npc.Id);
                             if (generatedChoices != null)
                             {
                                 _logger?.LogInformation("SLM produced valid dialogue on retry {Attempt} for {Npc}", attempt, npcName);
@@ -282,6 +284,10 @@ public class DialogueGenerator
             var cleanedJsonText = json ?? string.Empty;
             try
             {
+                // Remove repeated '# #' and solitary hashes
+                cleanedJsonText = System.Text.RegularExpressions.Regex.Replace(cleanedJsonText, @"#\s*#", " ", System.Text.RegularExpressions.RegexOptions.Compiled);
+                cleanedJsonText = System.Text.RegularExpressions.Regex.Replace(cleanedJsonText, @"\s#\s", " ", System.Text.RegularExpressions.RegexOptions.Compiled);
+                // Remove TOON markers and hashtags
                 cleanedJsonText = System.Text.RegularExpressions.Regex.Replace(cleanedJsonText, "(?i)\\b#?TOON\\b", "");
                 cleanedJsonText = System.Text.RegularExpressions.Regex.Replace(cleanedJsonText, "(?i)\\b#?ENDTOON\\b", "");
                 cleanedJsonText = System.Text.RegularExpressions.Regex.Replace(cleanedJsonText, "#\\w+", "");
@@ -301,6 +307,16 @@ public class DialogueGenerator
                 if (trimmed.StartsWith("{") && !trimmed.StartsWith("["))
                 {
                     json = "[" + trimmed + "]";
+                }
+                else if (!trimmed.Contains("[") && trimmed.Contains("{"))
+                {
+                    // Try to find embedded JSON object and wrap
+                    var objStart = trimmed.IndexOf('{');
+                    var objEnd = trimmed.LastIndexOf('}');
+                    if (objStart >= 0 && objEnd > objStart)
+                    {
+                        json = "[" + trimmed.Substring(objStart, objEnd - objStart + 1) + "]";
+                    }
                 }
             }
 
@@ -387,7 +403,7 @@ public class DialogueGenerator
         }
         catch (Exception ex)
         {
-            _logger?.LogWarning(ex, "Failed to parse dialogue JSON");
+            _logger?.LogWarning(ex, "Failed to parse dialogue JSON for NPC {NpcId}: {Message}", npcId, ex.Message);
             return null;
         }
     }
