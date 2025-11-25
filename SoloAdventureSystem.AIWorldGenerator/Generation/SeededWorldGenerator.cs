@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using SoloAdventureSystem.ContentGenerator.Adapters;
 using SoloAdventureSystem.ContentGenerator.Models;
+using SoloAdventureSystem.Engine.Rules;
 
 namespace SoloAdventureSystem.ContentGenerator.Generation
 {
@@ -16,8 +17,8 @@ namespace SoloAdventureSystem.ContentGenerator.Generation
         private readonly IContentGenerator<List<RoomModel>> _roomGenerator;
         private readonly RoomConnector _roomConnector;
         private readonly IContentGenerator<List<NpcModel>> _npcGenerator;
-        private readonly IContentGenerator<List<string>> _loreGenerator;
         private readonly ILogger<SeededWorldGenerator>? _logger;
+        private readonly ILocalSLMAdapter? _slm; // store adapter when provided
         
         /// <summary>
         /// Constructor for dependency injection with specialized generators
@@ -27,14 +28,12 @@ namespace SoloAdventureSystem.ContentGenerator.Generation
             IContentGenerator<List<RoomModel>> roomGenerator,
             RoomConnector roomConnector,
             IContentGenerator<List<NpcModel>> npcGenerator,
-            IContentGenerator<List<string>> loreGenerator,
             ILogger<SeededWorldGenerator>? logger = null)
         {
             _factionGenerator = factionGenerator ?? throw new ArgumentNullException(nameof(factionGenerator));
             _roomGenerator = roomGenerator ?? throw new ArgumentNullException(nameof(roomGenerator));
             _roomConnector = roomConnector ?? throw new ArgumentNullException(nameof(roomConnector));
             _npcGenerator = npcGenerator ?? throw new ArgumentNullException(nameof(npcGenerator));
-            _loreGenerator = loreGenerator ?? throw new ArgumentNullException(nameof(loreGenerator));
             _logger = logger;
         }
 
@@ -48,13 +47,14 @@ namespace SoloAdventureSystem.ContentGenerator.Generation
             if (image == null) throw new ArgumentNullException(nameof(image));
 
             _logger = logger;
+            _slm = slm;
             
             // Create specialized generators
             _factionGenerator = new FactionGenerator(slm, logger as ILogger<FactionGenerator>);
             _roomGenerator = new RoomGenerator(slm, image, logger as ILogger<RoomGenerator>);
             _roomConnector = new RoomConnector(logger as ILogger<RoomConnector>);
             _npcGenerator = new NpcGenerator(slm, logger as ILogger<NpcGenerator>);
-            _loreGenerator = new LoreGenerator(slm, logger as ILogger<LoreGenerator>);
+            // Lore generation removed temporarily
         }
         
         public WorldGenerationResult Generate(WorldGenerationOptions options)
@@ -82,7 +82,8 @@ namespace SoloAdventureSystem.ContentGenerator.Generation
                 result.Npcs = _npcGenerator.Generate(context);
                 context.Npcs = result.Npcs;
                 
-                result.LoreEntries = _loreGenerator.Generate(context);
+                // Lore generation disabled: provide empty list for now
+                result.LoreEntries = new List<string>();
                 context.LoreEntries = result.LoreEntries;
                 
                 // Create story nodes based on main plot point
@@ -106,21 +107,35 @@ namespace SoloAdventureSystem.ContentGenerator.Generation
         {
             _logger?.LogInformation("?? Generating story nodes...");
 
-            var storyNode = new StoryNodeModel
-            {
-                Id = "story1",
-                Title = "The Beginning",
-                Text = $"You awaken in {context.Rooms[0].Title}, disoriented and uncertain how you arrived here. {context.Options.MainPlotPoint}",
-                Choices = new List<StoryChoice>
-                {
-                    new StoryChoice { Label = "Look around", Next = context.Rooms[0].Id, Effects = new List<string>() },
-                    new StoryChoice { Label = "Stay still and listen", Next = "story2", Effects = new List<string>() }
-                }
-            };
+            // Use DialogueGenerator to create dialogue/story nodes. Pass stored adapter if available so Web UI generation uses LLM-enhanced dialogue
+            var dialogueGen = new DialogueGenerator(context, _logger as ILogger<DialogueGenerator>, _slm);
 
-            _logger?.LogInformation("? Story nodes generated");
-            return new List<StoryNodeModel> { storyNode };
-        }
+            // Provide a skillSelector that chooses skills based on NPC attributes and behavior
+            List<StoryNodeModel> dialogueNodes = dialogueGen.Generate(npc =>
+            {
+                if (npc == null) return null;
+                var skills = new List<Skill> { Skill.Social };
+                // High charisma -> Social
+                if (npc.Attributes != null && npc.Attributes.Charisma > 12)
+                {
+                    if (!skills.Contains(Skill.Social)) skills.Insert(0, Skill.Social);
+                }
+                // Aggressive behavior -> Combat
+                if (!string.IsNullOrEmpty(npc.Behavior) && npc.Behavior.Equals("Aggressive", System.StringComparison.OrdinalIgnoreCase))
+                {
+                    if (!skills.Contains(Skill.Combat)) skills.Add(Skill.Combat);
+                }
+                // Intelligent NPCs get Knowledge checks
+                if (npc.Attributes != null && npc.Attributes.Intelligence > 12)
+                {
+                    if (!skills.Contains(Skill.Knowledge)) skills.Add(Skill.Knowledge);
+                }
+                return skills;
+            });
+
+             // Return generated nodes
+             return dialogueNodes;
+         }
 
         private WorldJsonModel CreateWorldMetadata(WorldGenerationResult result, WorldGenerationOptions options)
         {

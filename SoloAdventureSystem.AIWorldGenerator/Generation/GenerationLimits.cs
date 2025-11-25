@@ -27,6 +27,11 @@ public static class GenerationLimits
     public const int LoreEntryTokens = 150;
 
     /// <summary>
+    /// Token limit for dialogue generation (choices JSON)
+    /// </summary>
+    public const int DialogueTokens = 180;
+
+    /// <summary>
     /// Minimum number of rooms required for a valid world
     /// </summary>
     public const int MinimumRooms = 3;

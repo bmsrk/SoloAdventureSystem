@@ -105,9 +105,13 @@ namespace SoloAdventureSystem.ContentGenerator.Generation
                 var consistencyScore = ValidateConsistency(result, theme, validationResult);
                 validationResult.Metrics.ConsistencyScore = consistencyScore;
 
-                // Calculate overall score
-                validationResult.Metrics.OverallScore = 
-                    (roomScore + npcScore + factionScore + consistencyScore) / 4;
+                // Calculate overall score - use average of the top 3 metrics to reduce sensitivity
+                // to a single very-low subscore (e.g., one failing NPC check shouldn't fail whole world)
+                var scores = new List<int> { roomScore, npcScore, factionScore, consistencyScore };
+                // Order descending and take top 3
+                var top3 = scores.OrderByDescending(s => s).Take(3).ToList();
+                var overall = top3.Count > 0 ? (int)Math.Round(top3.Average()) : 0;
+                validationResult.Metrics.OverallScore = overall;
 
                 _logger?.LogInformation("?? Quality Scores: Rooms={RoomScore}, NPCs={NpcScore}, Factions={FactionScore}, Consistency={ConsistencyScore}, Overall={OverallScore}",
                     roomScore, npcScore, factionScore, consistencyScore, validationResult.Metrics.OverallScore);

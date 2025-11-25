@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SoloAdventureSystem.ContentGenerator;
 using SoloAdventureSystem.ContentGenerator.Adapters;
+using SoloAdventureSystem.ContentGenerator.Models;
 using SoloAdventureSystem.ContentGenerator.Configuration;
 using SoloAdventureSystem.ContentGenerator.Generation;
 using SoloAdventureSystem.ContentGenerator.Utils;
@@ -163,13 +164,17 @@ class Program
             Console.WriteLine("??  Initializing AI adapter...");
             ILocalSLMAdapter slmAdapter;
 
-            if (provider.Equals("LLamaSharp", StringComparison.OrdinalIgnoreCase))
+            // Support MaIN.NET (embedded LLamaSharp wrapper) as primary provider
+            if (provider.Equals("MaIN.NET", StringComparison.OrdinalIgnoreCase) ||
+                provider.Equals("MaIN", StringComparison.OrdinalIgnoreCase) ||
+                provider.Equals("main.net", StringComparison.OrdinalIgnoreCase) ||
+                provider.Equals("embedded", StringComparison.OrdinalIgnoreCase))
             {
                 var settings = serviceProvider.GetRequiredService<IOptions<AISettings>>();
-                var logger = serviceProvider.GetRequiredService<ILogger<LLamaSharpAdapter>>();
-                var adapter = new LLamaSharpAdapter(settings, logger);
+                var logger = serviceProvider.GetRequiredService<ILogger<MaINAdapter>>();
+                var adapter = new MaINAdapter(settings, logger);
 
-                Console.WriteLine("?? Checking model availability...");
+                Console.WriteLine("?? Checking model availability and initializing MaIN adapter...");
                 var progress = new Progress<DownloadProgress>(p =>
                 {
                     if (p.PercentComplete % 10 == 0 || p.PercentComplete == 100)
@@ -182,12 +187,17 @@ class Program
                 });
 
                 await adapter.InitializeAsync(progress);
-                Console.WriteLine("? Model loaded successfully!");
+                Console.WriteLine("? Model loaded successfully (MaINAdapter)!");
                 slmAdapter = adapter;
+            }
+            else if (provider.Equals("LLamaSharp", StringComparison.OrdinalIgnoreCase) || provider.Equals("LLama", StringComparison.OrdinalIgnoreCase))
+            {
+                // Fallback: if LLamaSharpAdapter class becomes available in the future, handle here.
+                throw new InvalidOperationException("LLamaSharp provider not supported by this build. Use MaIN.NET provider.");
             }
             else
             {
-                throw new InvalidOperationException($"Unsupported provider: {provider}. Only 'LLamaSharp' is supported.");
+                throw new InvalidOperationException($"Unsupported provider: {provider}. Use 'MaIN.NET'.");
             }
 
             // Create generator

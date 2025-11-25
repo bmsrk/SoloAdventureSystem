@@ -1,3 +1,7 @@
+using System;
+using System.Collections.Generic;
+using SoloAdventureSystem.Engine.Rules;
+
 namespace SoloAdventureSystem.Engine.Models;
 
 public record class WorldDefinition(
@@ -90,6 +94,7 @@ public record StoryNode
     public string Id { get; init; } = string.Empty;
     public string Title { get; init; } = string.Empty;
     public string Text { get; init; } = string.Empty;
+    public string OwnerNpcId { get; init; } = string.Empty;
     public List<StoryChoice> Choices { get; init; } = new();
 }
 
@@ -98,6 +103,15 @@ public record StoryChoice
     public string Label { get; init; } = string.Empty;
     public string Next { get; init; } = string.Empty;
     public List<string> Effects { get; init; } = new();
+    public SkillCheck? SkillCheck { get; init; }
+}
+
+public record SkillCheck
+{
+    public GameAttribute Attribute { get; init; } = GameAttribute.Soul;
+    public Skill Skill { get; init; } = Skill.Social;
+    public int TargetNumber { get; init; } = 10;
+    public string OpponentNpcId { get; init; } = string.Empty;
 }
 
 public record class Alignment(

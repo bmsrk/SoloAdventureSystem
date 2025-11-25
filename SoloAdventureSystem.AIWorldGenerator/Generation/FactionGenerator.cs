@@ -26,14 +26,13 @@ public class FactionGenerator : IContentGenerator<List<FactionModel>>
         _logger?.LogInformation("??? Generating faction...");
 
         var factionName = ProceduralNames.GenerateFactionName(context.Seed);
-        
         _logger?.LogDebug("Generated faction name: {FactionName}", factionName);
 
-        string factionDescription;
+        string factionDescRaw;
         try
         {
             var factionPrompt = PromptTemplates.BuildFactionPrompt(factionName, context.Options);
-            factionDescription = _slm.GenerateFactionFlavor(factionPrompt, context.Seed);
+            factionDescRaw = _slm.GenerateFactionFlavor(factionPrompt, context.Seed);
         }
         catch (Exception ex)
         {
@@ -41,12 +40,35 @@ public class FactionGenerator : IContentGenerator<List<FactionModel>>
                 $"Failed to generate faction description. Error: {ex.Message}", ex);
         }
 
+        string description = factionDescRaw;
+        string ideology = "Neutral";
+
+        try
+        {
+            var parsed = ToonCodec.Deserialize<Dictionary<string, object>>(factionDescRaw);
+            if (parsed == null)
+            {
+                var list = ToonCodec.Deserialize<List<Dictionary<string, object>>>(factionDescRaw);
+                if (list != null && list.Count > 0) parsed = list[0];
+            }
+
+            if (parsed != null)
+            {
+                if (parsed.TryGetValue("description", out var d) && d != null) description = d.ToString() ?? factionDescRaw;
+                if (parsed.TryGetValue("ideology", out var i) && i != null) ideology = i.ToString() ?? ideology;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogDebug(ex, "Structured parse failed for faction output; falling back to raw text");
+        }
+
         var faction = new FactionModel
         {
             Id = "faction1",
             Name = factionName,
-            Description = factionDescription,
-            Ideology = "Neutral",
+            Description = description,
+            Ideology = ideology,
             Relations = new Dictionary<string, int>()
         };
 

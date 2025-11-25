@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using SoloAdventureSystem.ContentGenerator.Adapters;
 using SoloAdventureSystem.ContentGenerator.Models;
+using System.Text.Json;
 
 namespace SoloAdventureSystem.ContentGenerator.Generation;
 
@@ -67,7 +68,7 @@ public class NpcGenerator : IContentGenerator<List<NpcModel>>
         _logger?.LogDebug("Generating NPC {Index}/{Total}: {NpcName}", 
             index + 1, context.Rooms.Count, npcName);
 
-        string npcBio;
+        string npcBioRaw;
         try
         {
             var npcPrompt = PromptTemplates.BuildNpcPrompt(
@@ -75,7 +76,7 @@ public class NpcGenerator : IContentGenerator<List<NpcModel>>
                 context.Options,
                 room.Title,
                 faction.Name);
-            npcBio = _slm.GenerateNpcBio(npcPrompt, npcSeed);
+            npcBioRaw = _slm.GenerateNpcBio(npcPrompt, npcSeed);
         }
         catch (Exception ex)
         {
@@ -83,17 +84,48 @@ public class NpcGenerator : IContentGenerator<List<NpcModel>>
                 $"Failed to generate bio for NPC {index + 1} ({npcName}). Error: {ex.Message}", ex);
         }
 
+        string finalBio = string.Empty;
+        string role = string.Empty;
+        string trait = string.Empty;
+
+        try
+        {
+            var parsed = ToonCodec.Deserialize<Dictionary<string, object>>(npcBioRaw);
+            if (parsed == null)
+            {
+                var parsedList = ToonCodec.Deserialize<List<Dictionary<string, object>>>(npcBioRaw);
+                if (parsedList != null && parsedList.Count > 0) parsed = parsedList[0];
+            }
+
+            if (parsed != null)
+            {
+                if (parsed.TryGetValue("bio", out var bio) && bio != null) finalBio = bio.ToString() ?? string.Empty;
+                if (string.IsNullOrWhiteSpace(finalBio) && parsed.TryGetValue("description", out var desc) && desc != null) finalBio = desc.ToString() ?? string.Empty;
+                if (parsed.TryGetValue("role", out var r) && r != null) role = r.ToString() ?? string.Empty;
+                if (parsed.TryGetValue("trait", out var tr) && tr != null) trait = tr.ToString() ?? string.Empty;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogDebug(ex, "Structured parse failed for NPC output; falling back to raw text");
+        }
+
+        if (string.IsNullOrWhiteSpace(finalBio)) finalBio = npcBioRaw;
+
         var npc = new NpcModel
         {
             Id = npcId,
             Name = npcName,
-            Description = npcBio,
+            Description = finalBio,
             FactionId = faction.Id,
             Hostility = "Neutral",
             Attributes = new NpcAttributes(),
             Behavior = "Static",
             Inventory = new List<string>()
         };
+
+        if (!string.IsNullOrWhiteSpace(role)) npc.Behavior = role;
+        if (!string.IsNullOrWhiteSpace(trait)) npc.Description = npc.Description + " " + trait;
 
         _logger?.LogDebug("? NPC {Index} generated: {NpcName}", index + 1, npcName);
         return npc;

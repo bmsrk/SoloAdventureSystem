@@ -117,8 +117,78 @@
                 </Card>
             </div>
         </div>
+
+        <!-- Debug: show loaded story nodes and choices for current room only -->
+        @if (world?.StoryNodes != null)
+        {
+            var roomNodes = GetRoomStoryNodes().ToList();
+            <Card Style="margin-bottom: 1rem;">
+                <div style="padding: 1rem;">
+                    <h5 style="color: var(--color-text-primary); margin: 0 0 0.5rem 0;">Dialogue Index (Debug) - This Room</h5>
+                    @if (roomNodes.Count == 0)
+                    {
+                        <div style="color: var(--color-text-muted);">No story nodes attached to this room.</div>
+                    }
+                    else
+                    {
+                        <div style="max-height: 200px; overflow-y: auto;">
+                            @foreach (var sn in roomNodes)
+                            {
+                                <div style="padding: 0.5rem; border-bottom: 1px solid var(--color-border-default);">
+                                    <div><strong>ID:</strong> @sn.Id</div>
+                                    <div><strong>Title:</strong> @sn.Title</div>
+                                    <div style="margin-top: 0.25rem;"><strong>Choices:</strong></div>
+                                    @if (sn.Choices != null && sn.Choices.Count > 0)
+                                    {
+                                        <ul style="margin:0 0 0.5rem 1rem; padding:0; color: var(--color-text-secondary);">
+                                            @foreach (var c in sn.Choices)
+                                            {
+                                                <li>@c.Label <span style="color: var(--color-text-muted);">? @c.Next</span></li>
+                                            }
+                                        </ul>
+                                    }
+                                    else
+                                    {
+                                        <div style="color: var(--color-text-muted);">(no choices)</div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </Card>
+        }
     }
 </div>
+
+<!-- Dialogue Modal -->
+@if (showDialogueModal && currentStoryNode != null)
+{
+    <div class="modal-overlay" @onclick="CloseDialogue">
+        <div class="modal-content" @onclick:stopPropagation="true">
+            <h3 style="color: var(--color-text-primary); margin-bottom: 1rem;">@currentStoryNode.Title</h3>
+            <p style="color: var(--color-text-secondary); white-space: pre-wrap;">@currentStoryNode.Text</p>
+
+            <div style="margin-top: 1rem; display: grid; gap: 0.5rem;">
+                @foreach (var ch in currentStoryNode.Choices)
+                {
+                    <Button Appearance="accent" OnClick="() => OnDialogueChoiceSelected(ch)">
+                        @ch.Label
+                    </Button>
+                }
+            </div>
+
+            @if (!string.IsNullOrEmpty(dialogueOutcome))
+            {
+                <div style="margin-top: 1rem; color: var(--color-text-secondary);">@dialogueOutcome</div>
+            }
+
+            <div style="margin-top: 1.5rem; text-align: right;">
+                <Button Appearance="neutral" OnClick="CloseDialogue">Close</Button>
+            </div>
+        </div>
+    </div>
+}
 
 <!-- Stats Modal -->
 @if (showStatsModal)
@@ -253,7 +323,7 @@
     border: 1px solid var(--color-border-default);
     border-radius: var(--radius-lg);
     padding: 2rem;
-    max-width: 500px;
+    max-width: 600px;
     max-height: 80vh;
     overflow-y: auto;
     box-shadow: var(--shadow-lg);
@@ -271,6 +341,11 @@
     private bool showStatsModal = false;
     private bool showInventoryModal = false;
     private string message = "";
+
+    // Dialogue state
+    private bool showDialogueModal = false;
+    private StoryNode? currentStoryNode;
+    private string dialogueOutcome = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -413,6 +488,72 @@
                         ));
                     }
                 }
+
+                // Read story nodes (YAML)
+                foreach (var entry in zip.Entries.Where(e => e.FullName.StartsWith("story/") && e.FullName.EndsWith(".yaml")))
+                {
+                    using var stream = entry.Open();
+                    using var reader = new StreamReader(stream);
+                    var yaml = await reader.ReadToEndAsync();
+                    try
+                    {
+                        // First try to deserialize with the generator's model for better fidelity
+                        try
+                        {
+                            var deserializer = new YamlDotNet.Serialization.DeserializerBuilder()
+                                .IgnoreUnmatchedProperties()
+                                .Build();
+
+                            var genNode = deserializer.Deserialize<SoloAdventureSystem.ContentGenerator.Models.StoryNodeModel>(yaml);
+                            if (genNode != null)
+                            {
+                                var engineNode = new StoryNode
+                                {
+                                    Id = genNode.Id ?? string.Empty,
+                                    Title = genNode.Title ?? string.Empty,
+                                    Text = genNode.Text ?? string.Empty,
+                                    Choices = new List<StoryChoice>()
+                                };
+
+                                if (genNode.Choices != null)
+                                {
+                                    foreach (var gc in genNode.Choices)
+                                    {
+                                        var sc = gc.SkillCheck != null ? new SkillCheck
+                                        {
+                                            Attribute = gc.SkillCheck.Attribute,
+                                            Skill = gc.SkillCheck.Skill,
+                                            TargetNumber = gc.SkillCheck.TargetNumber,
+                                            OpponentNpcId = gc.SkillCheck.OpponentNpcId ?? string.Empty
+                                        } : null;
+
+                                        var choice = new StoryChoice
+                                        {
+                                            Label = gc.Label ?? string.Empty,
+                                            Next = gc.Next ?? string.Empty,
+                                            Effects = gc.Effects ?? new List<string>(),
+                                            SkillCheck = sc
+                                        };
+
+                                        engineNode.Choices.Add(choice);
+                                    }
+                                }
+
+                                world.StoryNodes.Add(engineNode);
+                                continue;
+                            }
+                        }
+                        catch (Exception) { /* fall back to loader */ }
+
+                        var loader = new WorldLoaderService();
+                        var node = loader.ParseStoryNode(yaml);
+                        if (node != null) world.StoryNodes.Add(node);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Failed to parse story node {entry.FullName}: {ex.Message}");
+                    }
+                }
             }
         }
         catch (Exception ex)
@@ -548,10 +689,162 @@
         
         if (npc != null)
         {
+            // Try to find a pre-generated story node for dialogue using several heuristics
+            var nodes = gameState.World.StoryNodes ?? new List<StoryNode>();
+
+            StoryNode? node = null;
+
+            // 1) Exact generator convention: dialogue_{npcId}_*
+            node = nodes.FirstOrDefault(s => s.Id.StartsWith($"dialogue_{npc.Id}_", StringComparison.OrdinalIgnoreCase));
+
+            // 2) ID contains npc id (fallback)
+            if (node == null)
+                node = nodes.FirstOrDefault(s => s.Id.IndexOf(npc.Id, StringComparison.OrdinalIgnoreCase) >= 0);
+
+            // 3) Text mentions NPC name
+            if (node == null)
+                node = nodes.FirstOrDefault(s => !string.IsNullOrEmpty(s.Text) && s.Text.IndexOf(npc.Name ?? "", StringComparison.OrdinalIgnoreCase) >= 0);
+
+            // 4) Skill checks reference opponent npc id
+            if (node == null)
+                node = nodes.FirstOrDefault(s => s.Choices != null && s.Choices.Any(c => c.SkillCheck != null && string.Equals(c.SkillCheck.OpponentNpcId, npc.Id, StringComparison.OrdinalIgnoreCase)));
+
+            // 5) Effects reference the npc id or daemon tag
+            if (node == null)
+                node = nodes.FirstOrDefault(s => s.Choices != null && s.Choices.Any(c => c.Effects != null && c.Effects.Any(e => e.IndexOf(npc.Id, StringComparison.OrdinalIgnoreCase) >= 0 || e.IndexOf($"Daemon:{npc.Id}", StringComparison.OrdinalIgnoreCase) >= 0)));
+
+            // 6) Last resort: any dialogue_ node at this location
+            if (node == null)
+                node = nodes.FirstOrDefault(s => s.Id.StartsWith("dialogue_") );
+
+            if (node != null)
+            {
+                currentStoryNode = node;
+                dialogueOutcome = string.Empty;
+                showDialogueModal = true;
+                StateHasChanged();
+                return;
+            }
+            
+            // Fallback: show basic description and log that no dialogue node was found for this NPC
+            try
+            {
+                Console.WriteLine($"No story node found for NPC {npc.Id} ({npc.Name}) in this world. Available story nodes: {gameState.World.StoryNodes?.Count ?? 0}");
+            }
+            catch { /* swallow logging errors in UI */ }
+
             var description = npc.Description ?? "They have nothing to say.";
             var name = npc.Name ?? "Someone";
-            ShowMessage($"\"{description}\"\n\n- {name}");
+            var message = $"\"{description}\"\n\n- {name}";
+            ShowMessage(message);
+         }
+     }
+
+    private void OnDialogueChoiceSelected(StoryChoice choice)
+    {
+        dialogueOutcome = string.Empty;
+
+        // If there's a skill check, resolve it
+        if (choice.SkillCheck != null)
+        {
+            var sc = choice.SkillCheck;
+
+            var playerAttributes = gameState.Player.Attributes;
+            var playerSkills = gameState.Player.Skills;
+            var playerDaemon = gameState.GetDaemonFor("player");
+
+            var outcome = DaemonDialogue.ResolveSkillCheck(playerAttributes, playerSkills, playerDaemon,
+                sc.Attribute, sc.Skill, sc.TargetNumber);
+
+            // Build detailed roll info
+            var diceStr = outcome.Roll.Dice != null && outcome.Roll.Dice.Count > 0
+                ? string.Join(", ", outcome.Roll.Dice)
+                : "";
+
+            // daemon modifier (for display) - safe default
+            var daemonMod = playerDaemon?.GetSkillModifier(sc.Skill) ?? 0;
+
+            var baseTotal = outcome.Roll.Total;
+            var modifiedTotal = outcome.ModifiedTotal;
+
+            var critNote = outcome.CriticalSuccess ? " (Critical Success)" : outcome.CriticalFailure ? " (Critical Failure)" : string.Empty;
+
+            dialogueOutcome = $"Roll: [{diceStr}] -> base {baseTotal}; Daemon mod: {daemonMod}; Modified: {modifiedTotal} vs Target: {sc.TargetNumber}{critNote}";
+
+            if (outcome.Success)
+            {
+                dialogueOutcome = "Success! " + dialogueOutcome;
+                // Apply effects
+                foreach (var eff in choice.Effects ?? new List<string>())
+                {
+                    DaemonDialogue.ApplyEffect(gameState, eff);
+                }
+
+                // Navigate to Next node
+                NavigateToStoryNode(choice.Next);
+                return;
+            }
+            else
+            {
+                dialogueOutcome = "Failure. " + dialogueOutcome;
+                // apply failure effect if any
+                foreach (var eff in choice.Effects ?? new List<string>())
+                {
+                    // Optionally apply negative or partial effects - for now apply same
+                    DaemonDialogue.ApplyEffect(gameState, eff);
+                }
+
+                // Navigate to a hostile or fallback node if exists
+                var hostile = gameState.World.StoryNodes?.FirstOrDefault(s => s.Id.Contains("hostile") || s.Id.Contains("dialogue_hostile"));
+                if (hostile != null)
+                {
+                    currentStoryNode = hostile;
+                    StateHasChanged();
+                    return;
+                }
+                else
+                {
+                    NavigateToStoryNode(choice.Next);
+                    return;
+                }
+            }
         }
+        else
+        {
+            // No skill check, apply effects and navigate
+            foreach (var eff in choice.Effects ?? new List<string>())
+            {
+                DaemonDialogue.ApplyEffect(gameState, eff);
+            }
+            NavigateToStoryNode(choice.Next);
+            return;
+        }
+    }
+
+    private void NavigateToStoryNode(string nextId)
+    {
+        if (string.IsNullOrEmpty(nextId) || nextId == "end")
+        {
+            // close dialogue
+            showDialogueModal = false;
+            currentStoryNode = null;
+            StateHasChanged();
+            return;
+        }
+
+        var next = gameState.World.StoryNodes?.FirstOrDefault(s => s.Id == nextId);
+        if (next != null)
+        {
+            currentStoryNode = next;
+        }
+        else
+        {
+            // missing node -> close
+            showDialogueModal = false;
+            currentStoryNode = null;
+        }
+
+        StateHasChanged();
     }
 
     private void AttackNPC(string npcName)
@@ -645,6 +938,14 @@
         StateHasChanged();
     }
 
+    private void CloseDialogue()
+    {
+        showDialogueModal = false;
+        currentStoryNode = null;
+        dialogueOutcome = string.Empty;
+        StateHasChanged();
+    }
+
     private void ShowMessage(string msg)
     {
         message = msg;
@@ -701,6 +1002,63 @@
         return Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
             "source", "repos", "SoloAdventureSystem", "content", "worlds");
+    }
+
+    private IEnumerable<StoryNode> GetRoomStoryNodes()
+    {
+        var nodes = world?.StoryNodes ?? new List<StoryNode>();
+        var currentNpcIds = gameState.CurrentLocation?.NpcIds ?? new List<string>();
+
+        // Heuristics:
+        // - Node id contains any npc id present in this room
+        // - Node text mentions any npc name present in this room
+        // - Node effects or skill checks reference opponent_npc_id matching npc ids
+        var result = new List<StoryNode>();
+
+        foreach (var n in nodes)
+        {
+            bool matched = false;
+
+            // id contains npc id
+            foreach (var nid in currentNpcIds)
+            {
+                if (!string.IsNullOrEmpty(n.Id) && n.Id.IndexOf(nid, StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    matched = true; break;
+                }
+            }
+
+            if (matched) { result.Add(n); continue; }
+
+            // text mentions npc name
+            if (n.Text != null && world?.Npcs != null)
+            {
+                foreach (var npcId in currentNpcIds)
+                {
+                    var npc = world.Npcs.FirstOrDefault(x => x.Id == npcId);
+                    if (npc != null && !string.IsNullOrEmpty(npc.Name) && n.Text.IndexOf(npc.Name, StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        matched = true; break;
+                    }
+                }
+            }
+
+            if (matched) { result.Add(n); continue; }
+
+            // choices reference opponent_npc_id or effects mention npc id
+            if (n.Choices != null)
+            {
+                foreach (var c in n.Choices)
+                {
+                    if (c.SkillCheck != null && currentNpcIds.Contains(c.SkillCheck.OpponentNpcId)) { matched = true; break; }
+                    if (c.Effects != null && c.Effects.Any(e => currentNpcIds.Any(id => e.IndexOf(id, StringComparison.OrdinalIgnoreCase) >= 0))) { matched = true; break; }
+                }
+            }
+
+            if (matched) result.Add(n);
+        }
+
+        return result;
     }
 
     // Data models for loading

@@ -44,8 +44,17 @@ namespace SoloAdventureSystem.ContentGenerator.Generation
             var serializer = new SerializerBuilder().Build();
             foreach (var node in result.StoryNodes)
             {
-                var yaml = serializer.Serialize(node);
-                File.WriteAllText(Path.Combine(outputDir, "story", $"{node.Id}.yaml"), yaml);
+                // If node is StoryNodeModel already (generator produced it), serialize preserving owner_npc_id
+                if (node is SoloAdventureSystem.ContentGenerator.Models.StoryNodeModel modelNode)
+                {
+                    var yaml = serializer.Serialize(modelNode);
+                    File.WriteAllText(Path.Combine(outputDir, "story", $"{modelNode.Id}.yaml"), yaml);
+                }
+                else
+                {
+                    var yaml = serializer.Serialize(node);
+                    File.WriteAllText(Path.Combine(outputDir, "story", $"{node.Id}.yaml"), yaml);
+                }
             }
             // Write system files
             File.WriteAllText(Path.Combine(outputDir, "system", "seed.txt"), options.Seed.ToString());

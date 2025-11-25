@@ -7,5 +7,7 @@ namespace SoloAdventureSystem.ContentGenerator.Adapters
         string GenerateNpcBio(string context, int seed);
         string GenerateFactionFlavor(string context, int seed);
         List<string> GenerateLoreEntries(string context, int seed, int count);
+        // New: generate dialogue JSON (pregenerated dialogue nodes and choices)
+        string GenerateDialogue(string prompt, int seed);
     }
 }

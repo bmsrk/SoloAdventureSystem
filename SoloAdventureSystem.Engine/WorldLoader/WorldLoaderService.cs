@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using YamlDotNet.Serialization;
 using System.Linq;
 using SoloAdventureSystem.Engine.Models;
+using SoloAdventureSystem.Engine.Rules;
 
 namespace SoloAdventureSystem.Engine.WorldLoader
 {
@@ -175,9 +176,80 @@ namespace SoloAdventureSystem.Engine.WorldLoader
         public StoryNode ParseStoryNode(string yamlContent)
         {
             var deserializer = new DeserializerBuilder()
-                .WithCaseInsensitivePropertyMatching()
+                .IgnoreUnmatchedProperties()
                 .Build();
-            return deserializer.Deserialize<StoryNode>(yamlContent);
+
+            // Deserialize into a lightweight dynamic representation
+            var node = deserializer.Deserialize<Dictionary<string, object>>(yamlContent);
+            var storyNode = new StoryNode
+            {
+                Id = node.ContainsKey("id") ? node["id"]?.ToString() ?? string.Empty : string.Empty,
+                Title = node.ContainsKey("title") ? node["title"]?.ToString() ?? string.Empty : string.Empty,
+                Text = node.ContainsKey("text") ? node["text"]?.ToString() ?? string.Empty : string.Empty,
+                OwnerNpcId = node.ContainsKey("owner_npc_id") ? node["owner_npc_id"]?.ToString() ?? string.Empty : string.Empty,
+                Choices = new List<StoryChoice>()
+            };
+
+            if (node.ContainsKey("choices") && node["choices"] is IEnumerable<object> choicesObj)
+            {
+                foreach (var c in choicesObj)
+                {
+                    if (c is IDictionary<object, object> cmap)
+                    {
+                        var label = cmap.ContainsKey("label") ? cmap["label"]?.ToString() ?? string.Empty : string.Empty;
+                        var next = cmap.ContainsKey("next") ? cmap["next"]?.ToString() ?? string.Empty : string.Empty;
+                        var effects = new List<string>();
+                        if (cmap.ContainsKey("effects") && cmap["effects"] is IEnumerable<object> effs)
+                        {
+                            foreach (var e in effs) effects.Add(e?.ToString() ?? string.Empty);
+                        }
+
+                        var choice = new StoryChoice
+                        {
+                            Label = label,
+                            Next = next,
+                            Effects = effects
+                        };
+
+                        // Skill check mapping
+                        if (cmap.ContainsKey("skill_check") && cmap["skill_check"] is IDictionary<object, object> sk)
+                        {
+                            try
+                            {
+                                var attrStr = sk.ContainsKey("attribute") ? sk["attribute"]?.ToString() ?? "Soul" : "Soul";
+                                var skillStr = sk.ContainsKey("skill") ? sk["skill"]?.ToString() ?? "Social" : "Social";
+                                var tn = sk.ContainsKey("target_number") ? int.Parse(sk["target_number"].ToString() ?? "10") : 10;
+                                var opp = sk.ContainsKey("opponent_npc_id") ? sk["opponent_npc_id"]?.ToString() ?? string.Empty : string.Empty;
+
+                                var sc = new SkillCheck
+                                {
+                                    Attribute = Enum.Parse<GameAttribute>(attrStr, true),
+                                    Skill = Enum.Parse<Skill>(skillStr, true),
+                                    TargetNumber = tn,
+                                    OpponentNpcId = opp
+                                };
+
+                                // assign to init-only property by constructing new StoryChoice instance
+                                choice = new StoryChoice
+                                {
+                                    Label = label,
+                                    Next = next,
+                                    Effects = effects,
+                                    SkillCheck = sc
+                                };
+                            }
+                            catch
+                            {
+                                // ignore malformed skill checks
+                            }
+                        }
+
+                        storyNode.Choices.Add(choice);
+                    }
+                }
+            }
+
+            return storyNode;
         }
 
         private string SanitizePath(string path)

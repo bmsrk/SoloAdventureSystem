@@ -3,6 +3,8 @@
 @using System.IO
 @using System.IO.Compression
 @using System.Text.Json
+@using SoloAdventureSystem.Engine.WorldLoader
+@using SoloAdventureSystem.Engine.Models
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
 
@@ -131,6 +133,9 @@
             </button>
             <button class="tab @(activeTab == "analysis" ? "active" : "")" @onclick='() => activeTab = "analysis"'>
                 Analysis
+            </button>
+            <button class="tab @(activeTab == "dialogue" ? "active" : "")" @onclick='() => activeTab = "dialogue"'>
+                Dialogue (@(world?.StoryNodes?.Count ?? 0))
             </button>
         </div>
 
@@ -501,6 +506,68 @@
                         }
                     </div>
                 </Card>
+            </div>
+        }
+        else if (activeTab == "dialogue")
+        {
+            <div style="display: grid; gap: 1rem;">
+                @if (world?.StoryNodes == null || !world.StoryNodes.Any())
+                {
+                    <Card>
+                        <p style="text-align: center; color: var(--color-text-muted); padding: 2rem;">No dialogue/story nodes found in this world.</p>
+                    </Card>
+                }
+                else
+                {
+                    @foreach (var node in world.StoryNodes)
+                    {
+                        <Card Class="expandable-card">
+                            <div style="display: flex; justify-content: space-between; align-items: start; gap: 1rem;">
+                                <div style="flex: 1;">
+                                    <div style="display:flex; align-items:center; gap: 1rem; margin-bottom: 0.5rem;">
+                                        <h4 style="color: var(--color-accent-primary); margin: 0;">@node.Title</h4>
+                                        <Badge Appearance="neutral">ID: @node.Id</Badge>
+                                        @{
+                                            var ownerLabel = GetNpcLabelForNode(node.Id);
+                                            if (!string.IsNullOrEmpty(ownerLabel))
+                                            {
+                                                <Badge Appearance="accent">NPC: @ownerLabel</Badge>
+                                            }
+                                        }
+                                    </div>
+                                    <p style="color: var(--color-text-secondary); white-space: pre-wrap;">@node.Text</p>
+
+                                    @if (node.Choices?.Any() == true)
+                                    {
+                                        <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--color-border-default);">
+                                            <h5 style="margin: 0 0 0.5rem 0; color: var(--color-text-primary);">Choices</h5>
+                                            <div style="display: grid; gap: 0.5rem;">
+                                                @foreach (var choice in node.Choices)
+                                                {
+                                                    <div style="padding: 0.5rem; background: var(--color-bg-primary); border-radius: var(--radius-sm);">
+                                                        <div><strong>@choice.Label</strong> <span style="color: var(--color-text-muted);">→ @choice.Next</span></div>
+                                                        @if (choice.SkillCheck != null)
+                                                        {
+                                                            <div style="color: var(--color-text-secondary); font-size: 0.9rem; margin-top: 0.25rem;">
+                                                                Skill Check: <strong>@choice.SkillCheck.Skill</strong> (Attribute: @choice.SkillCheck.Attribute) - Target: @choice.SkillCheck.TargetNumber
+                                                            </div>
+                                                        }
+                                                        @if (choice.Effects != null && choice.Effects.Any())
+                                                        {
+                                                            <div style="color: var(--color-text-muted); font-size: 0.85rem; margin-top: 0.25rem;">
+                                                                Effects: @string.Join(", ", choice.Effects)
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </Card>
+                    }
+                }
             </div>
         }
     }
@@ -942,6 +1009,24 @@
                         // Lore might not be in world.json, that's ok
                     }
                 }
+                
+                // Read story nodes (YAML)
+                foreach (var entry in zip.Entries.Where(e => e.FullName.StartsWith("story/") && e.FullName.EndsWith(".yaml")))
+                {
+                    using var stream = entry.Open();
+                    using var reader = new StreamReader(stream);
+                    var yaml = await reader.ReadToEndAsync();
+                    try
+                    {
+                        var loader = new WorldLoaderService();
+                        var node = loader.ParseStoryNode(yaml);
+                        if (node != null) world.StoryNodes.Add(node);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Failed to parse story node {entry.FullName}: {ex.Message}");
+                    }
+                }
             }
         }
         catch (Exception ex)
@@ -1220,7 +1305,6 @@
             "source", "repos", "SoloAdventureSystem", "content", "worlds");
     }
 
-    // Data models
     private class WorldData
     {
         public WorldJsonModel World { get; set; } = new();
@@ -1228,6 +1312,7 @@
         public List<NpcModel> Npcs { get; set; } = new();
         public List<FactionModel> Factions { get; set; } = new();
         public List<string> LoreEntries { get; set; } = new();
+        public List<StoryNode> StoryNodes { get; set; } = new();
     }
 
     private class WorldJsonModel
@@ -1279,5 +1364,18 @@
     {
         public string Title { get; set; } = "";
         public string Description { get; set; } = "";
+    }
+
+    private string GetNpcLabelForNode(string nodeId)
+    {
+        // Expected node id format: dialogue_{npcId}_suffix
+        if (string.IsNullOrWhiteSpace(nodeId)) return string.Empty;
+        if (!nodeId.StartsWith("dialogue_")) return string.Empty;
+        var parts = nodeId.Split('_');
+        if (parts.Length < 2) return string.Empty;
+        var npcId = parts[1];
+        var npc = world?.Npcs?.FirstOrDefault(n => n.Id == npcId);
+        if (npc != null) return npc.Name;
+        return npcId; // fallback to id if name not found
     }
 }

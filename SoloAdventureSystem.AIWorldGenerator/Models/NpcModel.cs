@@ -12,6 +12,10 @@ namespace SoloAdventureSystem.ContentGenerator.Models
         public NpcAttributes Attributes { get; set; } = new NpcAttributes();
         public string Behavior { get; set; } = "Static";
         public List<string> Inventory { get; set; } = new();
+
+        // New: guidance for dialogue generation
+        public string Alignment { get; set; } = "Neutral"; // e.g., Ambitious, Loyal, Paranoid
+        public string Motivation { get; set; } = "Maintain status quo"; // short description of driving motive
     }
     public class NpcAttributes
     {
