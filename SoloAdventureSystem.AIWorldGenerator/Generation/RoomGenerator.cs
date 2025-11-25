@@ -35,6 +35,7 @@ public class RoomGenerator : IContentGenerator<List<RoomModel>>
     {
         var roomCount = context.GetRoomCount();
         _logger?.LogInformation("?? Generating {Count} rooms with enhanced quality...", roomCount);
+        _logger?.LogDebug("Room generation context: Theme={Theme}, Flavor={Flavor}, Regions={Regions}", context.Options.Theme, context.Options.Flavor, context.Options.Regions);
 
         var rooms = new List<RoomModel>();
 

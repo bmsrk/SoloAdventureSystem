@@ -41,6 +41,7 @@ public class NpcGenerator : IContentGenerator<List<NpcModel>>
 
         var npcCount = context.Rooms.Count;
         _logger?.LogInformation("?? Generating {Count} NPCs with enhanced personalities...", npcCount);
+        _logger?.LogDebug("NPC generation context: Theme={Theme}, Flavor={Flavor}, Faction={Faction}", context.Options.Theme, context.Options.Flavor, context.Factions.FirstOrDefault()?.Name ?? "None");
 
         var npcs = new List<NpcModel>();
         var faction = context.Factions[0]; // Use first faction
