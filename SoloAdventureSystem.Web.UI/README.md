@@ -1,5 +1,9 @@
 # ?? SoloAdventureSystem.Web.UI
 
+This Blazor Server web UI is deprecated and scheduled for removal. A new standalone desktop UI will be provided as a MAUI Blazor Hybrid application. For distribution, see root-level `CONTRIBUTING.md`.
+
+(If you still need to run the legacy Web UI for testing, open the `SoloAdventureSystem.Web.UI` project and run `dotnet run`.)
+
 A Blazor Server web application for testing and generating AI-powered game worlds with CUDA acceleration support.
 
 ## ? Features

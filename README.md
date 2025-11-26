@@ -382,4 +382,8 @@ MIT License - Copyright (c) 2025 Solo Adventure System Contributors
 
 ---
 
-## ?? Quick Start
+# SoloAdventureSystem
+
+Updated distribution & contribution guidelines. See `CONTRIBUTING.md` for packaging and distribution strategy for the standalone desktop UI.
+
+Original project overview remains in subdirectories. Legacy UI projects may be removed as part of the migration to a single MAUI Blazor Hybrid desktop application.
