@@ -14,22 +14,6 @@
     <ProjectReference Include="..\SoloAdventureSystem.Engine\SoloAdventureSystem.Engine.csproj" />
   </ItemGroup>
 
-  <!-- Exclude LLM-related source files now compiled in SoloAdventureSystem.LLM to avoid duplicate types -->
-  <ItemGroup>
-    <Compile Remove="Adapters\**\*.cs" />
-    <Compile Remove="EmbeddedModel\**\*.cs" />
-    <Compile Remove="Parsing\**\*.cs" />
-    <Compile Remove="Configuration\ModelConfiguration.cs" />
-    <Compile Remove="Configuration\AISettings.cs" />
-    <Compile Remove="Generation\IGenerationPolicy.cs" />
-    <Compile Remove="Generation\GenerationLimits.cs" />
-    <Compile Remove="Utils\PathHelper.cs" />
-    <Compile Remove="Utils\ModelDiagnostics.cs" />
-    <Compile Remove="Configuration\AIProvider.cs" />
-    <Compile Remove="Configuration\HardwareConfiguration.cs" />
-    <Compile Remove="Generation\GenerationException.cs" />
-  </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="MaIN.NET" Version="0.7.9" />
     <!-- MaIN.NET 0.7.9 includes LLamaSharp 0.25.0 as dependency, so we keep references for compiled code -->
