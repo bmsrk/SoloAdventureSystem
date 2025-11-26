@@ -1,0 +1,1 @@
+If you cannot produce 1 valid choice, produce 0 choices. Can you please add more details on how to format the JSON to include the dialogue choice that's selected? I want the user to be able to choose multiple dialogue options

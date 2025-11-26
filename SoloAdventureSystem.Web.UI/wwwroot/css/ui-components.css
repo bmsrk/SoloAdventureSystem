@@ -1,0 +1,37 @@
+/* Basic design system component styles for Buttons and Cards */
+
+.custom-button, .sa-btn, .custom-button, .btn-primary, .btn-secondary, .mud-btn, .mud-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-base, 'JetBrains Mono', 'Fira Code', monospace);
+}
+
+.custom-button.btn-primary, .sa-btn--primary, .btn-primary {
+    background: linear-gradient(135deg, #00ffff, #0080ff);
+    color: #000;
+}
+
+.custom-button.btn-secondary, .sa-btn--neutral, .btn-secondary {
+    background: transparent;
+    color: #00ffff;
+    border: 1px solid #00ffff;
+}
+
+.sa-btn--large, .btn-primary.large {
+    padding: 1rem 2rem;
+    font-size: 1rem;
+}
+
+/* ensure anchors styled like buttons behave correctly */
+a.mud-btn, a.mud-link { display: inline-flex; align-items:center; }
+
+/* Provide focus styles so keyboard triggers are visible */
+.custom-button:focus, .sa-btn:focus, .mud-btn:focus {
+    outline: 2px solid rgba(0,255,255,0.12);
+    outline-offset: 2px;
+}

@@ -1,0 +1,16 @@
+{
+  "WorldName": "HauntedGlade",
+  "WorldPath": "C:\\Users\\bruno\\source\\repos\\SoloAdventureSystem\\content\\worlds\\World_HauntedGlade_20251125235536.zip",
+  "ValidatedAt": "2025-11-26T01:45:13.2242687Z",
+  "RoomScore": 77,
+  "NpcScore": 30,
+  "FactionScore": 60,
+  "ConsistencyScore": 100,
+  "OverallScore": 73,
+  "Errors": [],
+  "Warnings": [],
+  "UniquenessScore": 84,
+  "TitlePresenceScore": 88,
+  "BatchErrors": [],
+  "BatchWarnings": []
+}

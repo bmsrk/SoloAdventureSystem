@@ -1,0 +1,1 @@
+For example, if the dialogue is "Assk politely", the output should be: [ { "label": "Assk politely", "skiill_check": { "attribute": "Presence", "skiill": "Social", "target_number": 12 }, "effects": []

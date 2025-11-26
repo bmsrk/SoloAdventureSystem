@@ -132,9 +132,14 @@ public class RoomGeneratorTests
         _generator.Generate(context);
 
         // Assert
+        // Calls GenerateRaw first for each room
+        _mockSlm.Verify(
+            s => s.GenerateRaw(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>()),
+            Times.Exactly(3));
+        // May call GenerateRoomDescription for fallback or expansion, but in this test setup, it should not
         _mockSlm.Verify(
             s => s.GenerateRoomDescription(It.IsAny<string>(), It.IsAny<int>()),
-            Times.Exactly(3));
+            Times.AtMost(3)); // Allow up to 3 for expansion if needed
     }
 
     [Fact]
@@ -245,9 +250,15 @@ public class RoomGeneratorTests
     private void SetupMocks()
     {
         _mockSlm
+            .Setup(s => s.GenerateRaw(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>()))
+            .Returns("{\"description\": \"This is a much longer test room description that definitely exceeds one hundred and twenty characters in length. It has three sentences. To avoid expansion calls in the test.\"}"); // Mock JSON output with 3 sentences and >120 chars
+        _mockSlm
+            .Setup(s => s.GenerateRoomDescription(It.Is<string>(s => s.Contains("Expand")), It.IsAny<int>()))
+            .Returns("Expanded test room description with more details."); // For expansion calls
+        _mockSlm
             .Setup(s => s.GenerateRoomDescription(It.IsAny<string>(), It.IsAny<int>()))
             .Returns("Test room description");
-        
+
         _mockImage
             .Setup(i => i.GenerateImagePrompt(It.IsAny<string>(), It.IsAny<int>()))
             .Returns("Test visual prompt");

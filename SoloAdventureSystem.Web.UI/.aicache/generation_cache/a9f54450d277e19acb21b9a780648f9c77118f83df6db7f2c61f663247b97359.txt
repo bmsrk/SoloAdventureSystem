@@ -1,0 +1,1 @@
+This looks great so far, but can you add an option to choose between different dialogue choices? For example, if the player is playing a different version of the game, can they choose to switch between dialogue choices

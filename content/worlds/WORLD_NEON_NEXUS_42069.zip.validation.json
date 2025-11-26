@@ -1,12 +1,18 @@
 {
   "WorldName": "NEON_NEXUS",
   "WorldPath": "C:\\Users\\bruno\\source\\repos\\SoloAdventureSystem\\content\\worlds\\WORLD_NEON_NEXUS_42069.zip",
-  "ValidatedAt": "2025-11-25T20:56:49.4903639Z",
+  "ValidatedAt": "2025-11-26T01:45:13.2446682Z",
   "RoomScore": 69,
   "NpcScore": 67,
   "FactionScore": 30,
   "ConsistencyScore": 100,
-  "OverallScore": 66,
+  "OverallScore": 62,
   "Errors": [],
-  "Warnings": []
+  "Warnings": [],
+  "UniquenessScore": 100,
+  "TitlePresenceScore": 3,
+  "BatchErrors": [],
+  "BatchWarnings": [
+    "Low title presence (3%): Some entities have generic or missing titles."
+  ]
 }

@@ -1,0 +1,16 @@
+{
+  "WorldName": "MyWorld",
+  "WorldPath": "C:\\Users\\bruno\\source\\repos\\SoloAdventureSystem\\content\\worlds\\World_MyWorld_20251126014445.zip",
+  "ValidatedAt": "2025-11-26T01:45:13.2357103Z",
+  "RoomScore": 66,
+  "NpcScore": 34,
+  "FactionScore": 60,
+  "ConsistencyScore": 100,
+  "OverallScore": 73,
+  "Errors": [],
+  "Warnings": [],
+  "UniquenessScore": 87,
+  "TitlePresenceScore": 90,
+  "BatchErrors": [],
+  "BatchWarnings": []
+}

@@ -1,23 +1,28 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+﻿@using Microsoft.AspNetCore.Components.Web
 
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <base href="/" />
-    <ResourcePreloader />
-    <link rel="stylesheet" href="@Assets["app.css"]" />
-    <link rel="stylesheet" href="@Assets["css/custom-theme.css"]" />
-    <link rel="stylesheet" href="@Assets["SoloAdventureSystem.Web.UI.styles.css"]" />
-    <ImportMap />
-    <link rel="icon" type="image/png" href="favicon.png" />
-    <HeadOutlet />
-</head>
+<HeadOutlet />
+<ResourcePreloader />
+<link rel="stylesheet" href="@Assets["app.css"]" />
+<link rel="stylesheet" href="@Assets["css/custom-theme.css"]" />
+<link rel="stylesheet" href="@Assets["css/theme-presets.css"]" />
+<link rel="stylesheet" href="@Assets["css/mud-neon.css"]" />
+<link rel="stylesheet" href="@Assets["css/ui-components.css"]" />
+<link rel="stylesheet" href="@Assets["SoloAdventureSystem.Web.UI.styles.css"]" />
+<link rel="stylesheet" href="/css/shared-pages.css" />
 
-<body>
-    <Routes />
-    <ReconnectModal />
-    <script src="@Assets["_framework/blazor.web.js"]"></script>
-</body>
+<script src="@Assets["js/theme.js"]"></script>
 
-</html>
+<Routes />
+
+<script>
+// Ensure a default theme is present
+(function(){
+    if(!document.body.hasAttribute('data-theme')) document.body.setAttribute('data-theme', 'mud');
+})();
+</script>
+
+<!-- Blazor server script required for interactive server-side components -->
+<script src="/_framework/blazor.server.js"></script>
+
+<!-- Include ASP.NET Core browser refresh script so middleware can inject for hot reload -->
+<script src="/_framework/aspnetcore-browser-refresh.js"></script>

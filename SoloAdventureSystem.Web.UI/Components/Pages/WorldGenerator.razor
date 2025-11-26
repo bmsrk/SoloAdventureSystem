@@ -7,212 +7,702 @@
 @inject SoloAdventureSystem.Web.UI.Services.WorldGenerationService GenerationService
 @inject Microsoft.Extensions.Options.IOptions<AISettings> AISettings
 @inject Microsoft.Extensions.Logging.ILogger<WorldGenerator> Logger
+@inject NavigationManager Navigation
 
-<PageTitle>AI World Generator (Improved)</PageTitle>
+<PageTitle>AI World Generator</PageTitle>
 
-<h3>AI World Generator</h3>
+<link rel="stylesheet" href="/css/shared-pages.css" />
 
-<div style="max-width:900px;">
+<div class="mud-worlds">
+    <div class="mud-header page-header">
+        <div class="header-left">
+            <h1 class="mud-title">AI World Generator</h1>
+            <p class="mud-sub">Create procedural game worlds using local AI models</p>
+        </div>
+        <div class="header-right page-header-actions">
+            <Button Class="mud-link" OnClick="GoSelectWorld">Select World</Button>
+            <Button Class="mud-link" OnClick="GoWorlds">Manage Worlds</Button>
+        </div>
+    </div>
+
     @if (isInitializing || isGenerating)
     {
-        <div class="modal-overlay-global" @onclick:stopPropagation="true">
-            <div class="modal-box">
+        <div class="generation-modal">
+            <div class="modal-content">
                 <div class="modal-header">
-                    <div class="spinner-small"></div>
-                    <div style="margin-left:12px;">
-                        <div style="font-weight:700;">@((isInitializing) ? "Initializing AI Model..." : "Generating World...")</div>
-                        <div style="font-size:0.9rem; color:var(--color-text-secondary);">@hypeMessage</div>
+                    <div class="modal-title">
+                        <span class="modal-icon">@(isInitializing ? "[INIT]" : "[GEN]")</span>
+                        @(isInitializing ? "Initializing AI Model" : "Generating World")
                     </div>
                 </div>
 
-                <div class="progress-wrapper">
-                    <div class="progress-track">
-                        <div class="progress-fill" style="width:@(progressPercentage)%"></div>
+                <div class="modal-body">
+                    <div class="progress-section">
+                        <div class="progress-info">
+                            <div class="progress-label">@hypeMessage</div>
+                            <div class="progress-detail">@generationProgress</div>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: @(progressPercentage)%"></div>
+                        </div>
+                        <div class="progress-percentage">@progressPercentage%</div>
                     </div>
-                    <div class="progress-meta">@generationProgress (@progressPercentage%)</div>
-                </div>
 
-                <div class="modal-log">
-                    @foreach (var line in GetRecentLogLines(8))
-                    {
-                        <div class="log-line">@line</div>
-                    }
+                    <div class="log-section">
+                        <div class="log-header">Activity Log</div>
+                        <div class="log-content">
+                            @foreach (var line in GetRecentLogLines(10))
+                            {
+                                <div class="log-line">@line</div>
+                            }
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     }
 
-    <div style="margin-bottom:1rem; display:flex; align-items:center; gap:0.75rem;">
-        <label style="margin:0;">Model:</label>
-        <select @bind="selectedModel" disabled="@isInitializing">
-            <option value="tinyllama-q4">TinyLlama</option>
-            <option value="llama-3.2-1b-q4">Llama-3.2</option>
-            <option value="phi-3-mini-q4">Phi-3 Mini</option>
-        </select>
+    <div class="generator-content">
+        <div class="model-section">
+            <div class="section-card">
+                <h3 class="section-title">AI Model Selection</h3>
+                <div class="status-indicator @(GenerationService.IsInitialized ? "ready" : "not-ready")">
+                    <span class="status-icon">@(GenerationService.IsInitialized ? "[OK]" : "[ ]")</span>
+                    <span class="status-text">@(GenerationService.IsInitialized ? "AI Ready" : "AI Not Initialized")</span>
+                </div>
+                <div class="model-controls">
+                    <div class="control-group">
+                        <label class="control-label">Model:</label>
+                        <select @bind="selectedModel" disabled="@isInitializing" class="form-select">
+                            <option value="tinyllama-q4">TinyLlama (Fast, ~700MB)</option>
+                            <option value="llama-3.2-1b-q4">Llama-3.2 (Balanced, ~2GB)</option>
+                            <option value="phi-3-mini-q4">Phi-3 Mini (Quality, ~2.3GB)</option>
+                        </select>
+                    </div>
 
-        <button type="button" @onclick="InitializeModel" disabled="@isInitializing" class="btn"> 
-            @if (isInitializing)
-            {
-                <span class="spinner-small"></span>
-                <span style="margin-left:6px;">Initializing...</span>
-            }
-            else if (GenerationService.IsInitialized)
-            {
-                <span>Reinitialize</span>
-            }
-            else
-            {
-                <span>Initialize</span>
-            }
-        </button>
-
-        <div style="margin-left:auto; display:flex; gap:0.5rem; align-items:center;">
-            <div style="font-size:0.9rem;">Status:</div>
-            <div style="padding:6px 10px; border-radius:6px; background:@(GenerationService.IsInitialized ? "#155724" : "#333"); color:white; font-weight:600;">@(GenerationService.IsInitialized ? "AI READY" : "AI NOT INITIALIZED")</div>
-        </div>
-    </div>
-
-    @if (isInitializing)
-    {
-        <div style="margin-bottom:0.75rem;">
-            <strong>Initialization:</strong> @initProgress
-        </div>
-    }
-
-    <div style="border:1px solid #ddd; padding:0.75rem; border-radius:6px; margin-bottom:1rem; background:var(--color-bg-secondary);">
-        <div style="margin-bottom:0.5rem; padding:0.5rem; background: rgba(255,255,255,0.02); border-radius:4px; color: var(--color-text-muted); font-size:0.9rem;">
-            Note: All generated content is produced by an AI model. Review for accuracy before use.
-        </div>
-        <div style="display:flex; gap:0.5rem; align-items:center; margin-bottom:0.5rem;">
-            <label style="width:90px;">Name</label>
-            <input @bind="options.Name" />
-        </div>
-        <div style="display:flex; gap:0.5rem; align-items:center; margin-bottom:0.5rem;">
-            <label style="width:90px;">Seed</label>
-            <input type="number" @bind="options.Seed" />
-        </div>
-        <div style="display:flex; gap:0.5rem; align-items:center; margin-bottom:0.5rem;">
-            <label style="width:90px;">Theme</label>
-            <input @bind="options.Theme" />
-        </div>
-        <div style="display:flex; gap:0.5rem; align-items:center; margin-bottom:0.5rem;">
-            <label style="width:90px;">Regions</label>
-            <input type="number" min="3" max="20" @bind="options.Regions" />
+                    <Button Type="button" OnClick="InitializeModel" Disabled="@isInitializing" Class="btn-primary">
+                        <span class="btn-icon">@GetInitializeButtonIcon()</span>
+                        @GetInitializeButtonText()
+                    </Button>
+                </div>
+            </div>
         </div>
 
-        <div style="margin-top:0.5rem; display:flex; gap:0.5rem; align-items:center;">
-            <label style="width:90px;">Preset</label>
-            <select @onchange="OnPresetChanged">
-                <option value="Custom">Custom</option>
-                <option value="NeonCity">NeonCity (Cyberpunk)</option>
-                <option value="EchoHarbor">EchoHarbor (Cosmic Horror)</option>
-                <option value="SummerOf84">SummerOf84 (1980s Mystery)</option>
-                <option value="RetroFuture">RetroFuture (Retro-Futurism)</option>
-                <option value="Wasteland Hope">Wasteland Hope</option>
-                <option value="Medieval Realm">Medieval Realm</option>
-                <option value="Supernatural Glade">Supernatural Glade</option>
-            </select>
+        <div class="config-section">
+            <div class="section-card">
+                <h3 class="section-title">World Configuration</h3>
+
+                <div class="warning-notice">
+                    <div class="warning-icon">[!]</div>
+                    <div class="warning-content">
+                        <strong>Note:</strong> All generated content is produced by AI models. Review for accuracy.
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">World Name</label>
+                        <input @bind="options.Name" class="form-input" placeholder="Enter world name" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Seed</label>
+                        <input type="number" @bind="options.Seed" class="form-input" placeholder="Random seed" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Regions</label>
+                        <input type="number" min="3" max="20" @bind="options.Regions" class="form-input" placeholder="3-20 regions" />
+                    </div>
+                </div>
+
+                <div class="preset-section">
+                    <label class="form-label">Quick Presets</label>
+                    <select @onchange="OnPresetChanged" class="form-select">
+                        <option value="Custom">Custom Configuration</option>
+                        <option value="NeonCity">NeonCity (Cyberpunk)</option>
+                        <option value="EchoHarbor">EchoHarbor (Cosmic Horror)</option>
+                        <option value="SummerOf84">SummerOf84 (1980s Mystery)</option>
+                        <option value="RetroFuture">RetroFuture (Retro-Futurism)</option>
+                        <option value="Wasteland Hope">Wasteland Hope (Post-Apocalyptic)</option>
+                        <option value="Medieval Realm">Medieval Realm</option>
+                        <option value="Supernatural Glade">Supernatural Glade</option>
+                    </select>
+                </div>
+
+                <div class="action-buttons">
+                    <Button Type="button" OnClick="GenerateWorld" Disabled="@isGenerating" Class="btn-primary large">
+                        <span class="btn-icon">@(isGenerating ? "[...]": "")</span>
+                        @(isGenerating ? "Generating..." : "Generate World")
+                    </Button>
+                    <Button Type="button" OnClick="LogOptions" Class="btn-secondary">
+                        <span class="btn-icon"></span>
+                        Log Options
+                    </Button>
+                    <div class="model-info">
+                        <span class="info-label">Selected:</span>
+                        <span class="info-value">@selectedModel</span>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div style="margin-top:0.75rem; display:flex; gap:0.5rem; align-items:center;">
-            <button type="button" @onclick="GenerateWorld" disabled="@isGenerating" class="btn-primary" title="If the model is not initialized the generator will initialize it automatically.">@(isGenerating ? "Generating..." : "Generate World")</button>
-            <button type="button" @onclick="LogOptions" class="btn">Log Options</button>
-            <div style="margin-left:auto; color:var(--color-text-muted); font-size:0.9rem;">Model: <strong>@selectedModel</strong></div>
+        <div class="status-section">
+            <div class="section-card">
+                <h3 class="section-title">Generation Status</h3>
+                <div class="status-content">
+                    <div class="status-item">
+                        <span class="status-label">Progress:</span>
+                        <span class="status-value">@generationProgress</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Percentage:</span>
+                        <span class="status-value">@progressPercentage%</span>
+                    </div>
+                </div>
+            </div>
         </div>
-    </div>
 
-    <div style="margin-bottom:1rem;">
-        <strong>Progress:</strong> @generationProgress (@progressPercentage%)
-    </div>
+        <div class="log-section">
+            <div class="section-card">
+                <h3 class="section-title">Activity Log</h3>
+                <div class="log-container">
+                    <pre class="log-text">@uiLog</pre>
+                </div>
+            </div>
+        </div>
 
-    <div style="margin-bottom:1rem;">
-        <strong>UI Log</strong>
-        <pre id="uilog" style="max-height:200px; overflow:auto; background:#f8f8f8; padding:0.5rem; color:#111;">@uiLog</pre>
-    </div>
-
-    <div>
         @if (!string.IsNullOrEmpty(exportPath))
         {
-            <div>Exported: <code>@exportPath</code></div>
+            <div class="export-section">
+                <div class="section-card success">
+                    <div class="export-content">
+                        <div class="export-icon">[OK]</div>
+                        <div class="export-info">
+                            <h4 class="export-title">World Generated Successfully</h4>
+                            <p class="export-path">Saved to: @exportPath</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         }
+
         @if (!string.IsNullOrEmpty(errorMessage))
         {
-            <div style="color:red">Error: @errorMessage</div>
+            <div class="error-section">
+                <div class="section-card error">
+                    <div class="error-content">
+                        <div class="error-icon">[!]</div>
+                        <div class="error-info">
+                            <h4 class="error-title">Generation Error</h4>
+                            <p class="error-message">@errorMessage</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         }
     </div>
 </div>
 
 <style>
-.spinner-small { display:inline-block; width:14px; height:14px; border:2px solid rgba(255,255,255,0.3); border-top:2px solid white; border-radius:50%; animation:spin 1s linear infinite; }
-@@keyframes spin { 0%{transform:rotate(0deg);}100%{transform:rotate(360deg);} }
-.btn { padding:6px 10px; border-radius:6px; border:1px solid #444; background:#222; color:white; }
-.btn-primary { padding:8px 14px; border-radius:6px; border:1px solid #1e90ff; background:#1e90ff; color:white; }
+.terminal-generator {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
 
-.modal-overlay-global {
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(0, 255, 255, 0.2);
+}
+
+.header-content h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem 0;
+    background: linear-gradient(135deg, #ffffff, #00ffff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.page-description {
+    color: #b0b0b0;
+    margin: 0;
+    font-size: 1.125rem;
+}
+
+.header-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-weight: 500;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    margin-bottom: 1rem;
+}
+
+.status-indicator.ready {
+    background: linear-gradient(135deg, #00ff00, #00cc00);
+    color: #000000;
+}
+
+.status-indicator.not-ready {
+    background: rgba(176, 176, 176, 0.2);
+    color: #b0b0b0;
+    border: 1px solid rgba(176, 176, 176, 0.3);
+}
+
+.status-icon {
+    font-size: 1rem;
+}
+
+.generation-modal {
     position: fixed;
     top: 0;
+    left: 0;
     right: 0;
     bottom: 0;
-    left: 0;
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.8);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 1000;
+    backdrop-filter: blur(5px);
 }
 
-.modal-box {
-    background: #222;
-    border-radius: 8px;
-    padding: 1.5rem;
-    max-width: 500px;
+.modal-content {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border: 1px solid rgba(0, 255, 255, 0.3);
+    border-radius: 12px;
+    max-width: 600px;
     width: 100%;
-    color: white;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
 }
 
 .modal-header {
-    display: flex;
-    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.progress-wrapper {
+.modal-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #ffffff;
+    margin: 0;
+}
+
+.modal-icon {
+    font-size: 1.5rem;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.progress-section {
+    margin-bottom: 2rem;
+}
+
+.progress-info {
+    margin-bottom: 1rem;
+}
+
+.progress-label {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #00ffff;
+    margin-bottom: 0.25rem;
+}
+
+.progress-detail {
+    color: #b0b0b0;
+    font-size: 0.875rem;
+}
+
+.progress-bar {
+    height: 8px;
     background: #333;
     border-radius: 4px;
     overflow: hidden;
-    margin-top: 1rem;
-}
-
-.progress-track {
-    background: #444;
-    height: 8px;
+    margin-bottom: 0.5rem;
 }
 
 .progress-fill {
-    background: linear-gradient(90deg, rgba(30,144,255,1) 0%, rgba(0,212,255,1) 100%);
     height: 100%;
+    background: linear-gradient(90deg, #00ffff, #0080ff);
+    border-radius: 4px;
+    transition: width 0.3s ease;
 }
 
-.progress-meta {
-    font-size: 0.8rem;
+.progress-percentage {
     text-align: right;
-    margin-top: 2px;
+    color: #00ffff;
+    font-size: 0.875rem;
+    font-weight: 500;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
 }
 
-.modal-log {
+.log-section {
+    margin-top: 1.5rem;
+}
+
+.log-header {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 0.75rem;
+}
+
+.log-content {
+    background: #000000;
+    border: 1px solid rgba(0, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 1rem;
     max-height: 200px;
     overflow-y: auto;
-    background: #111;
-    border-radius: 4px;
-    padding: 0.5rem;
-    margin-top: 1rem;
 }
 
 .log-line {
-    font-family: monospace;
-    font-size: 0.9rem;
-    line-height: 1.2;
+    color: #e0e0e0;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 0.875rem;
+    line-height: 1.4;
+    margin-bottom: 0.25rem;
     white-space: pre-wrap;
+}
+
+.generator-content {
+    display: grid;
+    gap: 2rem;
+}
+
+.section-card {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border: 1px solid rgba(0, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 2rem;
+}
+
+.section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #ffffff;
+    margin: 0 0 1.5rem 0;
+}
+
+.model-controls {
+    display: flex;
+    gap: 1rem;
+    align-items: end;
+}
+
+.control-group {
+    flex: 1;
+}
+
+.control-label {
+    display: block;
+    color: #b0b0b0;
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.form-select {
+    width: 100%;
+    background: #000000;
+    color: #e0e0e0;
+    border: 1px solid rgba(0, 255, 255, 0.3);
+    border-radius: 6px;
+    padding: 0.75rem;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 0.875rem;
+}
+
+.form-select:focus {
+    outline: none;
+    border-color: #00ffff;
+    box-shadow: 0 0 0 2px rgba(0, 255, 255, 0.2);
+}
+
+.btn-primary, .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    cursor: pointer;
+    border: none;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #00ffff, #0080ff);
+    color: #000000;
+    box-shadow: 0 4px 15px rgba(0, 255, 255, 0.3);
+}
+
+.btn-primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 255, 255, 0.4);
+}
+
+.btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-secondary {
+    background: transparent;
+    color: #00ffff;
+    border: 1px solid #00ffff;
+}
+
+.btn-secondary:hover {
+    background: rgba(0, 255, 255, 0.1);
+}
+
+.btn-icon {
+    font-size: 1rem;
+}
+
+.warning-notice {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem;
+    background: rgba(255, 255, 0, 0.1);
+    border: 1px solid rgba(255, 255, 0, 0.3);
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+
+.warning-icon {
+    font-size: 1.25rem;
+    color: #ffff00;
+}
+
+.warning-content {
+    color: #e0e0e0;
+    font-size: 0.875rem;
+    line-height: 1.4;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-label {
+    color: #b0b0b0;
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.form-input {
+    background: #000000;
+    color: #e0e0e0;
+    border: 1px solid rgba(0, 255, 255, 0.3);
+    border-radius: 6px;
+    padding: 0.75rem;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 0.875rem;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #00ffff;
+    box-shadow: 0 0 0 2px rgba(0, 255, 255, 0.2);
+}
+
+.form-input::placeholder {
+    color: #666;
+}
+
+.preset-section {
+    margin-bottom: 2rem;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.btn-primary.large {
+    padding: 1rem 2rem;
+    font-size: 1rem;
+}
+
+.model-info {
+    margin-left: auto;
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.info-label {
+    color: #b0b0b0;
+    font-size: 0.875rem;
+}
+
+.info-value {
+    color: #00ffff;
+    font-weight: 500;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+.status-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.status-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background: rgba(0, 255, 255, 0.05);
+    border-radius: 6px;
+}
+
+.status-label {
+    color: #b0b0b0;
+    font-size: 0.875rem;
+}
+
+.status-value {
+    color: #00ffff;
+    font-weight: 500;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+.log-container {
+    background: #000000;
+    border: 1px solid rgba(0, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 1rem;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.log-text {
+    color: #e0e0e0;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 0.875rem;
+    line-height: 1.4;
+    margin: 0;
+    white-space: pre-wrap;
+}
+
+.export-section, .error-section {
+    margin-top: 2rem;
+}
+
+.section-card.success {
+    border-color: #00ff00;
+    background: linear-gradient(135deg, rgba(0, 255, 0, 0.1) 0%, rgba(0, 255, 0, 0.05) 100%);
+}
+
+.section-card.error {
+    border-color: #ff6b6b;
+    background: linear-gradient(135deg, rgba(255, 107, 107, 0.1) 0%, rgba(255, 107, 107, 0.05) 100%);
+}
+
+.export-content, .error-content {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.export-icon, .error-icon {
+    font-size: 2rem;
+}
+
+.export-info, .error-info {
+    flex: 1;
+}
+
+.export-title, .error-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin: 0 0 0.5rem 0;
+}
+
+.export-title {
+    color: #00ff00;
+}
+
+.error-title {
+    color: #ff6b6b;
+}
+
+.export-path, .error-message {
+    color: #e0e0e0;
+    margin: 0;
+    font-size: 0.875rem;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    word-break: break-all;
+}
+
+/* Responsive Design */
+@@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+
+    .model-controls {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .action-buttons {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .status-content {
+        grid-template-columns: 1fr;
+    }
+
+    .modal-content {
+        margin: 1rem;
+        max-width: none;
+    }
 }
 </style>
 
@@ -228,17 +718,13 @@
     private string errorMessage = string.Empty;
     private string exportPath = string.Empty;
 
-    private string hypeMessage = "Ready to rumble!";
+    private string hypeMessage = "Ready";
     private System.Threading.Timer? hypeTimer;
     private readonly string[] hypeMessages = new[] {
-        "Summoning pixels and possibilities...",
-        "Feeding the neural hamsters...",
-        "Warming up the imagination engines...",
-        "Spinning story threads...",
-        "Mixing lore and mystery...",
-        "Polishing neon skylines...",
-        "Calibrating NPC personalities...",
-        "Sealing the world in bytes..."
+        "Initializing...",
+        "Preparing model...",
+        "Generating...",
+        "Finalizing..."
     };
 
     private readonly Dictionary<string, WorldGenerationOptions> Presets = new()
@@ -297,7 +783,7 @@
         {
             options.Name = p.Name;
             options.Seed = p.Seed;
-            options.Theme = p.Theme;
+            // keep fixed theme; do not change options.Theme to enforce single-theme focus
             options.Regions = p.Regions;
             options.Flavor = p.Flavor;
             options.Description = p.Description;
@@ -406,4 +892,21 @@
         var lines = uiLog.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
         return lines.Take(count);
     }
+
+    private string GetInitializeButtonIcon()
+    {
+        if (isInitializing) return "[...]";
+        if (GenerationService.IsInitialized) return "[OK]";
+        return "";
+    }
+
+    private string GetInitializeButtonText()
+    {
+        if (isInitializing) return "Initializing...";
+        if (GenerationService.IsInitialized) return "Reinitialize";
+        return "Initialize";
+    }
+
+    private void GoSelectWorld() => Navigation.NavigateTo("/select-world");
+    private void GoWorlds() => Navigation.NavigateTo("/worlds");
 }

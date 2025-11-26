@@ -3,8 +3,9 @@
 <button class="custom-button @AppearanceClass @Class" 
         type="@Type" 
         disabled="@Disabled"
-        @onclick="OnClick"
-        style="@Style">
+        @onclick="@(async (Microsoft.AspNetCore.Components.Web.MouseEventArgs e) => { if (OnClick.HasDelegate) await OnClick.InvokeAsync(e); })"
+        style="@Style"
+        role="button">
     @ChildContent
 </button>
 

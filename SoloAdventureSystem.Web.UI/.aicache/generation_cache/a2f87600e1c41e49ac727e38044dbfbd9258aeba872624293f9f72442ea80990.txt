@@ -1,0 +1,1 @@
+Can you add a JSON array for the next question that asks the NPC to offer a specific item from their inventory? The answer is "A simple gift", and the next question should only have the nextSuffix "reveaal". Also, the effect should be "Daemon:npc1|Loyalty:1". Please ensure that the JSON is well-formed and follows the same format as the previous questions

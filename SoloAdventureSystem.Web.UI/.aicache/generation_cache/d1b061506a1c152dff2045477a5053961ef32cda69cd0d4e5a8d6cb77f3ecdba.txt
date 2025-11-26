@@ -1,0 +1,1 @@
+This is great! Can you add a field for the dialogue choice that includes a description of the action that will occur after the user selects the choice? For example, if the user selects "Reveal", it would include a description of what happens after the dialogue

@@ -1,0 +1,87 @@
+/* Theme presets for SoloAdventureSystem - defines CSS variables per theme and font sets */
+:root {
+    /* Default (minimal) */
+    --bg-primary: #0a0a0a;
+    --bg-secondary: #0f172a;
+    --text-primary: #e5e7eb;
+    --accent-cyan: #00ffcc;
+    --accent-blue: #3b82f6;
+    --muted: #9ca3af;
+    --success: #10b981;
+    --danger: #ef4444;
+    --font-mono: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+    --font-sans: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial;
+    --font-base: var(--font-sans);
+
+    /* Aliases for existing theme variables used elsewhere */
+    --color-bg-primary: var(--bg-primary);
+    --color-bg-secondary: var(--bg-secondary);
+    --color-text-primary: var(--text-primary);
+    --color-text-secondary: var(--muted);
+    --color-accent-primary: var(--accent-blue);
+    --color-accent-accent: var(--accent-cyan);
+}
+
+/* Mud / neon terminal theme */
+[data-theme="mud"] {
+    --bg-primary: #030303;
+    --bg-secondary: #00121a;
+    --text-primary: #9fffe0;
+    --accent-cyan: #00ffcc;
+    --accent-blue: #00ffff;
+    --muted: #6fe6c9;
+    --font-base: var(--font-mono);
+
+    --color-bg-primary: var(--bg-primary);
+    --color-bg-secondary: var(--bg-secondary);
+    --color-text-primary: var(--text-primary);
+    --color-text-secondary: var(--muted);
+    --color-accent-primary: var(--accent-blue);
+}
+
+/* Minimal dark theme */
+[data-theme="minimal"] {
+    --bg-primary: #0a0a0a;
+    --bg-secondary: #0f172a;
+    --text-primary: #e5e7eb;
+    --accent-cyan: #60a5fa;
+    --accent-blue: #3b82f6;
+    --muted: #9ca3af;
+    --font-base: var(--font-sans);
+
+    --color-bg-primary: var(--bg-primary);
+    --color-bg-secondary: var(--bg-secondary);
+    --color-text-primary: var(--text-primary);
+    --color-text-secondary: var(--muted);
+    --color-accent-primary: var(--accent-blue);
+}
+
+/* Retro theme - warmer tones and slab-ish monospace */
+[data-theme="retro"] {
+    --bg-primary: #100a0a;
+    --bg-secondary: #2a1a10;
+    --text-primary: #ffe7d6;
+    --accent-cyan: #ffb86b;
+    --accent-blue: #d97706;
+    --muted: #c6a27e;
+    --font-base: 'Courier New', monospace;
+
+    --color-bg-primary: var(--bg-primary);
+    --color-bg-secondary: var(--bg-secondary);
+    --color-text-primary: var(--text-primary);
+    --color-text-secondary: var(--muted);
+    --color-accent-primary: var(--accent-blue);
+}
+
+/* Apply base variables globally */
+body {
+    background: var(--bg-primary) !important;
+    color: var(--text-primary) !important;
+    font-family: var(--font-base, var(--font-sans));
+}
+
+/* Simple helpers used by components */
+.mud-theme-accent { color: var(--accent-cyan); }
+.mud-theme-muted { color: var(--muted); }
+.mud-theme-bg { background: var(--bg-secondary); }
+

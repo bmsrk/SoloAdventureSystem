@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,6 +14,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="Program.cs" />
+    <Compile Include="Services\GenerationService.cs" />
+    <Compile Include="Services\WorldFileValidator.cs" />
+    <Compile Include="Services\WorldGenerationService.cs" />
   </ItemGroup>
 
 </Project>

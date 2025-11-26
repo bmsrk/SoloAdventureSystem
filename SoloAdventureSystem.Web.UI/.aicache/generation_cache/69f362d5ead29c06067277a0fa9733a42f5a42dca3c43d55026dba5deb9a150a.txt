@@ -1,0 +1,1 @@
+Thanks for providing the example dialogue script and JSON array. Can you please add some comments to explain the purpose of each field

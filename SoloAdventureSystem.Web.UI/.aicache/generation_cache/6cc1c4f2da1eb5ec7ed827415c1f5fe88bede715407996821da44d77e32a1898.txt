@@ -1,0 +1,1 @@
+Can you please add the dialogue choices to the NPCs in the JSON array as well, just in case the player doesn't know the dialogue choices

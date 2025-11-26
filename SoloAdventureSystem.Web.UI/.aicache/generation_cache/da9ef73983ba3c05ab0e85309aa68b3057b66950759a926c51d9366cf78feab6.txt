@@ -1,0 +1,1 @@
+If you cannot produce JSON array, output a string with the message "Invalid format" instead

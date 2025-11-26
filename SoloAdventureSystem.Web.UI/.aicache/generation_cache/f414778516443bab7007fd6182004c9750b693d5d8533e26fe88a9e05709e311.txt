@@ -1,0 +1,1 @@
+For example, a valid choice might have the label "Leave", with nextSuffix "leave" and skill_check with attribute Presence and skill "Social" and target_number 12, and no other skills or effects

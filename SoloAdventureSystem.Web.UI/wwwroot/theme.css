@@ -373,33 +373,47 @@ input:focus, textarea:focus, select:focus {
     margin: 0 0 var(--spacing-sm) 0;
 }
 
-/* ===== NAVIGATION ===== */
+/* ===== NAVIGATION (top header) */
 .nav-menu {
-    background: var(--color-bg-secondary) !important;
-    border-right: 1px solid var(--color-border-default);
-    height: 100vh;
-    width: 250px;
+    display: flex;
+    gap: 1rem;
+    align-items: center;
 }
 
 .nav-link {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    padding: var(--spacing-md) var(--spacing-lg);
-    color: var(--color-text-secondary);
+    gap: 0.5rem;
+    color: rgba(0, 255, 255, 0.9);
     text-decoration: none;
-    transition: all var(--transition-fast);
+    padding: 0.5rem 0.75rem;
     border-radius: var(--radius-md);
-    margin: var(--spacing-xs) var(--spacing-sm);
+    transition: all var(--transition-fast);
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
 }
 
-.nav-link:hover {
-    background: var(--color-bg-tertiary);
-    color: var(--color-text-primary);
+.nav-link:hover { background: rgba(0,255,255,0.04); color: var(--color-accent-primary); }
+.nav-link.active { background: rgba(0,255,255,0.06); color: var(--color-text-primary); }
+
+/* Remove previous full-height sidebar behavior */
+.sidebar-nav .nav-menu {
+    height: auto;
+    width: auto;
+    flex-direction: row;
 }
 
-.nav-link.active {
-    background: var(--color-accent-primary);
-    color: white;
+.ascii-header {
+    color: var(--color-accent-primary);
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0;
+    text-shadow: 0 0 10px rgba(59,130,246,0.25);
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    white-space: pre-wrap;
+    line-height: 1.0;
+    text-align: center;
 }
 
 /* ===== WORLD GENERATOR PAGE ===== */

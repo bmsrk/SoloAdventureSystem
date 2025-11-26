@@ -1,12 +1,16 @@
 {
   "WorldName": "SummerOf84",
   "WorldPath": "C:\\Users\\bruno\\source\\repos\\SoloAdventureSystem\\content\\worlds\\World_SummerOf84_20251125205638.zip",
-  "ValidatedAt": "2025-11-25T20:56:48.198929Z",
+  "ValidatedAt": "2025-11-26T01:45:13.2571132Z",
   "RoomScore": 71,
   "NpcScore": 41,
   "FactionScore": 50,
   "ConsistencyScore": 100,
-  "OverallScore": 66,
+  "OverallScore": 74,
   "Errors": [],
-  "Warnings": []
+  "Warnings": [],
+  "UniquenessScore": 93,
+  "TitlePresenceScore": 92,
+  "BatchErrors": [],
+  "BatchWarnings": []
 }

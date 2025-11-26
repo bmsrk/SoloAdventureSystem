@@ -27,6 +27,7 @@ public class WorldGenerationService : IDisposable
     private ILocalSLMAdapter? _adapter;
     private bool _isInitialized;
     private readonly SemaphoreSlim _initLock = new(1, 1);
+    private readonly SemaphoreSlim _generationLock = new(1, 1);
 
     public WorldGenerationService(
         ILogger<WorldGenerationService> logger,
@@ -63,9 +64,9 @@ public class WorldGenerationService : IDisposable
             }
 
             _logger.LogInformation("Initializing AI adapter with model: {Model}", _settings.LLamaModelKey);
-            
+
             await _adapter.InitializeAsync(progress);
-            
+
             _isInitialized = true;
             _logger.LogInformation("AI adapter initialized successfully");
         }
@@ -85,19 +86,38 @@ public class WorldGenerationService : IDisposable
             throw new InvalidOperationException("Service not initialized. Call InitializeAsync first.");
         }
 
-        progress?.Report("Starting world generation...");
-        
-        var generator = new SeededWorldGenerator(_adapter, _imageAdapter, _logger as ILogger<SeededWorldGenerator>);
-        
-        progress?.Report("Generating world structure...");
-        var result = await Task.Run(() => generator.Generate(options), cancellationToken);
-        
-        progress?.Report("Validating world...");
-        _validator.Validate(result);
-        
-        progress?.Report("World generation complete!");
-        
-        return result;
+        // Prevent concurrent generations
+        await _generationLock.WaitAsync(cancellationToken);
+        try
+        {
+            progress?.Report("Starting world generation...");
+
+            // Run generation and validation on a background thread to avoid blocking the Blazor sync context
+            var result = await Task.Run(() =>
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                var generator = new SeededWorldGenerator(_adapter, _imageAdapter, _logger as ILogger<SeededWorldGenerator>);
+
+                progress?.Report("Generating world structure...");
+                var r = generator.Generate(options);
+
+                cancellationToken.ThrowIfCancellationRequested();
+
+                progress?.Report("Validating world...");
+                _validator.Validate(r);
+
+                return r;
+            }, cancellationToken);
+
+            progress?.Report("World generation complete!");
+
+            return result;
+        }
+        finally
+        {
+            _generationLock.Release();
+        }
     }
 
     // NOTE: Prefill/LLM helper methods were removed temporarily. Reintroduce when ready to rework the UI wizard.
@@ -105,11 +125,11 @@ public class WorldGenerationService : IDisposable
     public string ExportWorld(WorldGenerationResult result, WorldGenerationOptions options, string outputPath)
     {
         _logger.LogInformation("Exporting world to: {Path}", outputPath);
-        
+
         // Use a timestamp-based id for filename uniqueness instead of seed
         var id = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
         var tempDir = Path.Combine(Path.GetTempPath(), $"World_{options.Name}_{id}");
-        if (Directory.Exists(tempDir)) 
+        if (Directory.Exists(tempDir))
             Directory.Delete(tempDir, true);
         Directory.CreateDirectory(tempDir);
 
@@ -124,7 +144,7 @@ public class WorldGenerationService : IDisposable
 
         _exporter.Zip(tempDir, zipPath);
 
-        if (Directory.Exists(tempDir)) 
+        if (Directory.Exists(tempDir))
             Directory.Delete(tempDir, true);
 
         _logger.LogInformation("World exported to: {Path}", zipPath);
@@ -138,6 +158,7 @@ public class WorldGenerationService : IDisposable
             disposableAdapter.Dispose();
         }
         _initLock?.Dispose();
+        _generationLock?.Dispose();
         GC.SuppressFinalize(this);
     }
 }

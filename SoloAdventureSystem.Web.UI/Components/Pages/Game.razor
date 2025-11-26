@@ -12,126 +12,107 @@
 
 <PageTitle>Playing @world?.WorldDefinition?.Name ?? "Game"</PageTitle>
 
-<div style="padding: 2rem; width: 100%; max-width: none; box-sizing: border-box; margin: 0 auto;">
-    @if (isLoading)
-    {
-        <Card>
-            <div style="text-align: center; padding: 3rem;">
-                <div class="spinner" style="margin: 0 auto 1rem;"></div>
-                <p style="color: var(--color-text-muted);">Loading game...</p>
-            </div>
-        </Card>
-    }
-    else if (world == null)
-    {
-        <Card>
-            <div style="text-align: center; padding: 3rem;">
-                <div class="error-icon">!</div>
-                <h3 style="color: var(--color-text-primary); margin-bottom: 1rem;">World Not Found</h3>
-                <p style="color: var(--color-text-secondary); margin-bottom: 2rem;">
-                    The world you're trying to play doesn't exist or has been deleted.
-                </p>
-                <a href="/worlds" class="custom-button btn-neutral" style="text-decoration: none;">
-                    Back to Worlds
-                </a>
-            </div>
-        </Card>
-    }
-    else
-    {
-        <!-- Header -->
-        <div style="margin-bottom: 2rem;">
-            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
-                <div>
-                    <a href="/worlds" style="color: var(--color-text-muted); text-decoration: none; font-size: var(--font-size-sm);">
-                        &larr; Back to Worlds
-                    </a>
-                    <h1 style="color: var(--color-text-primary); margin: 0.5rem 0;">Playing @world.WorldDefinition.Name</h1>
-                    <p style="color: var(--color-text-secondary); margin: 0;">
-                        Turn: @gameState.TurnCount | HP: @gameState.Player.HP/@gameState.Player.MaxHP
-                    </p>
+<link rel="stylesheet" href="/css/shared-pages.css" />
+
+<div class="mud-home">
+    <div class="mud-container">
+        @if (isLoading)
+        {
+            <Card>
+                <div class="card-content" style="text-align: center;">
+                    <div class="spinner" style="margin: 0 auto 1rem;"></div>
+                    <p style="color: var(--color-text-muted);">Loading game...</p>
                 </div>
-                <div style="display: flex; gap: 0.5rem;">
+            </Card>
+        }
+        else if (world == null)
+        {
+            <Card>
+                <div class="card-content" style="text-align: center;">
+                    <div class="error-icon"></div>
+                    <h3 style="color: var(--color-text-primary); margin-bottom: 1rem;">World Not Found</h3>
+                    <p style="color: var(--color-text-secondary); margin-bottom: 2rem;">
+                        The world you're trying to play doesn't exist or has been deleted.
+                    </p>
+                    <a href="/worlds" class="custom-button btn-neutral" style="text-decoration: none;">
+                        Back to Worlds
+                    </a>
+                </div>
+            </Card>
+        }
+        else
+        {
+            <div class="page-header">
+                <div class="page-header-left">
+                    <a href="/worlds" style="color: var(--color-text-muted); text-decoration: none; font-size: var(--font-size-sm);">&larr; Back to Worlds</a>
+                    <h1 style="color: var(--color-text-primary); margin: 0.5rem 0;">Playing @world.WorldDefinition.Name</h1>
+                    <p style="color: var(--color-text-secondary); margin: 0;">Turn: @gameState.TurnCount | HP: @gameState.Player.HP/@gameState.Player.MaxHP</p>
+                </div>
+                <div class="page-header-actions">
                     <Button Appearance="neutral" OnClick="ShowStats">Stats</Button>
                     <Button Appearance="neutral" OnClick="ShowInventory">Inventory</Button>
                     <Button Appearance="danger" OnClick="QuitGame">Quit</Button>
                 </div>
             </div>
-        </div>
 
-        <!-- Game Layout -->
-        <div style="display: grid; grid-template-columns: 1fr 300px; gap: 2rem;">
-            <!-- Main Game Area -->
-            <div>
-                <!-- Location -->
-                <Card Style="margin-bottom: 1.5rem;">
-                    <!-- Make description area scrollable with fixed max-height -->
-                    <div style="padding: 1.5rem; max-height: 420px; overflow-y: auto; overflow-x: hidden;">
-                        <h3 style="color: var(--color-accent-primary); margin-bottom: 1rem;">@gameState.CurrentLocation.Name</h3>
-                        <p style="color: var(--color-text-secondary); line-height: 1.6; white-space: pre-wrap;">@GetLocationDescription()</p>
-                    </div>
-                </Card>
-
-                <!-- Actions -->
-                <Card>
-                    <div style="padding: 1.5rem;">
-                        <h4 style="color: var(--color-accent-primary); margin-bottom: 1rem;">Available Actions</h4>
-                        <!-- Make action list scrollable -->
-                        <div style="max-height: 320px; overflow-y: auto; display: grid; gap: 0.5rem;">
-                            @foreach (var action in availableActions)
-                            {
-                                <Button Appearance="accent" 
-                                        OnClick="() => ExecuteAction(action)"
-                                        Style="width: 100%; text-align: left; justify-content: flex-start;">
-                                    @action
-                                </Button>
-                            }
+            <div class="game-grid">
+                <div>
+                    <Card>
+                        <div class="card-content">
+                            <h3 style="color: var(--color-accent-primary); margin-bottom: 1rem;">@gameState.CurrentLocation.Name</h3>
+                            <p style="color: var(--color-text-secondary); line-height: 1.6; white-space: pre-wrap;">@GetLocationDescription()</p>
                         </div>
-                    </div>
-                </Card>
+                    </Card>
+
+                    <Card>
+                        <div class="card-content">
+                            <h4 style="color: var(--color-accent-primary); margin-bottom: 1rem;">Available Actions</h4>
+                            <div class="action-list">
+                                @foreach (var action in availableActions)
+                                {
+                                    <Button Appearance="accent" OnClick="() => ExecuteAction(action)" Class="action-button-fullwidth">@action</Button>
+                                }
+                            </div>
+                        </div>
+                    </Card>
+                </div>
+
+                <div class="sidebar">
+                    <Card>
+                        <div class="card-content">
+                            <h4 style="color: var(--color-accent-primary); margin-bottom: 1rem;">Quick Actions</h4>
+                            <div style="display: grid; gap: 0.5rem;">
+                                <Button Appearance="neutral" OnClick="LookAround" Class="action-button-fullwidth">Look Around</Button>
+                            </div>
+                        </div>
+                    </Card>
+
+                    <Card>
+                        <div class="card-content">
+                            <h4 style="color: var(--color-accent-primary); margin-bottom: 1rem;">Player</h4>
+                            <div style="display: grid; gap: 0.5rem;">
+                                <div><strong>Name:</strong> @gameState.Player.Name</div>
+                                <div><strong>HP:</strong> @gameState.Player.HP/@gameState.Player.MaxHP</div>
+                                <div><strong>Items:</strong> @gameState.Inventory.Count</div>
+                                <div><strong>Quests:</strong> @gameState.Player.ActiveQuests.Count</div>
+                            </div>
+                        </div>
+                    </Card>
+                </div>
             </div>
 
-            <!-- Sidebar -->
-            <div>
-                <!-- Quick Actions -->
-                <Card Style="margin-bottom: 1.5rem;">
-                    <div style="padding: 1.5rem;">
-                        <h4 style="color: var(--color-accent-primary); margin-bottom: 1rem;">Quick Actions</h4>
-                        <div style="display: grid; gap: 0.5rem;">
-                            <Button Appearance="neutral" OnClick="LookAround" Style="width: 100%;">Look Around</Button>
-                        </div>
-                    </div>
-                </Card>
-
-                <!-- Player Info -->
+            @if (world?.StoryNodes != null)
+            {
+                var roomNodes = GetRoomStoryNodes().ToList();
                 <Card>
-                    <div style="padding: 1.5rem;">
-                        <h4 style="color: var(--color-accent-primary); margin-bottom: 1rem;">Player</h4>
-                        <div style="display: grid; gap: 0.5rem;">
-                            <div><strong>Name:</strong> @gameState.Player.Name</div>
-                            <div><strong>HP:</strong> @gameState.Player.HP/@gameState.Player.MaxHP</div>
-                            <div><strong>Items:</strong> @gameState.Inventory.Count</div>
-                            <div><strong>Quests:</strong> @gameState.Player.ActiveQuests.Count</div>
-                        </div>
-                    </div>
-                </Card>
-            </div>
-        </div>
-
-        <!-- Debug: show loaded story nodes and choices for current room only -->
-        @if (world?.StoryNodes != null)
-        {
-            var roomNodes = GetRoomStoryNodes().ToList();
-            <Card Style="margin-bottom: 1rem;">
-                <div style="padding: 1rem;">
-                    <h5 style="color: var(--color-text-primary); margin: 0 0 0.5rem 0;">Dialogue Index (Debug) - This Room</h5>
-                    @if (roomNodes.Count == 0)
-                    {
-                        <div style="color: var(--color-text-muted);">No story nodes attached to this room.</div>
-                    }
-                    else
-                    {
-                        <div style="max-height: 200px; overflow-y: auto;">
+                    <div class="card-content dialogue-list">
+                        <h5 style="color: var(--color-text-primary); margin: 0 0 0.5rem 0;">Dialogue Index (Debug) - This Room</h5>
+                        @if (roomNodes.Count == 0)
+                        {
+                            <div style="color: var(--color-text-muted);">No story nodes attached to this room.</div>
+                        }
+                        else
+                        {
                             @foreach (var sn in roomNodes)
                             {
                                 <div style="padding: 0.5rem; border-bottom: 1px solid var(--color-border-default);">
@@ -153,182 +134,13 @@
                                     }
                                 </div>
                             }
-                        </div>
-                    }
-                </div>
-            </Card>
-        }
-    }
-</div>
-
-<!-- Dialogue Modal -->
-@if (showDialogueModal && currentStoryNode != null)
-{
-    <div class="modal-overlay" @onclick="CloseDialogue">
-        <div class="modal-content" @onclick:stopPropagation="true">
-            <h3 style="color: var(--color-text-primary); margin-bottom: 1rem;">@currentStoryNode.Title</h3>
-            <p style="color: var(--color-text-secondary); white-space: pre-wrap;">@currentStoryNode.Text</p>
-
-            <div style="margin-top: 1rem; display: grid; gap: 0.5rem;">
-                @foreach (var ch in currentStoryNode.Choices)
-                {
-                    <Button Appearance="accent" OnClick="() => OnDialogueChoiceSelected(ch)">
-                        @ch.Label
-                    </Button>
-                }
-            </div>
-
-            @if (!string.IsNullOrEmpty(dialogueOutcome))
-            {
-                <div style="margin-top: 1rem; color: var(--color-text-secondary);">@dialogueOutcome</div>
-            }
-
-            <div style="margin-top: 1.5rem; text-align: right;">
-                <Button Appearance="neutral" OnClick="CloseDialogue">Close</Button>
-            </div>
-        </div>
-    </div>
-}
-
-<!-- Stats Modal -->
-@if (showStatsModal)
-{
-    <div class="modal-overlay" @onclick="CloseStatsModal">
-        <div class="modal-content" @onclick:stopPropagation="true">
-            <h3 style="color: var(--color-text-primary); margin-bottom: 1rem;">Character Stats</h3>
-            <div style="display: grid; gap: 1rem;">
-                <div>
-                    <h5>Attributes</h5>
-                    @foreach (var attr in gameState.Player.Attributes)
-                    {
-                        <div>@attr.Key: @attr.Value</div>
-                    }
-                </div>
-                <div>
-                    <h5>Skills</h5>
-                    @foreach (var skill in gameState.Player.Skills)
-                    {
-                        <div>@skill.Key: @skill.Value</div>
-                    }
-                </div>
-                <div>
-                    <h5>Equipment</h5>
-                    @if (gameState.Player.Equipment.Any())
-                    {
-                        @foreach (var item in gameState.Player.Equipment)
-                        {
-                            <div>@item</div>
                         }
-                    }
-                    else
-                    {
-                        <div>No equipment</div>
-                    }
-                </div>
-            </div>
-            <div style="margin-top: 1.5rem; text-align: right;">
-                <Button Appearance="neutral" OnClick="CloseStatsModal">Close</Button>
-            </div>
-        </div>
-    </div>
-}
-
-<!-- Inventory Modal -->
-@if (showInventoryModal)
-{
-    <div class="modal-overlay" @onclick="CloseInventoryModal">
-        <div class="modal-content" @onclick:stopPropagation="true">
-            <h3 style="color: var(--color-text-primary); margin-bottom: 1rem;">Inventory</h3>
-            @if (gameState.Inventory.Any())
-            {
-                <div style="display: grid; gap: 0.5rem;">
-                    @foreach (var item in gameState.Inventory)
-                    {
-                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: var(--color-bg-primary); border-radius: var(--radius-sm);">
-                            <span>@item</span>
-                            <Button Appearance="accent" Size="small" OnClick="() => UseItem(item)">Use</Button>
-                        </div>
-                    }
-                </div>
+                    </div>
+                </Card>
             }
-            else
-            {
-                <div style="text-align: center; color: var(--color-text-muted); padding: 2rem;">Your inventory is empty.</div>
-            }
-            <div style="margin-top: 1.5rem; text-align: right;">
-                <Button Appearance="neutral" OnClick="CloseInventoryModal">Close</Button>
-            </div>
-        </div>
+        }
     </div>
-}
-
-<!-- Message Modal -->
-@if (!string.IsNullOrEmpty(message))
-{
-    <div class="modal-overlay" @onclick="CloseMessage">
-        <div class="modal-content" @onclick:stopPropagation="true">
-            <h3 style="color: var(--color-text-primary); margin-bottom: 1rem;">Message</h3>
-            <p style="color: var(--color-text-secondary); white-space: pre-wrap;">@message</p>
-            <div style="margin-top: 1.5rem; text-align: right;">
-                <Button Appearance="accent" OnClick="CloseMessage">Continue</Button>
-            </div>
-        </div>
-    </div>
-}
-
-<style>
-.spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid var(--color-bg-elevated);
-    border-top: 4px solid var(--color-accent-primary);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-.error-icon {
-    width: 80px;
-    height: 80px;
-    margin: 0 auto 1rem;
-    background: var(--color-error);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 3rem;
-    color: white;
-    font-weight: var(--font-weight-bold);
-}
-
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.7);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-}
-
-.modal-content {
-    background: var(--color-bg-secondary);
-    border: 1px solid var(--color-border-default);
-    border-radius: var(--radius-lg);
-    padding: 2rem;
-    max-width: 600px;
-    max-height: 80vh;
-    overflow-y: auto;
-    box-shadow: var(--shadow-lg);
-}
-</style>
+</div>
 
 @code {
     [Parameter]
@@ -347,30 +159,93 @@
     private StoryNode? currentStoryNode;
     private string dialogueOutcome = "";
 
-    protected override async Task OnInitializedAsync()
+    private string? _lastLoadedSeed;
+    private bool _isLoadingInProgress = false;
+
+    protected override void OnInitialized()
     {
-        await LoadWorld();
-        if (world != null)
+        // Subscribe to location changes so client-side navigation triggers loading reliably
+        Navigation.LocationChanged += OnLocationChanged;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // If seed changed (or first set), load world for the new seed
+        if (!string.Equals(_lastLoadedSeed, Seed, StringComparison.OrdinalIgnoreCase))
         {
-            InitializeGame();
+            _lastLoadedSeed = Seed;
+            await EnsureLoadWorldForSeed(Seed);
+            await InvokeAsync(StateHasChanged);
         }
     }
 
-    private async Task LoadWorld()
+    private async void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        try
+        {
+            var uri = new Uri(e.Location);
+            var segments = uri.AbsolutePath.Trim('/').Split('/');
+            if (segments.Length >= 2 && string.Equals(segments[0], "game", StringComparison.OrdinalIgnoreCase))
+            {
+                var newSeed = segments[1];
+                if (!string.Equals(_lastLoadedSeed, newSeed, StringComparison.OrdinalIgnoreCase))
+                {
+                    _lastLoadedSeed = newSeed;
+                    await EnsureLoadWorldForSeed(newSeed);
+                    await InvokeAsync(StateHasChanged);
+                }
+            }
+        }
+        catch { }
+    }
+
+    private async Task EnsureLoadWorldForSeed(string seed)
+    {
+        if (_isLoadingInProgress) return;
+        _isLoadingInProgress = true;
+        try
+        {
+            await LoadWorld(seed);
+            if (world != null)
+            {
+                InitializeGame();
+            }
+
+            // Ensure UI updates after load and initialization
+            await InvokeAsync(StateHasChanged);
+        }
+        finally
+        {
+            _isLoadingInProgress = false;
+        }
+    }
+
+    private async Task LoadWorld(string seed)
     {
         isLoading = true;
-        
+        world = null;
+        await InvokeAsync(StateHasChanged);
+
         try
         {
             var worldsPath = GetWorldsDirectory();
-            var files = Directory.GetFiles(worldsPath, $"*_{Seed}.zip");
-            
-            if (files.Length > 0)
+            if (!Directory.Exists(worldsPath)) return;
+
+            var files = Directory.GetFiles(worldsPath, "*.zip");
+
+            // Try to match by file name (without extension) first, then fallback to pattern
+            string? match = files.FirstOrDefault(f => Path.GetFileNameWithoutExtension(f).Equals(seed, StringComparison.OrdinalIgnoreCase));
+
+            if (match == null)
             {
-                var filePath = files[0];
-                
-                using var zip = ZipFile.OpenRead(filePath);
-                
+                // Fallback: if Seed looks like a timestamp suffix, try wildcard
+                match = files.FirstOrDefault(f => Path.GetFileName(f).Equals(seed + ".zip", StringComparison.OrdinalIgnoreCase) || Path.GetFileName(f).Contains(seed));
+            }
+
+            if (match != null)
+            {
+                using var zip = ZipFile.OpenRead(match);
+
                 // Read world.json for metadata
                 var worldEntry = zip.GetEntry("world.json");
                 if (worldEntry != null)
@@ -378,12 +253,12 @@
                     using var stream = worldEntry.Open();
                     using var reader = new StreamReader(stream);
                     var json = await reader.ReadToEndAsync();
-                    
+
                     var worldMetadata = JsonSerializer.Deserialize<WorldJsonModel>(json, new JsonSerializerOptions
                     {
                         PropertyNameCaseInsensitive = true
                     });
-                    
+
                     if (worldMetadata != null)
                     {
                         world = new WorldModel
@@ -409,10 +284,10 @@
                         };
                     }
                 }
-                
+
                 if (world == null) return;
-                
-                // Read all rooms
+
+                // Read rooms, npcs, factions, story nodes as before
                 foreach (var entry in zip.Entries.Where(e => e.FullName.StartsWith("rooms/") && e.FullName.EndsWith(".json")))
                 {
                     using var stream = entry.Open();
@@ -434,8 +309,7 @@
                         ));
                     }
                 }
-                
-                // Read all NPCs
+
                 foreach (var entry in zip.Entries.Where(e => e.FullName.StartsWith("npcs/") && e.FullName.EndsWith(".json")))
                 {
                     using var stream = entry.Open();
@@ -466,8 +340,7 @@
                         ));
                     }
                 }
-                
-                // Read all factions
+
                 foreach (var entry in zip.Entries.Where(e => e.FullName.StartsWith("factions/") && e.FullName.EndsWith(".json")))
                 {
                     using var stream = entry.Open();
@@ -489,7 +362,6 @@
                     }
                 }
 
-                // Read story nodes (YAML)
                 foreach (var entry in zip.Entries.Where(e => e.FullName.StartsWith("story/") && e.FullName.EndsWith(".yaml")))
                 {
                     using var stream = entry.Open();
@@ -497,7 +369,6 @@
                     var yaml = await reader.ReadToEndAsync();
                     try
                     {
-                        // First try to deserialize with the generator's model for better fidelity
                         try
                         {
                             var deserializer = new YamlDotNet.Serialization.DeserializerBuilder()
@@ -543,16 +414,13 @@
                                 continue;
                             }
                         }
-                        catch (Exception) { /* fall back to loader */ }
+                        catch (Exception) { }
 
                         var loader = new WorldLoaderService();
                         var node = loader.ParseStoryNode(yaml);
                         if (node != null) world.StoryNodes.Add(node);
                     }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Failed to parse story node {entry.FullName}: {ex.Message}");
-                    }
+                    catch { }
                 }
             }
         }
@@ -563,6 +431,8 @@
         finally
         {
             isLoading = false;
+            // ensure UI updates after load completes
+            await InvokeAsync(StateHasChanged);
         }
     }
 
@@ -1002,6 +872,11 @@
         return Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
             "source", "repos", "SoloAdventureSystem", "content", "worlds");
+    }
+
+    public void Dispose()
+    {
+        try { Navigation.LocationChanged -= OnLocationChanged; } catch { }
     }
 
     private IEnumerable<StoryNode> GetRoomStoryNodes()
