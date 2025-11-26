@@ -1,5 +1,9 @@
 <Solution>
   <Project Path="SoloAdventureSystem.AIWorldGenerator/SoloAdventureSystem.AIWorldGenerator.csproj" />
+  <Project Path="SoloAdventureSystem.Aspire.Web/SoloAdventureSystem.Aspire.Web.ApiService/SoloAdventureSystem.Aspire.Web.ApiService.csproj" />
+  <Project Path="SoloAdventureSystem.Aspire.Web/SoloAdventureSystem.Aspire.Web.AppHost/SoloAdventureSystem.Aspire.Web.AppHost.csproj" Id="9bed72b8-439f-4bbf-a4c0-f9f8df1f9d0a" />
+  <Project Path="SoloAdventureSystem.Aspire.Web/SoloAdventureSystem.Aspire.Web.ServiceDefaults/SoloAdventureSystem.Aspire.Web.ServiceDefaults.csproj" />
+  <Project Path="SoloAdventureSystem.Aspire.Web/SoloAdventureSystem.Aspire.Web.Web/SoloAdventureSystem.Aspire.Web.Web.csproj" />
   <Project Path="SoloAdventureSystem.CLI.Tests/SoloAdventureSystem.CLI.Tests.csproj" />
   <Project Path="SoloAdventureSystem.Engine.Tests/SoloAdventureSystem.Engine.Tests.csproj" />
   <Project Path="SoloAdventureSystem.Engine/SoloAdventureSystem.Engine.csproj" />
