@@ -82,6 +82,10 @@ left.Add(startButton, exitButton);
 var backendLabel = new Label("Backend: Unknown") { X = 1, Y = Pos.Bottom(startButton) + 2 };
 left.Add(backendLabel);
 
+// Status label to show generation state and allow clear visual cue when finished
+var statusLabel = new Label("Status: Ready") { X = 1, Y = Pos.Bottom(backendLabel) + 1 };
+left.Add(statusLabel);
+
 win.Add(left);
 
 // Right: log view
@@ -175,6 +179,22 @@ void AppendLog(string message)
     });
 }
 
+// Helper to flash the status label for a short duration (visual cue)
+void FlashStatusLabel()
+{
+    Application.MainLoop.Invoke(() =>
+    {
+        // Use Dialog colors for a temporary highlight
+        statusLabel.ColorScheme = Colors.Dialog;
+        // After 1.5s revert to base color
+        Application.MainLoop.AddTimeout(TimeSpan.FromSeconds(1.5), _ =>
+        {
+            statusLabel.ColorScheme = Colors.Base;
+            return false; // do not repeat
+        });
+    });
+}
+
 // Populate fields when preset changes
 listView.SelectedItem = 0;
 void ApplySelectedPreset()
@@ -242,6 +262,12 @@ startButton.Clicked += async () =>
 {
     startButton.Enabled = false;
     exitButton.Enabled = false;
+    listView.Enabled = false;
+    nameField.ReadOnly = true;
+    regionsField.ReadOnly = true;
+
+    statusLabel.Text = "Status: Generating...";
+    AppendLog("Generation started");
 
     var selectedIdx = listView.SelectedItem;
     var preset = presets[presetNames[selectedIdx]];
@@ -269,8 +295,15 @@ startButton.Clicked += async () =>
         if (!inited)
         {
             AppendLog("Initialization failed. See logs.");
-            startButton.Enabled = true;
-            exitButton.Enabled = true;
+            Application.MainLoop.Invoke(() =>
+            {
+                startButton.Enabled = true;
+                exitButton.Enabled = true;
+                listView.Enabled = true;
+                nameField.ReadOnly = false;
+                regionsField.ReadOnly = false;
+                statusLabel.Text = "Status: Initialization failed";
+            });
             return;
         }
 
@@ -293,20 +326,38 @@ startButton.Clicked += async () =>
             File.WriteAllText(outPath, JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true }));
 
             AppendLog($"Generation completed. Saved: {outPath}");
+
+            // Update UI to show completed status and re-enable controls
+            Application.MainLoop.Invoke(() =>
+            {
+                statusLabel.Text = $"Status: Completed at {DateTime.Now:HH:mm:ss} — Ready";
+                // briefly flash the label for a visual cue
+                FlashStatusLabel();
+
+                startButton.Enabled = true;
+                exitButton.Enabled = true;
+                listView.Enabled = true;
+                nameField.ReadOnly = false;
+                regionsField.ReadOnly = false;
+            });
         }
         catch (Exception ex)
         {
             AppendLog($"Generation failed: {ex.Message}");
             loggerFactory.CreateLogger("CLI").LogError(ex, "Generation failed");
+            Application.MainLoop.Invoke(() =>
+            {
+                statusLabel.Text = "Status: Generation failed - see logs";
+                startButton.Enabled = true;
+                exitButton.Enabled = true;
+                listView.Enabled = true;
+                nameField.ReadOnly = false;
+                regionsField.ReadOnly = false;
+            });
         }
         finally
         {
-            // Re-enable UI on main loop
-            Application.MainLoop.Invoke(() =>
-            {
-                startButton.Enabled = true;
-                exitButton.Enabled = true;
-            });
+            // nothing else; UI re-enabled above after success/fail
         }
 
     }).ConfigureAwait(false);
