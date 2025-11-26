@@ -1,0 +1,36 @@
+@page "/"
+@inject ProtoGeneratorService Generator
+
+<h2>Generate World (WASM Mock)</h2>
+<div>
+  <label>Seed: <input @bind="Seed" /></label>
+  <label>Rooms: <input type="number" @bind="Rooms" /></label>
+  <button @onclick="Generate">Generate</button>
+</div>
+<div>
+  <h3>Result</h3>
+  @if (IsGenerating)
+  {
+    <p>Generating...</p>
+  }
+  else if (ResultJson is not null)
+  {
+    <pre>@ResultJson</pre>
+  }
+</div>
+
+@code {
+  private int Seed { get; set; } = 123;
+  private int Rooms { get; set; } = 5;
+  private bool IsGenerating { get; set; }
+  private string? ResultJson { get; set; }
+
+  private async Task Generate()
+  {
+    IsGenerating = true;
+    ResultJson = null;
+    var world = await Generator.GenerateMockAsync(Seed, Rooms);
+    ResultJson = System.Text.Json.JsonSerializer.Serialize(world, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+    IsGenerating = false;
+  }
+}

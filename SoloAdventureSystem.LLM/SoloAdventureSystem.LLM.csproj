@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Include LLM-related source files from the AIWorldGenerator folder to avoid moving files physically for now -->
+    <Compile Include="..\SoloAdventureSystem.AIWorldGenerator\Adapters\**\*.cs" />
+    <Compile Include="..\SoloAdventureSystem.AIWorldGenerator\EmbeddedModel\**\*.cs" />
+    <Compile Include="..\SoloAdventureSystem.AIWorldGenerator\Parsing\**\*.cs" />
+    <Compile Include="..\SoloAdventureSystem.AIWorldGenerator\Configuration\ModelConfiguration.cs" />
+    <!-- Additional dependencies required by adapters -->
+    <Compile Include="..\SoloAdventureSystem.AIWorldGenerator\Configuration\AISettings.cs" />
+    <Compile Include="..\SoloAdventureSystem.AIWorldGenerator\Generation\IGenerationPolicy.cs" />
+    <Compile Include="..\SoloAdventureSystem.AIWorldGenerator\Generation\GenerationLimits.cs" />
+    <Compile Include="..\SoloAdventureSystem.AIWorldGenerator\Utils\PathHelper.cs" />
+    <Compile Include="..\SoloAdventureSystem.AIWorldGenerator\Utils\ModelDiagnostics.cs" />
+    <Compile Include="..\SoloAdventureSystem.AIWorldGenerator\Configuration\AIProvider.cs" />
+    <Compile Include="..\SoloAdventureSystem.AIWorldGenerator\Configuration\HardwareConfiguration.cs" />
+    <Compile Include="..\SoloAdventureSystem.AIWorldGenerator\Generation\GenerationException.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MaIN.NET" Version="0.7.9" />
+    <PackageReference Include="LLamaSharp" Version="0.25.0" />
+    <PackageReference Include="LLamaSharp.Backend.Cpu" Version="0.25.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />
+    <!-- Ensure compatible version to satisfy transitive dependency from MaIN.NET -->
+    <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.4" />
+  </ItemGroup>
+</Project>

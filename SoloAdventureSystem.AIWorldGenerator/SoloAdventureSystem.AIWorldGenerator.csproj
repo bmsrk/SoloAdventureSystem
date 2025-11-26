@@ -10,12 +10,29 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\SoloAdventureSystem.LLM\SoloAdventureSystem.LLM.csproj" />
     <ProjectReference Include="..\SoloAdventureSystem.Engine\SoloAdventureSystem.Engine.csproj" />
   </ItemGroup>
 
+  <!-- Exclude LLM-related source files now compiled in SoloAdventureSystem.LLM to avoid duplicate types -->
   <ItemGroup>
-    <PackageReference Include="MaIN.NET" Version="0.7.8" />
-    <!-- MaIN.NET 0.7.8 includes LLamaSharp 0.25.0 as dependency, so we use that version -->
+    <Compile Remove="Adapters\**\*.cs" />
+    <Compile Remove="EmbeddedModel\**\*.cs" />
+    <Compile Remove="Parsing\**\*.cs" />
+    <Compile Remove="Configuration\ModelConfiguration.cs" />
+    <Compile Remove="Configuration\AISettings.cs" />
+    <Compile Remove="Generation\IGenerationPolicy.cs" />
+    <Compile Remove="Generation\GenerationLimits.cs" />
+    <Compile Remove="Utils\PathHelper.cs" />
+    <Compile Remove="Utils\ModelDiagnostics.cs" />
+    <Compile Remove="Configuration\AIProvider.cs" />
+    <Compile Remove="Configuration\HardwareConfiguration.cs" />
+    <Compile Remove="Generation\GenerationException.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MaIN.NET" Version="0.7.9" />
+    <!-- MaIN.NET 0.7.9 includes LLamaSharp 0.25.0 as dependency, so we keep references for compiled code -->
     <PackageReference Include="LLamaSharp" Version="0.25.0" />
     <PackageReference Include="LLamaSharp.Backend.Cpu" Version="0.25.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.0" />
