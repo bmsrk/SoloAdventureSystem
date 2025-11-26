@@ -49,10 +49,10 @@ namespace SoloAdventureSystem.LLM.Adapters
                 throw new InvalidOperationException("Adapter not initialized");
         }
 
-        public string GenerateRaw(string prompt, int seed, int maxTokens = 150)
+        public string GenerateRaw(string prompt, int maxTokens = 150)
         {
             EnsureInit();
-            return _engine.Generate(prompt, seed, maxTokens);
+            return _engine.Generate(prompt, maxTokens);
         }
 
         private bool TryStructured<T>(Func<string> genFunc, out T? parsed)
@@ -82,51 +82,50 @@ namespace SoloAdventureSystem.LLM.Adapters
         private const int LoreEntryTokens = 120;
         private const int DialogueTokens = 200;
 
-        public string GenerateRoomDescription(string context, int seed)
+        public string GenerateRoomDescription(string context)
         {
             EnsureInit();
-            if (TryStructured<Dictionary<string, object>>(() => GenerateRaw(context, seed), out var parsed))
+            if (TryStructured<Dictionary<string, object>>(() => GenerateRaw(context), out var parsed))
             {
                 if (parsed != null && parsed.TryGetValue("description", out var d) && d != null)
                     return d.ToString() ?? string.Empty;
             }
 
-            var raw = _engine.Generate(context, seed, RoomDescriptionTokens);
+            var raw = _engine.Generate(context, RoomDescriptionTokens);
             return Clean(raw);
         }
 
-        public string GenerateNpcBio(string context, int seed)
+        public string GenerateNpcBio(string context)
         {
             EnsureInit();
-            if (TryStructured<Dictionary<string, object>>(() => GenerateRaw(context, seed), out var parsed))
+            if (TryStructured<Dictionary<string, object>>(() => GenerateRaw(context), out var parsed))
             {
                 if (parsed != null && parsed.TryGetValue("bio", out var b) && b != null)
                     return b.ToString() ?? string.Empty;
             }
-            var raw = _engine.Generate(context, seed, NpcBioTokens);
+            var raw = _engine.Generate(context, NpcBioTokens);
             return Clean(raw);
         }
 
-        public string GenerateFactionFlavor(string context, int seed)
+        public string GenerateFactionFlavor(string context)
         {
             EnsureInit();
-            if (TryStructured<Dictionary<string, object>>(() => GenerateRaw(context, seed), out var parsed))
+            if (TryStructured<Dictionary<string, object>>(() => GenerateRaw(context), out var parsed))
             {
                 if (parsed != null && parsed.TryGetValue("description", out var d) && d != null)
                     return d.ToString() ?? string.Empty;
             }
-            var raw = _engine.Generate(context, seed, FactionLoreTokens);
+            var raw = _engine.Generate(context, FactionLoreTokens);
             return Clean(raw);
         }
 
-        public List<string> GenerateLoreEntries(string context, int seed, int count)
+        public List<string> GenerateLoreEntries(string context, int count)
         {
             EnsureInit();
             var list = new List<string>();
             for (int i = 0; i < count; i++)
             {
-                var itemSeed = seed + i;
-                if (TryStructured<Dictionary<string, object>>(() => GenerateRaw(context, itemSeed), out var parsed))
+                if (TryStructured<Dictionary<string, object>>(() => GenerateRaw(context), out var parsed))
                 {
                     if (parsed != null && parsed.TryGetValue("text", out var t) && t != null)
                     {
@@ -134,23 +133,23 @@ namespace SoloAdventureSystem.LLM.Adapters
                         continue;
                     }
                 }
-                var raw = _engine.Generate(context, itemSeed, LoreEntryTokens);
+                var raw = _engine.Generate(context, LoreEntryTokens);
                 list.Add(Clean(raw));
             }
             return list;
         }
 
-        public string GenerateDialogue(string prompt, int seed)
+        public string GenerateDialogue(string prompt)
         {
             EnsureInit();
-            if (TryStructured<List<Dictionary<string, object>>>(() => GenerateRaw(prompt, seed), out var parsedList))
+            if (TryStructured<List<Dictionary<string, object>>>(() => GenerateRaw(prompt), out var parsedList))
             {
                 if (parsedList != null)
                 {
                     return JsonSerializer.Serialize(parsedList);
                 }
             }
-            var raw = _engine.Generate(prompt, seed, DialogueTokens);
+            var raw = _engine.Generate(prompt, DialogueTokens);
             return Clean(raw);
         }
 

@@ -12,24 +12,24 @@ namespace SoloAdventureSystem.ContentGenerator.Generation
     /// Orchestrator for world generation using specialized content generators.
     /// Refactored to use pipeline pattern with dedicated generators for each content type.
     /// </summary>
-    public class SeededWorldGenerator : IWorldGenerator
+    public class WorldGenerator : IWorldGenerator
     {
         private readonly IContentGenerator<List<FactionModel>> _factionGenerator;
         private readonly IContentGenerator<List<RoomModel>> _roomGenerator;
         private readonly RoomConnector _roomConnector;
         private readonly IContentGenerator<List<NpcModel>> _npcGenerator;
-        private readonly ILogger<SeededWorldGenerator>? _logger;
+        private readonly ILogger<WorldGenerator>? _logger;
         private readonly ILocalSLMAdapter? _slm; // store adapter when provided
         
         /// <summary>
         /// Constructor for dependency injection with specialized generators
         /// </summary>
-        public SeededWorldGenerator(
+        public WorldGenerator(
             IContentGenerator<List<FactionModel>> factionGenerator,
             IContentGenerator<List<RoomModel>> roomGenerator,
             RoomConnector roomConnector,
             IContentGenerator<List<NpcModel>> npcGenerator,
-            ILogger<SeededWorldGenerator>? logger = null)
+            ILogger<WorldGenerator>? logger = null)
         {
             _factionGenerator = factionGenerator ?? throw new ArgumentNullException(nameof(factionGenerator));
             _roomGenerator = roomGenerator ?? throw new ArgumentNullException(nameof(roomGenerator));
@@ -42,7 +42,7 @@ namespace SoloAdventureSystem.ContentGenerator.Generation
         /// Legacy constructor for backward compatibility
         /// Creates generators inline
         /// </summary>
-        public SeededWorldGenerator(ILocalSLMAdapter slm, IImageAdapter image, ILogger<SeededWorldGenerator>? logger = null)
+        public WorldGenerator(ILocalSLMAdapter slm, IImageAdapter image, ILogger<WorldGenerator>? logger = null)
         {
             if (slm == null) throw new ArgumentNullException(nameof(slm));
             if (image == null) throw new ArgumentNullException(nameof(image));

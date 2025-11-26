@@ -67,7 +67,7 @@ public class DialogueGenerator
                 {
                     var prompt = BuildDialoguePrompt(npc, npcName, factionName, roomName, npcSkills);
                     // Use raw output for parsing to preserve JSON structure
-                    var raw = _slm.GenerateRaw(prompt, seed);
+                    var raw = _slm.GenerateRaw(prompt);
                     rawJson = raw ?? string.Empty;
                     // Expect JSON array of choices with label, nextSuffix, skillCheck (optional), effects
                     generatedChoices = ParseChoicesFromJson(raw, npc.Id);
@@ -88,7 +88,7 @@ public class DialogueGenerator
                         {
                             var altPrompt = BuildShortDialoguePrompt(npcName, npc.Description, factionName, roomName, npcSkills, attempt);
                             // Use raw output for retries as well
-                            var altRaw = _slm.GenerateRaw(altPrompt, seed + attempt);
+                            var altRaw = _slm.GenerateRaw(altPrompt);
                             // append attempt output to rawJson for debugging
                             rawJson += "\n---retry-" + attempt + "---\n" + (altRaw ?? string.Empty);
                             generatedChoices = ParseChoicesFromJson(altRaw, npc.Id);

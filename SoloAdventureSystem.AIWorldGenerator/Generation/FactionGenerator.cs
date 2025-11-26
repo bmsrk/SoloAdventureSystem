@@ -51,13 +51,9 @@ Plot: {context.Options.MainPlotPoint}
 Return only JSON.";
                 }
 
-                // Prefer explicit options.Seed when supplied (tests rely on this). Fall back to per-run Random.
-                var baseSeed = (context.Options?.GetType().GetProperty("Seed") != null && context.Options.GetType().GetProperty("Seed")!.GetValue(context.Options) is int optSeed && optSeed != 0)
-                    ? optSeed
-                    : context.Random.Next();
-
-                var seed = baseSeed + attempt;
-                factionDescRaw = _slm.GenerateFactionFlavor(prompt, seed);
+                // Use per-run randomness internally; do not rely on external seed
+                var seed = context.Random.Next();
+                factionDescRaw = _slm.GenerateFactionFlavor(prompt);
 
                 try
                 {

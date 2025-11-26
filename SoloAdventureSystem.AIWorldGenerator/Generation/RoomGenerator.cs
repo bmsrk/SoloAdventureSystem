@@ -100,10 +100,10 @@ Title: short (1-4 words). Description: 2-4 sentences with sensory details. World
 Return only JSON.";
                 }
 
-                descriptionRaw = _slm.GenerateRoomDescription(roomPrompt, roomSeed + attempt);
+                descriptionRaw = _slm.GenerateRoomDescription(roomPrompt);
 
                 // Request raw output and attempt structured parse locally (avoid double-cleaning)
-                var raw = _slm.GenerateRaw(roomPrompt, roomSeed + attempt);
+                var raw = _slm.GenerateRaw(roomPrompt);
 
                 // Try structured parsing against raw output first
                 Dictionary<string, object>? parsed = null;
@@ -163,7 +163,7 @@ Return only JSON.";
                     catch { }
 
                     // Use cleaned/legacy method to obtain description
-                    descriptionRaw = _slm.GenerateRoomDescription(roomPrompt, roomSeed + attempt);
+                    descriptionRaw = _slm.GenerateRoomDescription(roomPrompt);
 
                     // Apply improved light sanitization to cleaned text
                     descriptionRaw = SanitizeGeneratedText(descriptionRaw);
@@ -232,7 +232,7 @@ Return only JSON.";
             {
                 // Ask the model to expand the short description into 3 sentences while preserving details
                 var expandPrompt = $@"Expand the following room description to exactly 3 vivid sentences, preserving details and tone. Return only the expanded description.\n\nOriginal: {cleanedDescription}";
-                var expanded = _slm.GenerateRoomDescription(expandPrompt, roomSeed + 9999);
+                var expanded = _slm.GenerateRoomDescription(expandPrompt);
                 expanded = CleanDescription(expanded);
                 if (!string.IsNullOrWhiteSpace(expanded) && expanded.Length > cleanedDescription.Length)
                 {

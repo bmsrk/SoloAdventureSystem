@@ -97,7 +97,7 @@ Return only JSON.";
                 }
 
                 // Request raw output and attempt structured parse locally (avoid double-cleaning)
-                var raw = _slm.GenerateRaw(prompt, npcSeed + attempt);
+                var raw = _slm.GenerateRaw(prompt);
 
                 // Try structured parsing against raw output first
                 Dictionary<string, object>? parsed = null;
@@ -133,7 +133,7 @@ Return only JSON.";
                     catch { }
 
                     // Use cleaned/legacy method to obtain bio
-                    bioRaw = _slm.GenerateNpcBio(prompt, npcSeed + attempt);
+                    bioRaw = _slm.GenerateNpcBio(prompt);
 
                     // Apply improved light sanitization to cleaned text
                     bioRaw = SanitizeGeneratedText(bioRaw);

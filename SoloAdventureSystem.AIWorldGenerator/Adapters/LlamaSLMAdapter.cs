@@ -37,40 +37,40 @@ public class LlamaSLMAdapter : ILocalSLMAdapter, IDisposable
         if (!_initialized) throw new InvalidOperationException("Adapter not initialized. Call InitializeAsync() before use.");
     }
 
-    public string GenerateRoomDescription(string context, int seed)
+    public string GenerateRoomDescription(string context)
     {
         EnsureInitialized();
-        return _llmAdapter.GenerateRoomDescription(context, seed);
+        return _llmAdapter.GenerateRoomDescription(context);
     }
 
-    public string GenerateNpcBio(string context, int seed)
+    public string GenerateNpcBio(string context)
     {
         EnsureInitialized();
-        return _llmAdapter.GenerateNpcBio(context, seed);
+        return _llmAdapter.GenerateNpcBio(context);
     }
 
-    public string GenerateFactionFlavor(string context, int seed)
+    public string GenerateFactionFlavor(string context)
     {
         EnsureInitialized();
-        return _llmAdapter.GenerateFactionFlavor(context, seed);
+        return _llmAdapter.GenerateFactionFlavor(context);
     }
 
-    public List<string> GenerateLoreEntries(string context, int seed, int count)
+    public List<string> GenerateLoreEntries(string context, int count)
     {
         EnsureInitialized();
-        return _llmAdapter.GenerateLoreEntries(context, seed, count);
+        return _llmAdapter.GenerateLoreEntries(context, count);
     }
 
-    public string GenerateDialogue(string prompt, int seed)
+    public string GenerateDialogue(string prompt)
     {
         EnsureInitialized();
-        return _llmAdapter.GenerateDialogue(prompt, seed);
+        return _llmAdapter.GenerateDialogue(prompt);
     }
 
-    public string GenerateRaw(string prompt, int seed, int maxTokens = 150)
+    public string GenerateRaw(string prompt, int maxTokens = 150)
     {
         EnsureInitialized();
-        return _llmAdapter.GenerateRaw(prompt, seed, maxTokens);
+        return _llmAdapter.GenerateRaw(prompt, maxTokens);
     }
 
     public void Dispose()

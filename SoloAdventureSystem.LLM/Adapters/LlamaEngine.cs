@@ -48,7 +48,7 @@ namespace SoloAdventureSystem.LLM.Adapters
             await Task.CompletedTask;
         }
 
-        public async Task<string> GenerateAsync(string prompt, int seed, int maxTokens, CancellationToken cancellationToken = default)
+        public async Task<string> GenerateAsync(string prompt, int maxTokens, CancellationToken cancellationToken = default)
         {
             if (_context == null || _weights == null)
                 throw new InvalidOperationException("Engine not initialized");
@@ -69,9 +69,9 @@ namespace SoloAdventureSystem.LLM.Adapters
             return result.ToString().Trim();
         }
 
-        public string Generate(string prompt, int seed, int maxTokens = 150)
+        public string Generate(string prompt, int maxTokens = 150)
         {
-            return GenerateAsync(prompt, seed, maxTokens).GetAwaiter().GetResult();
+            return GenerateAsync(prompt, maxTokens).GetAwaiter().GetResult();
         }
 
         public void Dispose()

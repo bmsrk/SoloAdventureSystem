@@ -9,18 +9,18 @@ public interface ILocalSLMAdapter
 {
     System.Threading.Tasks.Task InitializeAsync(IProgress<SoloAdventureSystem.ContentGenerator.EmbeddedModel.DownloadProgress>? progress = null);
 
-    string GenerateRoomDescription(string context, int seed);
+    string GenerateRoomDescription(string context);
 
-    string GenerateNpcBio(string context, int seed);
+    string GenerateNpcBio(string context);
 
-    string GenerateFactionFlavor(string context, int seed);
+    string GenerateFactionFlavor(string context);
 
-    System.Collections.Generic.List<string> GenerateLoreEntries(string context, int seed, int count);
+    System.Collections.Generic.List<string> GenerateLoreEntries(string context, int count);
 
-    string GenerateDialogue(string prompt, int seed);
+    string GenerateDialogue(string prompt);
 
     /// <summary>
     /// Returns raw un-cleaned generation and may accept a maxTokens hint.
     /// </summary>
-    string GenerateRaw(string prompt, int seed, int maxTokens = 150);
+    string GenerateRaw(string prompt, int maxTokens = 150);
 }

@@ -23,7 +23,7 @@ public class LlamaAdapterTests
         var stub = new TestStubAdapter();
         stub.InitializeAsync().GetAwaiter().GetResult();
 
-        var room = stub.GenerateRoomDescription("A test room", 1);
+        var room = stub.GenerateRoomDescription("A test room");
         Assert.Contains("MOCK", room);
     }
 }
@@ -31,11 +31,11 @@ public class LlamaAdapterTests
 public class TestStubAdapter : ILLMAdapter, IDisposable
 {
     public System.Threading.Tasks.Task InitializeAsync(System.IProgress<int>? progress = null) => System.Threading.Tasks.Task.CompletedTask;
-    public string GenerateRoomDescription(string context, int seed) => $"[MOCK ROOM {seed}] {context}";
-    public string GenerateNpcBio(string context, int seed) => $"[MOCK NPC {seed}] {context}";
-    public string GenerateFactionFlavor(string context, int seed) => $"[MOCK FACTION {seed}] {context}";
-    public System.Collections.Generic.List<string> GenerateLoreEntries(string context, int seed, int count) { var list = new System.Collections.Generic.List<string>(); for (int i =0;i<count;i++) list.Add($"[MOCK LORE {seed+i}] {context}"); return list; }
-    public string GenerateDialogue(string prompt, int seed) => $"[MOCK DIALOGUE {seed}] {prompt}";
-    public string GenerateRaw(string prompt, int seed, int maxTokens = 150) => $"[MOCK RAW {seed}] {prompt}";
+    public string GenerateRoomDescription(string context) => $"[MOCK ROOM] {context}";
+    public string GenerateNpcBio(string context) => $"[MOCK NPC] {context}";
+    public string GenerateFactionFlavor(string context) => $"[MOCK FACTION] {context}";
+    public System.Collections.Generic.List<string> GenerateLoreEntries(string context, int count) { var list = new System.Collections.Generic.List<string>(); for (int i =0;i<count;i++) list.Add($"[MOCK LORE {i}] {context}"); return list; }
+    public string GenerateDialogue(string prompt) => $"[MOCK DIALOGUE] {prompt}";
+    public string GenerateRaw(string prompt, int maxTokens = 150) => $"[MOCK RAW] {prompt}";
     public void Dispose() {}
 }

@@ -150,7 +150,7 @@ namespace SoloAdventureSystem.ContentGenerator.Generation
                 try
                 {
                     var prompt = BuildRoomValidationPrompt(room.Title, room.BaseDescription, theme);
-                    var response = _slm.GenerateRoomDescription(prompt, 1); // Use seed=1 for deterministic validation
+                    var response = _slm.GenerateRoomDescription(prompt);
 
                     var score = ParseValidationScore(response);
                     totalScore += score;
@@ -184,7 +184,7 @@ namespace SoloAdventureSystem.ContentGenerator.Generation
                 try
                 {
                     var prompt = BuildNpcValidationPrompt(npc.Name, npc.Description, theme);
-                    var response = _slm.GenerateNpcBio(prompt, 1);
+                    var response = _slm.GenerateNpcBio(prompt);
 
                     var score = ParseValidationScore(response);
                     totalScore += score;
@@ -218,7 +218,7 @@ namespace SoloAdventureSystem.ContentGenerator.Generation
                 try
                 {
                     var prompt = BuildFactionValidationPrompt(faction.Name, faction.Description, theme);
-                    var response = _slm.GenerateFactionFlavor(prompt, 1);
+                    var response = _slm.GenerateFactionFlavor(prompt);
 
                     var score = ParseValidationScore(response);
                     totalScore += score;
