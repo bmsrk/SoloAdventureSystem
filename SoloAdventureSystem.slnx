@@ -1,4 +1,4 @@
-<Solution>
+﻿<Solution>
   <Project Path="SoloAdventureSystem.AIWorldGenerator/SoloAdventureSystem.AIWorldGenerator.csproj" />
   <Project Path="SoloAdventureSystem.Aspire.Web/SoloAdventureSystem.Aspire.Web.ApiService/SoloAdventureSystem.Aspire.Web.ApiService.csproj" />
   <Project Path="SoloAdventureSystem.Aspire.Web/SoloAdventureSystem.Aspire.Web.AppHost/SoloAdventureSystem.Aspire.Web.AppHost.csproj" Id="9bed72b8-439f-4bbf-a4c0-f9f8df1f9d0a" />
@@ -11,3 +11,4 @@
   <Project Path="SoloAdventureSystem.ValidationTool/SoloAdventureSystem.ValidationTool.csproj" />
   <Project Path="SoloAdventureSystem.Web.UI/SoloAdventureSystem.Web.UI.csproj" />
 </Solution>
+
