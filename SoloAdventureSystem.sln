@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SoloAdventureSystem.Engine.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SoloAdventureSystem.AIWorldGenerator.Tests", "SoloAdventureSystem.AIWorldGenerator.Tests\SoloAdventureSystem.AIWorldGenerator.Tests.csproj", "{57D38C55-9A9D-414C-B5DF-8FB4351D36BF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SoloAdventureSystem.CLI", "SoloAdventureSystem.CLI\SoloAdventureSystem.CLI.csproj", "{8021E0D3-0040-D4A4-CF10-902E2CD794EA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -97,6 +99,18 @@ Global
 		{57D38C55-9A9D-414C-B5DF-8FB4351D36BF}.Release|x64.Build.0 = Release|Any CPU
 		{57D38C55-9A9D-414C-B5DF-8FB4351D36BF}.Release|x86.ActiveCfg = Release|Any CPU
 		{57D38C55-9A9D-414C-B5DF-8FB4351D36BF}.Release|x86.Build.0 = Release|Any CPU
+		{8021E0D3-0040-D4A4-CF10-902E2CD794EA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8021E0D3-0040-D4A4-CF10-902E2CD794EA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8021E0D3-0040-D4A4-CF10-902E2CD794EA}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{8021E0D3-0040-D4A4-CF10-902E2CD794EA}.Debug|x64.Build.0 = Debug|Any CPU
+		{8021E0D3-0040-D4A4-CF10-902E2CD794EA}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{8021E0D3-0040-D4A4-CF10-902E2CD794EA}.Debug|x86.Build.0 = Debug|Any CPU
+		{8021E0D3-0040-D4A4-CF10-902E2CD794EA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8021E0D3-0040-D4A4-CF10-902E2CD794EA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8021E0D3-0040-D4A4-CF10-902E2CD794EA}.Release|x64.ActiveCfg = Release|Any CPU
+		{8021E0D3-0040-D4A4-CF10-902E2CD794EA}.Release|x64.Build.0 = Release|Any CPU
+		{8021E0D3-0040-D4A4-CF10-902E2CD794EA}.Release|x86.ActiveCfg = Release|Any CPU
+		{8021E0D3-0040-D4A4-CF10-902E2CD794EA}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

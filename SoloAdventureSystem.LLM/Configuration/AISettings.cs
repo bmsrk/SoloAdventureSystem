@@ -8,4 +8,5 @@ public class AISettings
     public int? ContextSize { get; set; } = 2048;
     public bool UseGPU { get; set; }
     public int MaxInferenceThreads { get; set; } = 4;
+    public bool SuppressNativeConsoleOutput { get; set; } = true;
 }
