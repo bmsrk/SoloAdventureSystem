@@ -3,10 +3,9 @@ using System.Collections.Generic;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using SoloAdventureSystem.ContentGenerator.Configuration;
-using SoloAdventureSystem.ContentGenerator.EmbeddedModel;
-using SoloAdventureSystem.ContentGenerator.Parsing;
 using SoloAdventureSystem.LLM.Adapters;
+using SoloAdventureSystem.LLM.Configuration;
+using SoloAdventureSystem.LLM.Parsing;
 
 namespace SoloAdventureSystem.LLM.Adapters
 {
@@ -30,13 +29,16 @@ namespace SoloAdventureSystem.LLM.Adapters
         {
             if (_initialized) return;
 
-            var modelConfig = _settings.GetModelConfiguration();
-            var hardware = _settings.GetHardwareConfiguration();
+            // Expect settings.LLamaModelKey to be the local model path or model key.
+            var modelPath = _settings.LLamaModelKey ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(modelPath))
+            {
+                throw new InvalidOperationException("LLama model path/key not configured in AISettings.LLamaModelKey");
+            }
 
-            var downloader = new SoloAdventureSystem.AIWorldGenerator.EmbeddedModel.GGUFModelDownloader(_logger as ILogger<SoloAdventureSystem.AIWorldGenerator.EmbeddedModel.GGUFModelDownloader>);
-            var path = await downloader.EnsureModelAvailableAsync(modelConfig.ModelKey, null);
-
-            await _engine.InitializeAsync(path, modelConfig.ContextSize, hardware.UseGPU, hardware.MaxThreads, progress);
+            // Initialize engine with provided model path and hardware settings
+            var contextSize = _settings.ContextSize ?? 2048;
+            await _engine.InitializeAsync(modelPath, contextSize, _settings.UseGPU, _settings.MaxInferenceThreads, progress);
 
             _initialized = true;
         }
@@ -73,6 +75,13 @@ namespace SoloAdventureSystem.LLM.Adapters
             return false;
         }
 
+        // Token limits used directly to avoid dependency on AIWorldGenerator project
+        private const int RoomDescriptionTokens = 180;
+        private const int NpcBioTokens = 150;
+        private const int FactionLoreTokens = 160;
+        private const int LoreEntryTokens = 120;
+        private const int DialogueTokens = 200;
+
         public string GenerateRoomDescription(string context, int seed)
         {
             EnsureInit();
@@ -82,7 +91,7 @@ namespace SoloAdventureSystem.LLM.Adapters
                     return d.ToString() ?? string.Empty;
             }
 
-            var raw = _engine.Generate(context, seed, SoloAdventureSystem.AIWorldGenerator.Generation.GenerationLimits.RoomDescriptionTokens);
+            var raw = _engine.Generate(context, seed, RoomDescriptionTokens);
             return Clean(raw);
         }
 
@@ -94,7 +103,7 @@ namespace SoloAdventureSystem.LLM.Adapters
                 if (parsed != null && parsed.TryGetValue("bio", out var b) && b != null)
                     return b.ToString() ?? string.Empty;
             }
-            var raw = _engine.Generate(context, seed, SoloAdventureSystem.AIWorldGenerator.Generation.GenerationLimits.NpcBioTokens);
+            var raw = _engine.Generate(context, seed, NpcBioTokens);
             return Clean(raw);
         }
 
@@ -106,7 +115,7 @@ namespace SoloAdventureSystem.LLM.Adapters
                 if (parsed != null && parsed.TryGetValue("description", out var d) && d != null)
                     return d.ToString() ?? string.Empty;
             }
-            var raw = _engine.Generate(context, seed, SoloAdventureSystem.AIWorldGenerator.Generation.GenerationLimits.FactionLoreTokens);
+            var raw = _engine.Generate(context, seed, FactionLoreTokens);
             return Clean(raw);
         }
 
@@ -125,7 +134,7 @@ namespace SoloAdventureSystem.LLM.Adapters
                         continue;
                     }
                 }
-                var raw = _engine.Generate(context, itemSeed, SoloAdventureSystem.AIWorldGenerator.Generation.GenerationLimits.LoreEntryTokens);
+                var raw = _engine.Generate(context, itemSeed, LoreEntryTokens);
                 list.Add(Clean(raw));
             }
             return list;
@@ -141,14 +150,13 @@ namespace SoloAdventureSystem.LLM.Adapters
                     return JsonSerializer.Serialize(parsedList);
                 }
             }
-            var raw = _engine.Generate(prompt, seed, SoloAdventureSystem.AIWorldGenerator.Generation.GenerationLimits.DialogueTokens);
+            var raw = _engine.Generate(prompt, seed, DialogueTokens);
             return Clean(raw);
         }
 
         private string Clean(string input)
         {
             if (string.IsNullOrWhiteSpace(input)) return string.Empty;
-            // simple placeholder: trim and collapse whitespace
             var trimmed = input.Trim();
             trimmed = System.Text.RegularExpressions.Regex.Replace(trimmed, "\\s+", " ");
             return trimmed;

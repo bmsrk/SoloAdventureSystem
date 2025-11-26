@@ -1,6 +1,4 @@
-using System;
-
-namespace SoloAdventureSystem.Common.Parsing
+namespace SoloAdventureSystem.LLM.Parsing
 {
     public interface IStructuredOutputParser
     {

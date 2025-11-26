@@ -14,7 +14,7 @@ namespace SoloAdventureSystem.Engine.Tests
     {
         #region Helper Methods
 
-        private string? FindContentWorldsDirectory()
+        private static string? FindContentWorldsDirectory()
         {
             var currentDir = Directory.GetCurrentDirectory();
             var projectRoot = currentDir;
@@ -32,7 +32,7 @@ namespace SoloAdventureSystem.Engine.Tests
             return Directory.Exists(worldsDir) ? worldsDir : null;
         }
 
-        private async Task<WorldModel?> LoadWorldFromZip(string zipPath)
+        private static async Task<WorldModel?> LoadWorldFromZip(string zipPath)
         {
             using var fs = new FileStream(zipPath, FileMode.Open, FileAccess.Read);
             var loader = new WorldLoaderService();
@@ -44,7 +44,7 @@ namespace SoloAdventureSystem.Engine.Tests
         #region Basic Loading Tests
 
         [Fact]
-        public async Task LoadFromZip_ValidWorld_Success()
+        public async Task LoadFromZipValidWorldSuccess()
         {
             // Arrange
             var worldsDir = FindContentWorldsDirectory();
@@ -74,7 +74,7 @@ namespace SoloAdventureSystem.Engine.Tests
         }
 
         [Fact]
-        public async Task LoadFromZip_HasRequiredCollections()
+        public async Task LoadFromZipHasRequiredCollections()
         {
             // Arrange
             var worldsDir = FindContentWorldsDirectory();
@@ -95,7 +95,7 @@ namespace SoloAdventureSystem.Engine.Tests
         }
 
         [Fact]
-        public async Task LoadFromZip_RoomsHaveValidIds()
+        public async Task LoadFromZipRoomsHaveValidIds()
         {
             // Arrange
             var worldsDir = FindContentWorldsDirectory();
@@ -119,7 +119,7 @@ namespace SoloAdventureSystem.Engine.Tests
         }
 
         [Fact]
-        public async Task LoadFromZip_StartLocationExists()
+        public async Task LoadFromZipStartLocationExists()
         {
             // Arrange
             var worldsDir = FindContentWorldsDirectory();
@@ -147,7 +147,7 @@ namespace SoloAdventureSystem.Engine.Tests
         #region Multiple Worlds Tests
 
         [Fact]
-        public async Task LoadFromZip_AllGeneratedWorlds_LoadSuccessfully()
+        public async Task LoadFromZipAllGeneratedWorldsLoadSuccessfully()
         {
             // Arrange
             var worldsDir = FindContentWorldsDirectory();
@@ -177,7 +177,7 @@ namespace SoloAdventureSystem.Engine.Tests
         }
 
         [Fact]
-        public async Task LoadFromZip_AllWorlds_HaveMinimumContent()
+        public async Task LoadFromZipAllWorldsHaveMinimumContent()
         {
             // Arrange
             var worldsDir = FindContentWorldsDirectory();
@@ -208,7 +208,7 @@ namespace SoloAdventureSystem.Engine.Tests
         #region Data Integrity Tests
 
         [Fact]
-        public async Task LoadFromZip_NPCs_HaveValidData()
+        public async Task LoadFromZipNpcsHaveValidData()
         {
             // Arrange
             var worldsDir = FindContentWorldsDirectory();
@@ -238,7 +238,7 @@ namespace SoloAdventureSystem.Engine.Tests
         }
 
         [Fact]
-        public async Task LoadFromZip_Factions_HaveValidData()
+        public async Task LoadFromZipFactionsHaveValidData()
         {
             // Arrange
             var worldsDir = FindContentWorldsDirectory();
@@ -264,7 +264,7 @@ namespace SoloAdventureSystem.Engine.Tests
         }
 
         [Fact]
-        public async Task LoadFromZip_Rooms_HaveValidExits()
+        public async Task LoadFromZipRoomsHaveValidExits()
         {
             // Arrange
             var worldsDir = FindContentWorldsDirectory();
@@ -283,7 +283,7 @@ namespace SoloAdventureSystem.Engine.Tests
             // Verify room connectivity
             foreach (var room in result.Rooms)
             {
-                if (room.Connections != null && room.Connections.Any())
+                if (room.Connections != null && room.Connections.Count > 0)
                 {
                     foreach (var connection in room.Connections)
                     {
@@ -300,7 +300,7 @@ namespace SoloAdventureSystem.Engine.Tests
         #region Performance Tests
 
         [Fact]
-        public async Task LoadFromZip_LargeWorld_LoadsInReasonableTime()
+        public async Task LoadFromZipLargeWorldLoadsInReasonableTime()
         {
             // Arrange
             var worldsDir = FindContentWorldsDirectory();
@@ -330,7 +330,7 @@ namespace SoloAdventureSystem.Engine.Tests
         #region Edge Cases
 
         [Fact]
-        public async Task LoadFromZip_InvalidPath_ThrowsException()
+        public async Task LoadFromZipInvalidPathThrowsException()
         {
             // Arrange
             var invalidPath = Path.Combine(Path.GetTempPath(), "nonexistent.zip");
@@ -345,7 +345,7 @@ namespace SoloAdventureSystem.Engine.Tests
         }
 
         [Fact]
-        public async Task LoadFromZip_EmptyStream_ThrowsException()
+        public async Task LoadFromZipEmptyStreamThrowsException()
         {
             // Arrange
             var loader = new WorldLoaderService();
@@ -362,7 +362,7 @@ namespace SoloAdventureSystem.Engine.Tests
         #region Summary Test
 
         [Fact(Skip = "Requires generated worlds in content folder - run generator first")]
-        public async Task GeneratedWorlds_Summary()
+        public async Task GeneratedWorldsSummary()
         {
             // This test is skipped by default - it will only show summary if worlds exist
             var worldsDir = FindContentWorldsDirectory();
