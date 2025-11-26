@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SoloAdventureSystem.LLM\SoloAdventureSystem.LLM.csproj" />
+    <ProjectReference Include="..\SoloAdventureSystem.Common\SoloAdventureSystem.Common.csproj" />
     <ProjectReference Include="..\SoloAdventureSystem.Engine\SoloAdventureSystem.Engine.csproj" />
   </ItemGroup>
 

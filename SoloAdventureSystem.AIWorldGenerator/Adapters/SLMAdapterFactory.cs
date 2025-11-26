@@ -2,6 +2,7 @@ using SoloAdventureSystem.ContentGenerator.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using SoloAdventureSystem.Common.Parsing;
 
 namespace SoloAdventureSystem.ContentGenerator.Adapters;
 
@@ -31,9 +32,9 @@ public class SLMAdapterFactory
     private static MaINAdapter CreateMaINAdapter(IServiceProvider services, AISettings settings, ILoggerFactory loggerFactory)
     {
         var logger = loggerFactory.CreateLogger<MaINAdapter>();
-        // Resolve optional structured output parser if registered
-        var parser = services.GetService(typeof(SoloAdventureSystem.ContentGenerator.Parsing.IStructuredOutputParser)) as SoloAdventureSystem.ContentGenerator.Parsing.IStructuredOutputParser;
-        var adapter = new MaINAdapter(Options.Create(settings), logger, null, parser);
+        // Resolve optional structured output parser if registered from common parsing
+        var parser = services.GetService(typeof(SoloAdventureSystem.Common.Parsing.IStructuredOutputParser)) as SoloAdventureSystem.Common.Parsing.IStructuredOutputParser;
+        var adapter = new MaINAdapter(Options.Create(settings), logger, null, parser as SoloAdventureSystem.ContentGenerator.Parsing.IStructuredOutputParser);
         
         // Initialize asynchronously (will download model if needed)
         logger.LogInformation("Initializing MaIN.NET adapter...");
