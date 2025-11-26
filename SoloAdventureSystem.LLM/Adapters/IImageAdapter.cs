@@ -1,3 +1,4 @@
+// Moved from SoloAdventureSystem.AIWorldGenerator/Adapters
 namespace SoloAdventureSystem.ContentGenerator.Adapters
 {
     public interface IImageAdapter

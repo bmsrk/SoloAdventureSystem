@@ -7,12 +7,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Include LLM-related source files from the AIWorldGenerator folder to avoid moving files physically for now -->
-    <Compile Include="..\SoloAdventureSystem.AIWorldGenerator\Adapters\**\*.cs" />
+    <!-- Now include the moved interface files from LLM itself -->
+    <Compile Include="Adapters\**\*.cs" />
+    <Compile Include="..\SoloAdventureSystem.AIWorldGenerator\Adapters\MaINAdapter.cs" />
+    <Compile Include="..\SoloAdventureSystem.AIWorldGenerator\Adapters\SLMAdapterFactory.cs" />
+    <Compile Include="..\SoloAdventureSystem.AIWorldGenerator\Adapters\SimpleImageAdapter.cs" />
     <Compile Include="..\SoloAdventureSystem.AIWorldGenerator\EmbeddedModel\**\*.cs" />
     <Compile Include="..\SoloAdventureSystem.AIWorldGenerator\Parsing\**\*.cs" />
     <Compile Include="..\SoloAdventureSystem.AIWorldGenerator\Configuration\ModelConfiguration.cs" />
-    <!-- Additional dependencies required by adapters -->
     <Compile Include="..\SoloAdventureSystem.AIWorldGenerator\Configuration\AISettings.cs" />
     <Compile Include="..\SoloAdventureSystem.AIWorldGenerator\Generation\IGenerationPolicy.cs" />
     <Compile Include="..\SoloAdventureSystem.AIWorldGenerator\Generation\GenerationLimits.cs" />
@@ -28,7 +30,6 @@
     <PackageReference Include="LLamaSharp" Version="0.25.0" />
     <PackageReference Include="LLamaSharp.Backend.Cpu" Version="0.25.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />
-    <!-- Ensure compatible version to satisfy transitive dependency from MaIN.NET -->
     <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.4" />
   </ItemGroup>
 </Project>
