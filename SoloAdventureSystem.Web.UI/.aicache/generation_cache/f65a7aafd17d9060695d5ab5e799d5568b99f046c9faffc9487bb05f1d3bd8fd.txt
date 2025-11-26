@@ -1,1 +1,0 @@
-Can you please provide an example of how to input the dialogue choices into the `Toon_NPC_Dialogue_Choice.py` script

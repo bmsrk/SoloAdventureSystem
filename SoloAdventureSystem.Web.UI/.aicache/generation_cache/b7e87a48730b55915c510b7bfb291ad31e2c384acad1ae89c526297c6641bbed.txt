@@ -1,1 +1,0 @@
-Example: [ { "label": "Ask politely", "skiill_check": { "attribute": "Presence", "skiill": "Social", "target_number": 12 }, "effects": ["Daemon:npc1|Loyalty:1"] }, { "label": "Leave", "effects": []

@@ -1,1 +1,0 @@
-#TOON items[1]{description}: The room buzzes with the harsh glow of fluorescent lights, casting an unnatural pallor on the sea of faces that shuffle in the crowd, their whispers creating a low hum that permeates the stale, recycled air. #ENDTOON

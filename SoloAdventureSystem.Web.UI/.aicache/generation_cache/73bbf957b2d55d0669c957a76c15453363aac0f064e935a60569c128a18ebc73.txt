@@ -1,1 +1,0 @@
-If the choices are invalid, throw an error

@@ -1,1 +1,0 @@
-Can you please provide me with an example of how to format the output for the skill check in the NPC's dialogue choices

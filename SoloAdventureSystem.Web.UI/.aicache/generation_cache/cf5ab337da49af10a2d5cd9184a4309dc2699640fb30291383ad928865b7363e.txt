@@ -1,1 +1,0 @@
-If you cannot produce the JSON array, explain why and provide a new example

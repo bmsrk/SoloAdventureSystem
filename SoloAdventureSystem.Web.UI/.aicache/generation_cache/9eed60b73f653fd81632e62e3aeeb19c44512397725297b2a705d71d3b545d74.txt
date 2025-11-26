@@ -1,1 +1,0 @@
-No need to save it or store it. The output is purely for the JSON parsing library to use for the game engine

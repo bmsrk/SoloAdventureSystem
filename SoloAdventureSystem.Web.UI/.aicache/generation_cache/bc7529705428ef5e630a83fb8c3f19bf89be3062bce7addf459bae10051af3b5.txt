@@ -1,1 +1,0 @@
-This looks great, but can you add a field for the dialogue choices that don't have a nextSuffix? Just so that it's clear what the options are

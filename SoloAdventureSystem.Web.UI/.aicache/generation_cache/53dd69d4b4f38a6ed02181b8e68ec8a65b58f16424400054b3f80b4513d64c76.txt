@@ -1,1 +1,0 @@
-Can you provide me with an example of how to use the `skiill` command in the `npc_skill.py` script to generate a JSON array of 3 dialogue choices for an NPC named Edda, who is a member of The Collective in the Faaded 4 location

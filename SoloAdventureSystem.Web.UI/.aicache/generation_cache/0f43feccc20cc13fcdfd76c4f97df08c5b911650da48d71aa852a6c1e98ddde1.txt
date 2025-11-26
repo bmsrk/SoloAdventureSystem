@@ -1,1 +1,0 @@
-Could you please add some comments explaining the `skiill_check` and `effects` structures? It would be helpful for me to understand how they are used in the example

@@ -1,1 +1,0 @@
-If you cannot produce an array, return an error message

@@ -1,1 +1,0 @@
-The JSON array is not a response, it's the data you'll use to generate your interactive dialogue

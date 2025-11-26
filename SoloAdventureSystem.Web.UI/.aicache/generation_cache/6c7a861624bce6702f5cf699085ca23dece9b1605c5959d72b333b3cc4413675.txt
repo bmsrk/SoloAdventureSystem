@@ -1,1 +1,0 @@
-Hey, that's a great example! Can you please add an additional field to the dialogue choices, "Suitable time"? This field should only contain a string that indicates the best time to ask for the answer. Can you do that

@@ -1,1 +1,0 @@
-Do NOT include any non-essential fields such as "skills", "effects", "next_suffix", or "skiill_check

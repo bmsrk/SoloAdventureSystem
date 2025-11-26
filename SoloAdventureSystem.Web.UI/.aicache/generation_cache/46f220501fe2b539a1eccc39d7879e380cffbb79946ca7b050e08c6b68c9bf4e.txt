@@ -1,1 +1,0 @@
-Expected output: { "skill1": "Social", "skill2": "Presence", "skill3": "Loyalty", "effect1": "Daemon:npc1|Loyalty:1", "effect2": "Daemon:npc2|Loyalty:1

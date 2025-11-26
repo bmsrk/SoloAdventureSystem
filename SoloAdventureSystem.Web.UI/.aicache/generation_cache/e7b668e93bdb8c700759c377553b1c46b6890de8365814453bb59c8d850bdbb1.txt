@@ -1,1 +1,0 @@
-Examples of valid choices: - "Revail" (attrib: Presence, skill: Social, target: 12) - "Leave" (skiill: Loyalty, eff: 1) This is a good start, but can you add some information on the NPC's dialogue choices? Maybe some examples of how they respond to certain situations

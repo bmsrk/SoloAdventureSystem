@@ -1,1 +1,0 @@
-Do not use any variables or placeholders in the JSON

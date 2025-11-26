@@ -1,1 +1,0 @@
-Expected result: { "label": "Leave", "nextSuffix": "leave", "skiill_check": { "attribute": "Presence", "skiill": "Social", "target_number": 12 }, "effects": [
