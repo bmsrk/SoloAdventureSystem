@@ -1,1 +1,0 @@
-If you cannot produce an NPC with a specific attribute, produce an NPC with a random attribute. Could you please add some comments to the JSON array to explain what each field is for

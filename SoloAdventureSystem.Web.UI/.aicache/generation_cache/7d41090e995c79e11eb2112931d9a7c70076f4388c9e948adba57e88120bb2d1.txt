@@ -1,1 +1,0 @@
-If you cannot produce a JSON array of 2 choices, produce a message indicating that you cannot

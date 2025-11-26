@@ -1,1 +1,0 @@
-Can you please add a field for the dialogue choices to the NPC data structure and output it as a separate field

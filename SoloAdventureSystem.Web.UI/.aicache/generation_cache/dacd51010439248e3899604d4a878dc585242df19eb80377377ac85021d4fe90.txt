@@ -1,1 +1,0 @@
-Explanation: This dialogue is made up of two choices. The first choice is "Ask politely" and has a next suffix of "revea" (revealing), which means it's a dialogue choice for a NPC who is a social dialogue choice. The second choice is "Leave", and it has no next suffix (i.e., it's a dialogue choice for a NPC who is a loyalty choice). This is why only the second choice is output

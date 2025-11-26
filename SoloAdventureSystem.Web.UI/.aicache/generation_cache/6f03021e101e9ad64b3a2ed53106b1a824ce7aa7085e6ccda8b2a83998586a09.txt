@@ -1,1 +1,0 @@
-If you cannot produce a valid choice, produce an error message

@@ -1,1 +1,0 @@
-Examples: [ { "label": "Say hello", "nextSuffix": "and", "skill_check": { "attribute": "Presence", "skill": "Social", "target_number": 12 }, "effects": ["Daemon:npc1|Loyalty:1"] }, { "label": "Ask for advice", "nextSuffix": "and", "skill_check": { "attribute": "Presence", "skill": "Social", "target_number": 12 }, "effects": ["Daemon:npc1|Loyalty:1"]

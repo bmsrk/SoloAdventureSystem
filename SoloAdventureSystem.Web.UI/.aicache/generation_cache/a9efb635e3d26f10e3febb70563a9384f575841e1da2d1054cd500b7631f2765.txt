@@ -1,1 +1,0 @@
-If the NPC has multiple valid dialogue choices, include all of them

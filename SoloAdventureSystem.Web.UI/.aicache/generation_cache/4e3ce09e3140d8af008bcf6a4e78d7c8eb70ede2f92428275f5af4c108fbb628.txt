@@ -1,1 +1,0 @@
-If you cannot produce valid choices, provide an empty array. Can you provide me with an example of how to format the dialogue choices for a specific NPC, specifically the NPC named "Daemon"? I'm having trouble coming up with an appropriate format for my choice

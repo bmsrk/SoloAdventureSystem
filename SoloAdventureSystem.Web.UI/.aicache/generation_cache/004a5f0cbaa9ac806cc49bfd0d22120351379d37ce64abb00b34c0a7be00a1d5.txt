@@ -1,1 +1,0 @@
-Can you please add some comments to explain what each part of the API request is doing in the code you provided? It would help me understand the code better

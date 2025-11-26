@@ -1,1 +1,0 @@
-This looks great, but can you please add some comments explaining what each field means? It will make the JSON more readable and understandable for me

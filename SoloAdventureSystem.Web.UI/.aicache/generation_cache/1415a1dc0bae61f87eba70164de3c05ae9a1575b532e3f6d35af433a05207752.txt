@@ -1,1 +1,0 @@
-Examples: [ { "label": "Ask politely", "nextSuffix": "revea", "skill_check": { "attribute": "Presence", "skill": "Social", "target_number": 12 }, "effects": ["Daemon:npc1|Loyalty:1"] }, { "label": "Leave", "nextSuffix": "lea", "effects": []

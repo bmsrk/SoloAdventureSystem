@@ -1,1 +1,0 @@
-Can you add a section for the NPC's responses? I want to include the NPC's responses in my JSON array

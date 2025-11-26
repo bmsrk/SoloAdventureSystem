@@ -1,7 +1,0 @@
-:root {
-    --brand-gradient-1: #7c3aed;
-    --brand-gradient-2: #06b6d4;
-    --brand-accent: linear-gradient(90deg, var(--brand-gradient-1), var(--brand-gradient-2));
-}
-
-/* Modern terminal-inspired navigation styles - removed ASCII overrides */

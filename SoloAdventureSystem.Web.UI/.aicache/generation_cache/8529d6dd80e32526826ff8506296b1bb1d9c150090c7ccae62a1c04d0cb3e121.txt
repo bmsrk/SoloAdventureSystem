@@ -1,1 +1,0 @@
-If you cannot produce any choices, provide an empty array. Can you add some examples of dialogue choices with different responses and their corresponding next suffixes? It would make the script more user-friendly

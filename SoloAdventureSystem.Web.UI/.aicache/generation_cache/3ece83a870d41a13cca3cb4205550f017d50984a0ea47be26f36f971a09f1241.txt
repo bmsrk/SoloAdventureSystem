@@ -1,1 +1,0 @@
-This looks great! Can you add a feature that allows the agent to choose between two dialogue choices with different outcomes, such as "Reveal a secret" and "Reveal nothing

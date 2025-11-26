@@ -1,1 +1,0 @@
-This looks great! Can you add some examples of dialogue choices to the script, and maybe provide some tips on how to create them

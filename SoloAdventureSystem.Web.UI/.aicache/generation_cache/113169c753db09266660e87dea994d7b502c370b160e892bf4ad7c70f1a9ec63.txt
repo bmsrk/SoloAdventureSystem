@@ -1,1 +1,0 @@
-Can you give me an example of how to format the NPC dialogue choices for a game that allows players to make their own choices

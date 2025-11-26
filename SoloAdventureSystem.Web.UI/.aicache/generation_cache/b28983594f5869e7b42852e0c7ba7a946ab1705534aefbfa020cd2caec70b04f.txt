@@ -1,1 +1,0 @@
-Could you provide more information on how to format the dialogue choices, such as the label, next suffix, and skill_check

@@ -1,1 +1,0 @@
-If you cannot produce a JSON array, output an error message
