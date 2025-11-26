@@ -154,7 +154,7 @@ namespace SoloAdventureSystem.LLM.Adapters
             return Clean(raw);
         }
 
-        private string Clean(string input)
+        private static string Clean(string input)
         {
             if (string.IsNullOrWhiteSpace(input)) return string.Empty;
             var trimmed = input.Trim();
@@ -165,6 +165,7 @@ namespace SoloAdventureSystem.LLM.Adapters
         public void Dispose()
         {
             (_engine as IDisposable)?.Dispose();
+            GC.SuppressFinalize(this);
         }
     }
 }

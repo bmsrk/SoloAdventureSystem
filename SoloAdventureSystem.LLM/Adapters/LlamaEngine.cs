@@ -61,7 +61,7 @@ namespace SoloAdventureSystem.LLM.Adapters
             };
 
             var result = new StringBuilder();
-            await foreach (var text in executor.InferAsync(prompt, inferenceParams))
+            await foreach (var text in executor.InferAsync(prompt, inferenceParams, cancellationToken))
             {
                 result.Append(text);
             }
