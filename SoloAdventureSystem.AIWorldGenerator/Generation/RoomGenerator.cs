@@ -107,17 +107,10 @@ Return only JSON.";
 
                 // Try structured parsing against raw output first
                 Dictionary<string, object>? parsed = null;
-                try
+                bool parseSuccess = false;
+                if (!string.IsNullOrWhiteSpace(raw))
                 {
-                    if (!string.IsNullOrWhiteSpace(raw))
-                    {
-                        _structuredParser.TryParse<Dictionary<string, object>>(raw, out parsed);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger?.LogDebug(ex, "Structured parser threw for raw room output on attempt {Attempt}", attempt + 1);
-                    parsed = null;
+                    parseSuccess = _structuredParser.TryParse<Dictionary<string, object>>(raw, out parsed);
                 }
 
                 if (parsed != null)
@@ -165,8 +158,8 @@ Return only JSON.";
                     // Use cleaned/legacy method to obtain description
                     descriptionRaw = _slm.GenerateRoomDescription(roomPrompt);
 
-                    // Apply improved light sanitization to cleaned text
-                    descriptionRaw = SanitizeGeneratedText(descriptionRaw);
+                    // Apply shared sanitization utility
+                    descriptionRaw = GenerationUtils.SanitizeGeneratedText(descriptionRaw);
                 }
 
                 // If description present and non-empty, break
@@ -194,14 +187,11 @@ Return only JSON.";
         // If no title provided by AI, derive short title from first sentence (fallback)
         if (string.IsNullOrWhiteSpace(title))
         {
-            // Use a helper to create a compact title from the description (prefer 2-4 words)
             string GenerateTitleFrom(string desc)
             {
                 if (string.IsNullOrWhiteSpace(desc)) return $"Room {index + 1}";
-                // take first full sentence, then first 3-4 words
                 var first = desc.Split(new[] {'.','!','?'}, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? desc;
                 first = Regex.Replace(first, "(Could you|Please|Return only).*", "", RegexOptions.IgnoreCase).Trim();
-                // remove artifacts
                 first = Regex.Replace(first, "(?i)\\b#?TOON\\b", "");
                 first = Regex.Replace(first, "(?i)\\b#?ENDTOON\\b", "");
                 first = Regex.Replace(first, "#\\w+", "");
@@ -209,9 +199,7 @@ Return only JSON.";
                 var words = first.Split(new[] {' ', '\t'}, StringSplitOptions.RemoveEmptyEntries).Take(4).ToArray();
                 if (words.Length == 0) return $"Room {index + 1}";
                 var candidate = string.Join(' ', words);
-                // Capitalize each word
                 candidate = string.Join(' ', candidate.Split(' ').Select(w => char.ToUpperInvariant(w[0]) + (w.Length > 1 ? w.Substring(1) : string.Empty)));
-                // Append room number for uniqueness if title is generic
                 if (candidate.Length < 10 || candidate.Contains("Room", StringComparison.OrdinalIgnoreCase))
                 {
                     candidate += $" {index + 1}";
@@ -222,27 +210,23 @@ Return only JSON.";
             title = GenerateTitleFrom(descriptionRaw);
         }
 
-        // Ensure description length is acceptable; if too short or too few sentences, try one expansion attempt
-        string CleanDescription(string raw) => SanitizeGeneratedText(raw);
-        var cleanedDescription = CleanDescription(descriptionRaw);
+        string cleanedDescription = GenerationUtils.SanitizeGeneratedText(descriptionRaw);
         int sentenceCount = Regex.Split(cleanedDescription, "(?<=[\\.!?])\\s+").Where(s => !string.IsNullOrWhiteSpace(s)).Count();
         if (cleanedDescription.Length < 120 || sentenceCount < 2)
         {
             try
             {
-                // Ask the model to expand the short description into 3 sentences while preserving details
                 var expandPrompt = $@"Expand the following room description to exactly 3 vivid sentences, preserving details and tone. Return only the expanded description.\n\nOriginal: {cleanedDescription}";
                 var expanded = _slm.GenerateRoomDescription(expandPrompt);
-                expanded = CleanDescription(expanded);
+                expanded = GenerationUtils.SanitizeGeneratedText(expanded);
                 if (!string.IsNullOrWhiteSpace(expanded) && expanded.Length > cleanedDescription.Length)
                 {
                     cleanedDescription = expanded;
                 }
             }
-            catch { /* best-effort, keep original */ }
+            catch { }
         }
 
-        // Use final cleanedDescription as descriptionRaw to store in model
         descriptionRaw = cleanedDescription;
 
         string visualPrompt;
@@ -267,55 +251,8 @@ Return only JSON.";
             VisualPrompt = visualPrompt,
             UiPosition = new UiPosition { X = index % 3, Y = index / 3 }
         };
-        // Note: do not append per-room AI markers here; disclaimer is shown in the UI header
 
         _logger?.LogDebug("? Room {Index} generated: {RoomName}", index + 1, title);
         return room;
-    }
-
-    private static string SanitizeGeneratedText(string text)
-    {
-        if (string.IsNullOrWhiteSpace(text)) return string.Empty;
-
-        // Collapse obvious '# #' artifacts and solitary hashes that leak from model output
-        text = Regex.Replace(text, @"#\s*#", " ", RegexOptions.Compiled);
-        text = Regex.Replace(text, @"\s#\s", " ", RegexOptions.Compiled);
-
-        // Remove leading instruction markers like '#json', leading quote, or code fences (```json)
-        text = Regex.Replace(text, @"^\s*(?:#json\n|""|```json|```)\.*", "", RegexOptions.IgnoreCase);
-
-        // Remove 'Return only JSON' or similar trailing instructions
-
-        // Remove common prompt fragments that sometimes appear when model repeats prompt
-        text = Regex.Replace(text, "You are a creative writer.*", "", RegexOptions.IgnoreCase);
-
-        // Trim and normalize whitespace
-        text = Regex.Replace(text, @"\s+", " ").Trim();
-
-        // Remove TOON/ENDTOON markers and hashtags
-        try
-        {
-            text = Regex.Replace(text, "(?i)\\b#?TOON\\b", "");
-            text = Regex.Replace(text, "(?i)\\b#?ENDTOON\\b", "");
-            text = Regex.Replace(text, "#\\w+", "");
-            text = Regex.Replace(text, "\\(s\\)", "");
-
-            // Collapse repeated sentences/fragments
-            var sentences = Regex.Split(text, "(?<=[\\.!?])\\s+");
-            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            var sb = new List<string>();
-            foreach (var s in sentences)
-            {
-                var t = s.Trim();
-                if (string.IsNullOrEmpty(t)) continue;
-                var key = Regex.Replace(t.ToLowerInvariant(), "[\\p{P}\\s]+", " ").Trim();
-                if (!seen.Contains(key)) { sb.Add(t); seen.Add(key); }
-            }
-            if (sb.Count > 0) text = string.Join(" ", sb);
-            text = Regex.Replace(text, "\\s+", " ").Trim();
-        }
-        catch { }
-
-        return text;
     }
 }

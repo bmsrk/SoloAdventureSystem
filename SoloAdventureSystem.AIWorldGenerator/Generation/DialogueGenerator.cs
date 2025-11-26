@@ -70,7 +70,7 @@ public class DialogueGenerator
                     var raw = _slm.GenerateRaw(prompt);
                     rawJson = raw ?? string.Empty;
                     // Expect JSON array of choices with label, nextSuffix, skillCheck (optional), effects
-                    generatedChoices = ParseChoicesFromJson(raw, npc.Id);
+                    generatedChoices = GenerationUtils.ParseChoicesFromJson(raw, npc.Id, _logger as ILogger);
                 }
                 catch (Exception ex)
                 {
@@ -91,7 +91,7 @@ public class DialogueGenerator
                             var altRaw = _slm.GenerateRaw(altPrompt);
                             // append attempt output to rawJson for debugging
                             rawJson += "\n---retry-" + attempt + "---\n" + (altRaw ?? string.Empty);
-                            generatedChoices = ParseChoicesFromJson(altRaw, npc.Id);
+                            generatedChoices = GenerationUtils.ParseChoicesFromJson(altRaw, npc.Id, _logger as ILogger);
                             if (generatedChoices != null)
                             {
                                 _logger?.LogInformation("SLM produced valid dialogue on retry {Attempt} for {Npc}", attempt, npcName);
@@ -274,156 +274,6 @@ public class DialogueGenerator
         return sb.ToString();
     }
 
-    private List<StoryChoice>? ParseChoicesFromJson(string json, string npcId)
-    {
-        try
-        {
-            if (string.IsNullOrWhiteSpace(json)) return null;
-
-            // Pre-clean common artifacts before attempting JSON extraction
-            var cleanedJsonText = json ?? string.Empty;
-            try
-            {
-                // Remove repeated '# #' and solitary hashes
-                cleanedJsonText = System.Text.RegularExpressions.Regex.Replace(cleanedJsonText, @"#\s*#", " ", System.Text.RegularExpressions.RegexOptions.Compiled);
-                cleanedJsonText = System.Text.RegularExpressions.Regex.Replace(cleanedJsonText, @"\s#\s", " ", System.Text.RegularExpressions.RegexOptions.Compiled);
-                // Remove TOON markers and hashtags
-                cleanedJsonText = System.Text.RegularExpressions.Regex.Replace(cleanedJsonText, "(?i)\\b#?TOON\\b", "");
-                cleanedJsonText = System.Text.RegularExpressions.Regex.Replace(cleanedJsonText, "(?i)\\b#?ENDTOON\\b", "");
-                cleanedJsonText = System.Text.RegularExpressions.Regex.Replace(cleanedJsonText, "#\\w+", "");
-            }
-            catch { }
-
-            var trimmed = cleanedJsonText.Trim();
-            var startIdx = trimmed.IndexOf('[');
-            var endIdx = trimmed.LastIndexOf(']');
-            if (startIdx >= 0 && endIdx > startIdx)
-            {
-                json = trimmed.Substring(startIdx, endIdx - startIdx + 1);
-            }
-            else
-            {
-                // Some models return a single object; wrap it to normalize to array
-                if (trimmed.StartsWith("{") && !trimmed.StartsWith("["))
-                {
-                    json = "[" + trimmed + "]";
-                }
-                else if (!trimmed.Contains("[") && trimmed.Contains("{"))
-                {
-                    // Try to find embedded JSON object and wrap
-                    var objStart = trimmed.IndexOf('{');
-                    var objEnd = trimmed.LastIndexOf('}');
-                    if (objStart >= 0 && objEnd > objStart)
-                    {
-                        json = "[" + trimmed.Substring(objStart, objEnd - objStart + 1) + "]";
-                    }
-                }
-            }
-
-            // Try to deserialize; allow for fields named 'label' or 'text' or 'option'
-            var options = new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-            var choices = System.Text.Json.JsonSerializer.Deserialize<List<ChoiceDto>>(json, options);
-
-            if (choices == null || choices.Count == 0) return null;
-
-            var result = new List<StoryChoice>();
-            foreach (var c in choices)
-            {
-                // Trim and validate label (accept several possible fields)
-                var label = (c.label ?? c.text ?? c.option)?.Trim() ?? string.Empty;
-                if (string.IsNullOrEmpty(label))
-                {
-                    // skip empty labels
-                    continue;
-                }
-
-                // Sanitize next suffix (allow alphanum and underscore)
-                var nextCandidate = (c.nextSuffix ?? c.next ?? string.Empty).Trim();
-                string next;
-                if (string.IsNullOrEmpty(nextCandidate))
-                {
-                    next = $"dialogue_{npcId}_end";
-                }
-                else
-                {
-                    // If candidate looks like a full id (starts with dialogue_) use as-is
-                    if (nextCandidate.StartsWith("dialogue_", StringComparison.OrdinalIgnoreCase))
-                    {
-                        next = System.Text.RegularExpressions.Regex.Replace(nextCandidate, "[^a-zA-Z0-9_\\-]", "").Trim();
-                    }
-                    else
-                    {
-                        // sanitize short suffix and prefix with npc id
-                        var suffix = System.Text.RegularExpressions.Regex.Replace(nextCandidate, "[^a-zA-Z0-9_\\-]", "").Trim();
-                        next = string.IsNullOrEmpty(suffix) ? $"dialogue_{npcId}_end" : $"dialogue_{npcId}_" + suffix;
-                    }
-                }
-
-                // Skill check mapping with safety bounds
-                SkillCheckModel? sc = null;
-                if (c.skill_check != null)
-                {
-                    var attrStr = c.skill_check.attribute ?? "Soul";
-                    var skillStr = c.skill_check.skill ?? "Social";
-                    var tn = c.skill_check.target_number;
-                    if (tn <= 0) tn = 10;
-                    // clamp reasonable target numbers
-                    tn = Math.Max(3, Math.Min(20, tn));
-
-                    if (Enum.TryParse<GameAttribute>(attrStr, true, out var attr))
-                    {
-                        if (Enum.TryParse<Skill>(skillStr, true, out var sk))
-                        {
-                            sc = new SkillCheckModel
-                            {
-                                Attribute = attr,
-                                Skill = sk,
-                                TargetNumber = tn,
-                                OpponentNpcId = npcId
-                            };
-                        }
-                    }
-                }
-
-                var effects = c.effects?.Where(e => !string.IsNullOrWhiteSpace(e)).Select(e => e.Trim()).ToList() ?? new List<string>();
-
-                result.Add(new StoryChoice
-                {
-                    Label = label,
-                    Next = next,
-                    Effects = effects,
-                    SkillCheck = sc
-                });
-            }
-
-            // If parsed result contains no valid choices, return null so caller falls back
-            if (result.Count == 0) return null;
-
-            return result;
-        }
-        catch (Exception ex)
-        {
-            _logger?.LogWarning(ex, "Failed to parse dialogue JSON for NPC {NpcId}: {Message}", npcId, ex.Message);
-            return null;
-        }
-    }
-
-    private class ChoiceDto
-    {
-        // accept multiple possible field names that model might output
-        public string? label { get; set; }
-        public string? text { get; set; }
-        public string? option { get; set; }
-        public string? next { get; set; }
-        public string? nextSuffix { get; set; }
-        public SkillCheckDto? skill_check { get; set; }
-        public List<string>? effects { get; set; }
-    }
-
-    private class SkillCheckDto
-    {
-        public string? attribute { get; set; }
-        public string? skill { get; set; }
-        public int target_number { get; set; }
-    }
+    private class ChoiceDto { /* moved to GenerationUtils */ }
+    private class SkillCheckDto { /* moved to GenerationUtils */ }
 }

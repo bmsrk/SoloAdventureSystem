@@ -1,5 +1,5 @@
 using System;
-using System.Collections.Generic;
+using System.Collections;
 using Microsoft.Extensions.Logging;
 
 namespace SoloAdventureSystem.ContentGenerator.Generation;
@@ -94,12 +94,12 @@ public class ResilienceGenerationPolicy : IGenerationPolicy
 
     private bool IsEmptyResult<T>(T result) where T : class
     {
-        return result switch
-        {
-            null => true,
-            string str => string.IsNullOrWhiteSpace(str),
-            ICollection<object> col => col.Count == 0,
-            _ => false
-        };
+        if (result == null) return true;
+        if (result is string str) return string.IsNullOrWhiteSpace(str);
+
+        // Handle non-generic collections (covers arrays, lists etc.) using ICollection
+        if (result is ICollection col) return col.Count == 0;
+
+        return false;
     }
 }
