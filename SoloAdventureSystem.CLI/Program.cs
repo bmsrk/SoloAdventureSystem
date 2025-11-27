@@ -49,6 +49,66 @@ var presets = new Dictionary<string, WorldGenerationOptions>
     ["Chrome City 1985"] = new WorldGenerationOptions { Name = "Chrome City 1985", Theme = "Retro-Future", Flavor = "Neon-soaked noir mystery", Description = "Alternative 1980s where AI emerged early", MainPlotPoint = "Solve the murder of a famous scientist", TimePeriod = "Alternative timeline 1985", PowerStructure = "Tech corporations and detective agencies", Regions = 5 }
 };
 
+// If headless requested, run a single generation and exit
+if (args is not null && args.Length > 0 && Array.Exists(args, a => a == "--headless"))
+{
+    Console.WriteLine("Headless generation mode starting...");
+    var preset = presets["Neon Nights"];
+    var options = new WorldGenerationOptions
+    {
+        Name = preset.Name,
+        Regions = preset.Regions,
+        Theme = preset.Theme,
+        Flavor = preset.Flavor,
+        Description = preset.Description,
+        MainPlotPoint = preset.MainPlotPoint,
+        TimePeriod = preset.TimePeriod,
+        PowerStructure = preset.PowerStructure
+    };
+
+    try
+    {
+        // Initialize model/downloader and adapter
+        var sfLogger = loggerFactory.CreateLogger("SLMAdapterFactory");
+        sfLogger.LogInformation("Ensuring model available: {ModelKey}", aiSettings.LLamaModelKey);
+        var downloader = new SoloAdventureSystem.ContentGenerator.EmbeddedModel.GGUFModelDownloader(loggerFactory.CreateLogger<SoloAdventureSystem.ContentGenerator.EmbeddedModel.GGUFModelDownloader>());
+        var progress = new Progress<DownloadProgress>(p => Console.WriteLine($"Download: {p.PercentComplete}% {p.DownloadedMB:F1}/{p.TotalMB:F1} MB"));
+        var modelPathTask = downloader.EnsureModelAvailableAsync(aiSettings.LLamaModelKey, progress);
+        modelPathTask.Wait();
+        var modelPath = modelPathTask.Result;
+        if (!string.IsNullOrWhiteSpace(modelPath))
+        {
+            sfLogger.LogInformation("Model ready at {Path}", modelPath);
+            aiSettings.LLamaModelKey = modelPath;
+        }
+
+        var headlessSlmAdapter = SLMAdapterFactory.Create(provider);
+        sfLogger.LogInformation("SLM adapter created (headless)");
+
+        var imageAdapter = new SimpleImageAdapter();
+        var headlessWorldGen = new WorldGenerator(
+            new FactionGenerator(headlessSlmAdapter, loggerFactory.CreateLogger<FactionGenerator>()),
+            new RoomGenerator(headlessSlmAdapter, imageAdapter, loggerFactory.CreateLogger<RoomGenerator>()),
+            new RoomConnector(loggerFactory.CreateLogger<RoomConnector>()),
+            new NpcGenerator(headlessSlmAdapter, loggerFactory.CreateLogger<NpcGenerator>()),
+            loggerFactory.CreateLogger<WorldGenerator>());
+
+        Console.WriteLine("Starting generation...");
+        var result = headlessWorldGen.Generate(options);
+        var outDir = Path.Combine("content", "worlds");
+        Directory.CreateDirectory(outDir);
+        var outPath = Path.Combine(outDir, $"{options.Name}_{DateTime.UtcNow:yyyyMMddHHmmss}.json");
+        File.WriteAllText(outPath, JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true }));
+        Console.WriteLine($"Generation completed. Saved: {outPath}");
+        return;
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Headless generation failed: {ex}");
+        return;
+    }
+}
+
 // Terminal.Gui setup
 Application.Init();
 var top = Application.Top;

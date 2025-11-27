@@ -1,0 +1,936 @@
+{
+  "World": {
+    "Name": "Neon Nights",
+    "Description": "A sprawling megacity where corporations own everything (Dark and gritty with neon highlights). Expose the corporation covering up illegal AI experiments",
+    "Version": "1.0.0",
+    "Author": "SoloAdventureSystem (Enhanced Generator)",
+    "CreatedAt": "2025-11-27T11:28:48.9250122Z",
+    "StartLocationId": "room1",
+    "LocationIds": [
+      "room1",
+      "room2",
+      "room3",
+      "room4",
+      "room5",
+      "room6"
+    ],
+    "NpcIds": [
+      "npc1",
+      "npc2",
+      "npc3",
+      "npc4",
+      "npc5",
+      "npc6"
+    ],
+    "ItemIds": [],
+    "FactionIds": [
+      "faction1"
+    ],
+    "StoryNodeIds": [
+      "dialogue_npc1_intro",
+      "dialogue_npc1_reveal",
+      "dialogue_npc1_hostile",
+      "dialogue_npc1_leave",
+      "dialogue_npc1_end",
+      "dialogue_npc2_intro",
+      "dialogue_npc2_reveal",
+      "dialogue_npc2_hostile",
+      "dialogue_npc2_leave",
+      "dialogue_npc2_end",
+      "dialogue_npc3_intro",
+      "dialogue_npc3_reveal",
+      "dialogue_npc3_hostile",
+      "dialogue_npc3_leave",
+      "dialogue_npc3_end",
+      "dialogue_npc4_intro",
+      "dialogue_npc4_reveal",
+      "dialogue_npc4_hostile",
+      "dialogue_npc4_leave",
+      "dialogue_npc4_end",
+      "dialogue_npc5_intro",
+      "dialogue_npc5_reveal",
+      "dialogue_npc5_hostile",
+      "dialogue_npc5_leave",
+      "dialogue_npc5_end",
+      "dialogue_npc6_intro",
+      "dialogue_npc6_reveal",
+      "dialogue_npc6_hostile",
+      "dialogue_npc6_leave",
+      "dialogue_npc6_end"
+    ]
+  },
+  "Rooms": [
+    {
+      "Id": "room1",
+      "Title": "Room 1",
+      "BaseDescription": "Vivid description: The room is dark, with the faint hum of a distant radio emanating from the wall. The walls are covered in a layer of dust, obscuring the room\u0027s color. The room is silent, and the only sound is the faint hum that echoes from the walls. The room is warm and humid, with a faint, musty smell. The air is thick with the scent of dampness and decay. The room is narrow, with a small window on one side. The window is cracked, and the only light comes from a flickering lamp on the table. The floor is a mottled gray, with the occasional patch of dirt or grime. The table is an old, wooden one, with a few chipped and cracked edges. The only furniture in the room is a single",
+      "Exits": {
+        "east": "room2"
+      },
+      "Items": [],
+      "Npcs": [
+        "npc1"
+      ],
+      "VisualPrompt": "A detailed visualization of: Room 1 in Neon Nights - Cyberpunk (rendered with seed 845159916)",
+      "UiPosition": {
+        "X": 0,
+        "Y": 0
+      }
+    },
+    {
+      "Id": "room2",
+      "Title": "Neon Nights",
+      "BaseDescription": "is a place of shadows and lights, of dark and bright, of black and white, of night and day. It is a place where the stars shine brightly, and where the darkness never fully disappears. The neon-punk is a place where the world is a canvas, where the sky is the limit, and where the imagination is the only limit. It is a place where anything is possible, and anything can happen. In neon-punk, the night is always the beginning, and the day is always the end. It is a place where the past is a memory, and the future is yet to come. The neon-punk is a place where the world is a canvas, and the sky is the limit. The neon-punk is a place where the imagination is the only limit, and anything is possible, and anything can",
+      "Exits": {
+        "west": "room1",
+        "east": "room3"
+      },
+      "Items": [],
+      "Npcs": [
+        "npc2"
+      ],
+      "VisualPrompt": "A detailed visualization of: Neon Nights in Neon Nights - Cyberpunk (rendered with seed 1579957184)",
+      "UiPosition": {
+        "X": 1,
+        "Y": 0
+      }
+    },
+    {
+      "Id": "room3",
+      "Title": "If You Need To",
+      "BaseDescription": "If you need to include extra comments, labels, or explanation, do NOT add them to the output. If you need to add a sentence of explanation, do NOT add it as part of the output object. The output object should be concise and easy to understand. If you need to add a sentence of instruction, do not add it as part of the output object, but do include it in the prompt. The prompt should be concise, easy to understand, and repeatable. If the prompt includes instruction fragments, make sure to include them in the prompt as well as the output object. The output object should be in the JSON format specified above. Do not add extra commentary, labels, or explanation. If you need to include an instruction fragment, include it in the prompt, not the output object. The output object should be formatted as a JSON object with fields \u0027title\u0027, \u0027",
+      "Exits": {
+        "west": "room2",
+        "east": "room4",
+        "south": "room6"
+      },
+      "Items": [],
+      "Npcs": [
+        "npc3"
+      ],
+      "VisualPrompt": "A detailed visualization of: If You Need To in Neon Nights - Cyberpunk (rendered with seed 1606933657)",
+      "UiPosition": {
+        "X": 2,
+        "Y": 0
+      }
+    },
+    {
+      "Id": "room4",
+      "Title": "Room 4",
+      "BaseDescription": "The room was dimly lit, with a faint humming sound that seemed to grow louder with every passing moment. The walls themselves were a faded shade of gray, with a few small cracks that seemed to show signs of age. The furniture, however, was mostly intact, with the exception of a single armchair that had been overturned and the legs bent backward. The chair itself was a pale grey, with a creaking back and a few spots of rust on the wood. The carpet beneath the chair was an unremarkable brown, with a few small cracks that seemed to have been there for a while. The room was cramped, with the only access being a narrow window that was covered in a thick layer of dust. The window itself was slightly cracked, with a small pane of glass that",
+      "Exits": {
+        "west": "room3",
+        "east": "room5"
+      },
+      "Items": [],
+      "Npcs": [
+        "npc4"
+      ],
+      "VisualPrompt": "A detailed visualization of: Room 4 in Neon Nights - Cyberpunk (rendered with seed 995191147)",
+      "UiPosition": {
+        "X": 0,
+        "Y": 1
+      }
+    },
+    {
+      "Id": "room5",
+      "Title": "Room 5",
+      "BaseDescription": "The hum is so faint that it is nearly indistinguishable from the background noise. The room is empty, save for a single lamp, flickering dimly. The walls are bare, save for a single crack in the plaster. The only furniture is a single chair and a single table, both covered in a thin layer of dust. The only light source is a single lamp, which shines down into the room from above, casting a faded yellow glow on the walls and floor. The room smells of old age, and the only sound is the hum.",
+      "Exits": {
+        "west": "room4",
+        "east": "room6"
+      },
+      "Items": [],
+      "Npcs": [
+        "npc5"
+      ],
+      "VisualPrompt": "A detailed visualization of: Room 5 in Neon Nights - Cyberpunk (rendered with seed 315016364)",
+      "UiPosition": {
+        "X": 1,
+        "Y": 1
+      }
+    },
+    {
+      "Id": "room6",
+      "Title": "No Extra Information, No",
+      "BaseDescription": "No extra information, no commentary, no instruction fragments. Please include the room name and time as part of the output, in a way that the context is clear. Please use a concise and visually appealing style. Please use appropriate punctuation. Please do not repeat any prompt or instruction. Please do not add any extra commentary, labels, or explanation. Please do not include instruction fragments. Please do not include any neon highlights or neon lights in the output. Please do not include any extra information not required for the context. Please do not include any information that is not relevant to the room name or time. Please do not use any punctuation that is not appropriate for the context. Please do not use any spaces, tabs, or line breaks as punctuation. Please",
+      "Exits": {
+        "west": "room5",
+        "north": "room3"
+      },
+      "Items": [],
+      "Npcs": [
+        "npc6"
+      ],
+      "VisualPrompt": "A detailed visualization of: No Extra Information, No in Neon Nights - Cyberpunk (rendered with seed 1793595165)",
+      "UiPosition": {
+        "X": 2,
+        "Y": 1
+      }
+    }
+  ],
+  "Factions": [
+    {
+      "Id": "faction1",
+      "Name": "The Collective",
+      "Description": "A shadowy faction whose details are lost to rumor and time. Their true motives remain unclear.",
+      "Ideology": "Neutral",
+      "Relations": {}
+    }
+  ],
+  "Npcs": [
+    {
+      "Id": "npc1",
+      "Name": "NPC1",
+      "Description": "An unremarkable local who prefers to avoid attention; details lost to time.",
+      "FactionId": "faction1",
+      "Hostility": "Neutral",
+      "Attributes": {
+        "Strength": 10,
+        "Dexterity": 10,
+        "Intelligence": 10,
+        "Constitution": 10,
+        "Wisdom": 10,
+        "Charisma": 10
+      },
+      "Behavior": "Static",
+      "Inventory": [],
+      "Alignment": "Neutral",
+      "Motivation": "Maintain status quo"
+    },
+    {
+      "Id": "npc2",
+      "Name": "Can",
+      "Description": "\u003C|user|\u003E Can you please add some more details about the NPC\u0027s backstory? I want to make sure I have a clear understanding of who they are and why they\u0027re important to the story.",
+      "FactionId": "faction1",
+      "Hostility": "Neutral",
+      "Attributes": {
+        "Strength": 10,
+        "Dexterity": 10,
+        "Intelligence": 10,
+        "Constitution": 10,
+        "Wisdom": 10,
+        "Charisma": 10
+      },
+      "Behavior": "Static",
+      "Inventory": [],
+      "Alignment": "Neutral",
+      "Motivation": "Maintain status quo"
+    },
+    {
+      "Id": "npc3",
+      "Name": "Could",
+      "Description": "\u003C|user|\u003E Could you please provide me with some additional information on the specific illigal AI experiments that the NPC is referring to in the prompt? It would be great to have some details to further flesh out the story.",
+      "FactionId": "faction1",
+      "Hostility": "Neutral",
+      "Attributes": {
+        "Strength": 10,
+        "Dexterity": 10,
+        "Intelligence": 10,
+        "Constitution": 10,
+        "Wisdom": 10,
+        "Charisma": 10
+      },
+      "Behavior": "Static",
+      "Inventory": [],
+      "Alignment": "Neutral",
+      "Motivation": "Maintain status quo"
+    },
+    {
+      "Id": "npc4",
+      "Name": "NPC4",
+      "Description": "An unremarkable local who prefers to avoid attention; details lost to time.",
+      "FactionId": "faction1",
+      "Hostility": "Neutral",
+      "Attributes": {
+        "Strength": 10,
+        "Dexterity": 10,
+        "Intelligence": 10,
+        "Constitution": 10,
+        "Wisdom": 10,
+        "Charisma": 10
+      },
+      "Behavior": "Static",
+      "Inventory": [],
+      "Alignment": "Neutral",
+      "Motivation": "Maintain status quo"
+    },
+    {
+      "Id": "npc5",
+      "Name": "NPC5",
+      "Description": "An unremarkable local who prefers to avoid attention; details lost to time.",
+      "FactionId": "faction1",
+      "Hostility": "Neutral",
+      "Attributes": {
+        "Strength": 10,
+        "Dexterity": 10,
+        "Intelligence": 10,
+        "Constitution": 10,
+        "Wisdom": 10,
+        "Charisma": 10
+      },
+      "Behavior": "Static",
+      "Inventory": [],
+      "Alignment": "Neutral",
+      "Motivation": "Maintain status quo"
+    },
+    {
+      "Id": "npc6",
+      "Name": "Can",
+      "Description": "\u003C|user|\u003E Can you add some more information about the background of Marcus Chen, like his childhood and how he got involved in hacking and security work?",
+      "FactionId": "faction1",
+      "Hostility": "Neutral",
+      "Attributes": {
+        "Strength": 10,
+        "Dexterity": 10,
+        "Intelligence": 10,
+        "Constitution": 10,
+        "Wisdom": 10,
+        "Charisma": 10
+      },
+      "Behavior": "Static",
+      "Inventory": [],
+      "Alignment": "Neutral",
+      "Motivation": "Maintain status quo"
+    }
+  ],
+  "StoryNodes": [
+    {
+      "Id": "dialogue_npc1_intro",
+      "Title": "A Tense Meeting",
+      "Text": "You encounter NPC1, a representative of The Collective, in Room 1. They seem guarded but willing to speak about recent events: Expose the corporation covering up illegal AI experiments",
+      "OwnerNpcId": "npc1",
+      "RawGeneratorJson": "",
+      "Choices": [
+        {
+          "Label": "Try to persuade them (appeal to empathy)",
+          "Next": "dialogue_npc1_reveal",
+          "Effects": [
+            "Daemon:npc1|Loyalty:1"
+          ],
+          "SkillCheck": {
+            "Attribute": 3,
+            "Skill": 4,
+            "TargetNumber": 12,
+            "OpponentNpcId": "npc1"
+          }
+        },
+        {
+          "Label": "Threaten them (intimidate)",
+          "Next": "dialogue_npc1_hostile",
+          "Effects": [
+            "Daemon:npc1|Rage:2"
+          ],
+          "SkillCheck": {
+            "Attribute": 1,
+            "Skill": 0,
+            "TargetNumber": 11,
+            "OpponentNpcId": "npc1"
+          }
+        },
+        {
+          "Label": "Leave them alone",
+          "Next": "dialogue_npc1_leave",
+          "Effects": [],
+          "SkillCheck": null
+        }
+      ]
+    },
+    {
+      "Id": "dialogue_npc1_reveal",
+      "Title": "They Open Up",
+      "Text": "NPC1 relaxes and shares a hint: \u0027There\u0027s a meeting at the old docks tonight. Someone from The Collective will be there.\u0027",
+      "OwnerNpcId": "npc1",
+      "RawGeneratorJson": "",
+      "Choices": [
+        {
+          "Label": "Thank them and leave",
+          "Next": "dialogue_npc1_end",
+          "Effects": [
+            "Flag:revealed_meeting:1"
+          ],
+          "SkillCheck": null
+        },
+        {
+          "Label": "Ask for more details",
+          "Next": "dialogue_npc1_end",
+          "Effects": [
+            "Flag:asked_more:1"
+          ],
+          "SkillCheck": null
+        }
+      ]
+    },
+    {
+      "Id": "dialogue_npc1_hostile",
+      "Title": "Threat Escalates",
+      "Text": "NPC1 narrows their eyes. The conversation ends badly; guards are alerted and you must flee.",
+      "OwnerNpcId": "npc1",
+      "RawGeneratorJson": "",
+      "Choices": [
+        {
+          "Label": "Flee",
+          "Next": "dialogue_npc1_end",
+          "Effects": [
+            "Flag:chased_by_guards:1"
+          ],
+          "SkillCheck": null
+        }
+      ]
+    },
+    {
+      "Id": "dialogue_npc1_leave",
+      "Title": "You Walk Away",
+      "Text": "You decide not to press the issue. NPC1 watches you go, unreadable.",
+      "OwnerNpcId": "npc1",
+      "RawGeneratorJson": "",
+      "Choices": [
+        {
+          "Label": "Continue",
+          "Next": "dialogue_npc1_end",
+          "Effects": [],
+          "SkillCheck": null
+        }
+      ]
+    },
+    {
+      "Id": "dialogue_npc1_end",
+      "Title": "End",
+      "Text": "The conversation ends.",
+      "OwnerNpcId": "npc1",
+      "RawGeneratorJson": "",
+      "Choices": []
+    },
+    {
+      "Id": "dialogue_npc2_intro",
+      "Title": "A Tense Meeting",
+      "Text": "You encounter Can, a representative of The Collective, in Neon Nights. They seem guarded but willing to speak about recent events: Expose the corporation covering up illegal AI experiments",
+      "OwnerNpcId": "npc2",
+      "RawGeneratorJson": "",
+      "Choices": [
+        {
+          "Label": "Try to persuade them (appeal to empathy)",
+          "Next": "dialogue_npc2_reveal",
+          "Effects": [
+            "Daemon:npc2|Loyalty:1"
+          ],
+          "SkillCheck": {
+            "Attribute": 3,
+            "Skill": 4,
+            "TargetNumber": 12,
+            "OpponentNpcId": "npc2"
+          }
+        },
+        {
+          "Label": "Threaten them (intimidate)",
+          "Next": "dialogue_npc2_hostile",
+          "Effects": [
+            "Daemon:npc2|Rage:2"
+          ],
+          "SkillCheck": {
+            "Attribute": 1,
+            "Skill": 0,
+            "TargetNumber": 11,
+            "OpponentNpcId": "npc2"
+          }
+        },
+        {
+          "Label": "Leave them alone",
+          "Next": "dialogue_npc2_leave",
+          "Effects": [],
+          "SkillCheck": null
+        }
+      ]
+    },
+    {
+      "Id": "dialogue_npc2_reveal",
+      "Title": "They Open Up",
+      "Text": "Can relaxes and shares a hint: \u0027There\u0027s a meeting at the old docks tonight. Someone from The Collective will be there.\u0027",
+      "OwnerNpcId": "npc2",
+      "RawGeneratorJson": "",
+      "Choices": [
+        {
+          "Label": "Thank them and leave",
+          "Next": "dialogue_npc2_end",
+          "Effects": [
+            "Flag:revealed_meeting:1"
+          ],
+          "SkillCheck": null
+        },
+        {
+          "Label": "Ask for more details",
+          "Next": "dialogue_npc2_end",
+          "Effects": [
+            "Flag:asked_more:1"
+          ],
+          "SkillCheck": null
+        }
+      ]
+    },
+    {
+      "Id": "dialogue_npc2_hostile",
+      "Title": "Threat Escalates",
+      "Text": "Can narrows their eyes. The conversation ends badly; guards are alerted and you must flee.",
+      "OwnerNpcId": "npc2",
+      "RawGeneratorJson": "",
+      "Choices": [
+        {
+          "Label": "Flee",
+          "Next": "dialogue_npc2_end",
+          "Effects": [
+            "Flag:chased_by_guards:1"
+          ],
+          "SkillCheck": null
+        }
+      ]
+    },
+    {
+      "Id": "dialogue_npc2_leave",
+      "Title": "You Walk Away",
+      "Text": "You decide not to press the issue. Can watches you go, unreadable.",
+      "OwnerNpcId": "npc2",
+      "RawGeneratorJson": "",
+      "Choices": [
+        {
+          "Label": "Continue",
+          "Next": "dialogue_npc2_end",
+          "Effects": [],
+          "SkillCheck": null
+        }
+      ]
+    },
+    {
+      "Id": "dialogue_npc2_end",
+      "Title": "End",
+      "Text": "The conversation ends.",
+      "OwnerNpcId": "npc2",
+      "RawGeneratorJson": "",
+      "Choices": []
+    },
+    {
+      "Id": "dialogue_npc3_intro",
+      "Title": "A Tense Meeting",
+      "Text": "You encounter Could, a representative of The Collective, in If You Need To. They seem guarded but willing to speak about recent events: Expose the corporation covering up illegal AI experiments",
+      "OwnerNpcId": "npc3",
+      "RawGeneratorJson": "",
+      "Choices": [
+        {
+          "Label": "Try to persuade them (appeal to empathy)",
+          "Next": "dialogue_npc3_reveal",
+          "Effects": [
+            "Daemon:npc3|Loyalty:1"
+          ],
+          "SkillCheck": {
+            "Attribute": 3,
+            "Skill": 4,
+            "TargetNumber": 12,
+            "OpponentNpcId": "npc3"
+          }
+        },
+        {
+          "Label": "Threaten them (intimidate)",
+          "Next": "dialogue_npc3_hostile",
+          "Effects": [
+            "Daemon:npc3|Rage:2"
+          ],
+          "SkillCheck": {
+            "Attribute": 1,
+            "Skill": 0,
+            "TargetNumber": 11,
+            "OpponentNpcId": "npc3"
+          }
+        },
+        {
+          "Label": "Leave them alone",
+          "Next": "dialogue_npc3_leave",
+          "Effects": [],
+          "SkillCheck": null
+        }
+      ]
+    },
+    {
+      "Id": "dialogue_npc3_reveal",
+      "Title": "They Open Up",
+      "Text": "Could relaxes and shares a hint: \u0027There\u0027s a meeting at the old docks tonight. Someone from The Collective will be there.\u0027",
+      "OwnerNpcId": "npc3",
+      "RawGeneratorJson": "",
+      "Choices": [
+        {
+          "Label": "Thank them and leave",
+          "Next": "dialogue_npc3_end",
+          "Effects": [
+            "Flag:revealed_meeting:1"
+          ],
+          "SkillCheck": null
+        },
+        {
+          "Label": "Ask for more details",
+          "Next": "dialogue_npc3_end",
+          "Effects": [
+            "Flag:asked_more:1"
+          ],
+          "SkillCheck": null
+        }
+      ]
+    },
+    {
+      "Id": "dialogue_npc3_hostile",
+      "Title": "Threat Escalates",
+      "Text": "Could narrows their eyes. The conversation ends badly; guards are alerted and you must flee.",
+      "OwnerNpcId": "npc3",
+      "RawGeneratorJson": "",
+      "Choices": [
+        {
+          "Label": "Flee",
+          "Next": "dialogue_npc3_end",
+          "Effects": [
+            "Flag:chased_by_guards:1"
+          ],
+          "SkillCheck": null
+        }
+      ]
+    },
+    {
+      "Id": "dialogue_npc3_leave",
+      "Title": "You Walk Away",
+      "Text": "You decide not to press the issue. Could watches you go, unreadable.",
+      "OwnerNpcId": "npc3",
+      "RawGeneratorJson": "",
+      "Choices": [
+        {
+          "Label": "Continue",
+          "Next": "dialogue_npc3_end",
+          "Effects": [],
+          "SkillCheck": null
+        }
+      ]
+    },
+    {
+      "Id": "dialogue_npc3_end",
+      "Title": "End",
+      "Text": "The conversation ends.",
+      "OwnerNpcId": "npc3",
+      "RawGeneratorJson": "",
+      "Choices": []
+    },
+    {
+      "Id": "dialogue_npc4_intro",
+      "Title": "A Tense Meeting",
+      "Text": "You encounter NPC4, a representative of The Collective, in Room 4. They seem guarded but willing to speak about recent events: Expose the corporation covering up illegal AI experiments",
+      "OwnerNpcId": "npc4",
+      "RawGeneratorJson": "",
+      "Choices": [
+        {
+          "Label": "Try to persuade them (appeal to empathy)",
+          "Next": "dialogue_npc4_reveal",
+          "Effects": [
+            "Daemon:npc4|Loyalty:1"
+          ],
+          "SkillCheck": {
+            "Attribute": 3,
+            "Skill": 4,
+            "TargetNumber": 12,
+            "OpponentNpcId": "npc4"
+          }
+        },
+        {
+          "Label": "Threaten them (intimidate)",
+          "Next": "dialogue_npc4_hostile",
+          "Effects": [
+            "Daemon:npc4|Rage:2"
+          ],
+          "SkillCheck": {
+            "Attribute": 1,
+            "Skill": 0,
+            "TargetNumber": 11,
+            "OpponentNpcId": "npc4"
+          }
+        },
+        {
+          "Label": "Leave them alone",
+          "Next": "dialogue_npc4_leave",
+          "Effects": [],
+          "SkillCheck": null
+        }
+      ]
+    },
+    {
+      "Id": "dialogue_npc4_reveal",
+      "Title": "They Open Up",
+      "Text": "NPC4 relaxes and shares a hint: \u0027There\u0027s a meeting at the old docks tonight. Someone from The Collective will be there.\u0027",
+      "OwnerNpcId": "npc4",
+      "RawGeneratorJson": "",
+      "Choices": [
+        {
+          "Label": "Thank them and leave",
+          "Next": "dialogue_npc4_end",
+          "Effects": [
+            "Flag:revealed_meeting:1"
+          ],
+          "SkillCheck": null
+        },
+        {
+          "Label": "Ask for more details",
+          "Next": "dialogue_npc4_end",
+          "Effects": [
+            "Flag:asked_more:1"
+          ],
+          "SkillCheck": null
+        }
+      ]
+    },
+    {
+      "Id": "dialogue_npc4_hostile",
+      "Title": "Threat Escalates",
+      "Text": "NPC4 narrows their eyes. The conversation ends badly; guards are alerted and you must flee.",
+      "OwnerNpcId": "npc4",
+      "RawGeneratorJson": "",
+      "Choices": [
+        {
+          "Label": "Flee",
+          "Next": "dialogue_npc4_end",
+          "Effects": [
+            "Flag:chased_by_guards:1"
+          ],
+          "SkillCheck": null
+        }
+      ]
+    },
+    {
+      "Id": "dialogue_npc4_leave",
+      "Title": "You Walk Away",
+      "Text": "You decide not to press the issue. NPC4 watches you go, unreadable.",
+      "OwnerNpcId": "npc4",
+      "RawGeneratorJson": "",
+      "Choices": [
+        {
+          "Label": "Continue",
+          "Next": "dialogue_npc4_end",
+          "Effects": [],
+          "SkillCheck": null
+        }
+      ]
+    },
+    {
+      "Id": "dialogue_npc4_end",
+      "Title": "End",
+      "Text": "The conversation ends.",
+      "OwnerNpcId": "npc4",
+      "RawGeneratorJson": "",
+      "Choices": []
+    },
+    {
+      "Id": "dialogue_npc5_intro",
+      "Title": "A Tense Meeting",
+      "Text": "You encounter NPC5, a representative of The Collective, in Room 5. They seem guarded but willing to speak about recent events: Expose the corporation covering up illegal AI experiments",
+      "OwnerNpcId": "npc5",
+      "RawGeneratorJson": "",
+      "Choices": [
+        {
+          "Label": "Try to persuade them (appeal to empathy)",
+          "Next": "dialogue_npc5_reveal",
+          "Effects": [
+            "Daemon:npc5|Loyalty:1"
+          ],
+          "SkillCheck": {
+            "Attribute": 3,
+            "Skill": 4,
+            "TargetNumber": 12,
+            "OpponentNpcId": "npc5"
+          }
+        },
+        {
+          "Label": "Threaten them (intimidate)",
+          "Next": "dialogue_npc5_hostile",
+          "Effects": [
+            "Daemon:npc5|Rage:2"
+          ],
+          "SkillCheck": {
+            "Attribute": 1,
+            "Skill": 0,
+            "TargetNumber": 11,
+            "OpponentNpcId": "npc5"
+          }
+        },
+        {
+          "Label": "Leave them alone",
+          "Next": "dialogue_npc5_leave",
+          "Effects": [],
+          "SkillCheck": null
+        }
+      ]
+    },
+    {
+      "Id": "dialogue_npc5_reveal",
+      "Title": "They Open Up",
+      "Text": "NPC5 relaxes and shares a hint: \u0027There\u0027s a meeting at the old docks tonight. Someone from The Collective will be there.\u0027",
+      "OwnerNpcId": "npc5",
+      "RawGeneratorJson": "",
+      "Choices": [
+        {
+          "Label": "Thank them and leave",
+          "Next": "dialogue_npc5_end",
+          "Effects": [
+            "Flag:revealed_meeting:1"
+          ],
+          "SkillCheck": null
+        },
+        {
+          "Label": "Ask for more details",
+          "Next": "dialogue_npc5_end",
+          "Effects": [
+            "Flag:asked_more:1"
+          ],
+          "SkillCheck": null
+        }
+      ]
+    },
+    {
+      "Id": "dialogue_npc5_hostile",
+      "Title": "Threat Escalates",
+      "Text": "NPC5 narrows their eyes. The conversation ends badly; guards are alerted and you must flee.",
+      "OwnerNpcId": "npc5",
+      "RawGeneratorJson": "",
+      "Choices": [
+        {
+          "Label": "Flee",
+          "Next": "dialogue_npc5_end",
+          "Effects": [
+            "Flag:chased_by_guards:1"
+          ],
+          "SkillCheck": null
+        }
+      ]
+    },
+    {
+      "Id": "dialogue_npc5_leave",
+      "Title": "You Walk Away",
+      "Text": "You decide not to press the issue. NPC5 watches you go, unreadable.",
+      "OwnerNpcId": "npc5",
+      "RawGeneratorJson": "",
+      "Choices": [
+        {
+          "Label": "Continue",
+          "Next": "dialogue_npc5_end",
+          "Effects": [],
+          "SkillCheck": null
+        }
+      ]
+    },
+    {
+      "Id": "dialogue_npc5_end",
+      "Title": "End",
+      "Text": "The conversation ends.",
+      "OwnerNpcId": "npc5",
+      "RawGeneratorJson": "",
+      "Choices": []
+    },
+    {
+      "Id": "dialogue_npc6_intro",
+      "Title": "A Tense Meeting",
+      "Text": "You encounter Can, a representative of The Collective, in No Extra Information, No. They seem guarded but willing to speak about recent events: Expose the corporation covering up illegal AI experiments",
+      "OwnerNpcId": "npc6",
+      "RawGeneratorJson": "",
+      "Choices": [
+        {
+          "Label": "Try to persuade them (appeal to empathy)",
+          "Next": "dialogue_npc6_reveal",
+          "Effects": [
+            "Daemon:npc6|Loyalty:1"
+          ],
+          "SkillCheck": {
+            "Attribute": 3,
+            "Skill": 4,
+            "TargetNumber": 12,
+            "OpponentNpcId": "npc6"
+          }
+        },
+        {
+          "Label": "Threaten them (intimidate)",
+          "Next": "dialogue_npc6_hostile",
+          "Effects": [
+            "Daemon:npc6|Rage:2"
+          ],
+          "SkillCheck": {
+            "Attribute": 1,
+            "Skill": 0,
+            "TargetNumber": 11,
+            "OpponentNpcId": "npc6"
+          }
+        },
+        {
+          "Label": "Leave them alone",
+          "Next": "dialogue_npc6_leave",
+          "Effects": [],
+          "SkillCheck": null
+        }
+      ]
+    },
+    {
+      "Id": "dialogue_npc6_reveal",
+      "Title": "They Open Up",
+      "Text": "Can relaxes and shares a hint: \u0027There\u0027s a meeting at the old docks tonight. Someone from The Collective will be there.\u0027",
+      "OwnerNpcId": "npc6",
+      "RawGeneratorJson": "",
+      "Choices": [
+        {
+          "Label": "Thank them and leave",
+          "Next": "dialogue_npc6_end",
+          "Effects": [
+            "Flag:revealed_meeting:1"
+          ],
+          "SkillCheck": null
+        },
+        {
+          "Label": "Ask for more details",
+          "Next": "dialogue_npc6_end",
+          "Effects": [
+            "Flag:asked_more:1"
+          ],
+          "SkillCheck": null
+        }
+      ]
+    },
+    {
+      "Id": "dialogue_npc6_hostile",
+      "Title": "Threat Escalates",
+      "Text": "Can narrows their eyes. The conversation ends badly; guards are alerted and you must flee.",
+      "OwnerNpcId": "npc6",
+      "RawGeneratorJson": "",
+      "Choices": [
+        {
+          "Label": "Flee",
+          "Next": "dialogue_npc6_end",
+          "Effects": [
+            "Flag:chased_by_guards:1"
+          ],
+          "SkillCheck": null
+        }
+      ]
+    },
+    {
+      "Id": "dialogue_npc6_leave",
+      "Title": "You Walk Away",
+      "Text": "You decide not to press the issue. Can watches you go, unreadable.",
+      "OwnerNpcId": "npc6",
+      "RawGeneratorJson": "",
+      "Choices": [
+        {
+          "Label": "Continue",
+          "Next": "dialogue_npc6_end",
+          "Effects": [],
+          "SkillCheck": null
+        }
+      ]
+    },
+    {
+      "Id": "dialogue_npc6_end",
+      "Title": "End",
+      "Text": "The conversation ends.",
+      "OwnerNpcId": "npc6",
+      "RawGeneratorJson": "",
+      "Choices": []
+    }
+  ],
+  "LoreEntries": []
+}

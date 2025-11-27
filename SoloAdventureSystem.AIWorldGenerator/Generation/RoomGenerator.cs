@@ -64,124 +64,104 @@ public class RoomGenerator : IContentGenerator<List<RoomModel>>
         var exits = new Dictionary<string, string>();
         Exception? lastEx = null;
 
-        // Try up to 3 attempts: initial rich prompt, then simpler, then structured JSON prompt
-        for (int attempt = 0; attempt < 3; attempt++)
+        // Build primary prompt
+        var primaryPrompt = PromptTemplates.BuildRoomPrompt(string.Empty, context.Options, context.Options.Flavor ?? string.Empty, index, total);
+        var altPrompt = $@"Return a JSON object with exactly two fields: title and description.\nTitle: short (1-4 words). Description: 2-4 sentences with sensory details. World: {context.Options.Name}. Theme: {context.Options.Theme}. Return only JSON.";
+
+        var rawStructured = GenerationValidator.EnsureStructuredOrFallback(
+            p => _slm.GenerateRaw(p),
+            primaryPrompt,
+            new[] { altPrompt },
+            raw => {
+                if (string.IsNullOrWhiteSpace(raw)) return false;
+                return raw.Contains("{") && raw.Contains("\"description\"");
+            },
+            () => _slm.GenerateRoomDescription(primaryPrompt),
+            _logger);
+
+        Dictionary<string, object>? parsed = null;
+        try
         {
-            try
+            if (!string.IsNullOrWhiteSpace(rawStructured))
             {
-                string roomPrompt;
-                if (attempt == 0)
-                {
-                    // Rich prompt using world options for context, ask model to produce a JSON-like object with title and description
-                    roomPrompt = PromptTemplates.BuildRoomPrompt(
-                        string.Empty, // let the model pick the room name/title
-                        context.Options,
-                        context.Options.Flavor ?? string.Empty,
-                        index,
-                        total);
-                }
-                else if (attempt == 1)
-                {
-                    // Simpler instruction asking for title + description in JSON
-                    roomPrompt = $@"You are a creative writer for a text-adventure game.
-World: {context.Options.Name}
-Theme: {context.Options.Theme}
-Mood: {context.Options.Flavor}
-Plot: {context.Options.MainPlotPoint}
-
-Produce a short JSON object with fields: title (a short, evocative room name) and description (2-4 sentences, vivid sensory detail). Example: {{ ""title"": ""Neon Alley"", ""description"": ""..."" }}
-Return ONLY the JSON object.";
-                }
-                else
-                {
-                    // Enforce structured output
-                    roomPrompt = $@"Return a JSON object with exactly two fields: title and description.
-Title: short (1-4 words). Description: 2-4 sentences with sensory details. World: {context.Options.Name}. Theme: {context.Options.Theme}.
-Return only JSON.";
-                }
-
-                descriptionRaw = _slm.GenerateRoomDescription(roomPrompt);
-
-                // Request raw output and attempt structured parse locally (avoid double-cleaning)
-                var raw = _slm.GenerateRaw(roomPrompt);
-
-                // Try structured parsing against raw output first
-                Dictionary<string, object>? parsed = null;
-                bool parseSuccess = false;
-                if (!string.IsNullOrWhiteSpace(raw))
-                {
-                    parseSuccess = _structuredParser.TryParse<Dictionary<string, object>>(raw, out parsed);
-                }
-
-                if (parsed != null)
-                {
-                    if (parsed.TryGetValue("title", out var t) && t != null) title = t.ToString() ?? string.Empty;
-                    if (parsed.TryGetValue("description", out var d) && d != null) descriptionRaw = d.ToString() ?? string.Empty;
-
-                    // items/exits optional (handle JsonElement cases defensively)
-                    if (parsed.TryGetValue("items", out var itms) && itms != null)
-                    {
-                        if (itms is System.Text.Json.JsonElement jeItems && jeItems.ValueKind == System.Text.Json.JsonValueKind.Array)
-                        {
-                            foreach (var el in jeItems.EnumerateArray())
-                            {
-                                if (el.ValueKind == System.Text.Json.JsonValueKind.String)
-                                    items.Add(el.GetString()!);
-                                else
-                                    items.Add(el.ToString());
-                            }
-                        }
-                    }
-
-                    if (parsed.TryGetValue("exits", out var exs) && exs != null)
-                    {
-                        if (exs is System.Text.Json.JsonElement jeExs && jeExs.ValueKind == System.Text.Json.JsonValueKind.Object)
-                        {
-                            foreach (var prop in jeExs.EnumerateObject())
-                            {
-                                exits[prop.Name] = prop.Value.GetString() ?? string.Empty;
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    // Structured parse failed - fall back to cleaned text from adapter
-                    // Log raw output for debugging (trim large content)
-                    try
-                    {
-                        var dbg = string.IsNullOrWhiteSpace(raw) ? "(empty)" : (raw.Length > 800 ? raw.Substring(0, 800) + "..." : raw);
-                        _logger?.LogDebug("Raw generation (room attempt {Attempt}): {Raw}", attempt + 1, dbg);
-                    }
-                    catch { }
-
-                    // Use cleaned/legacy method to obtain description
-                    descriptionRaw = _slm.GenerateRoomDescription(roomPrompt);
-
-                    // Apply shared sanitization utility
-                    descriptionRaw = GenerationUtils.SanitizeGeneratedText(descriptionRaw);
-                }
-
-                // If description present and non-empty, break
-                if (!string.IsNullOrWhiteSpace(descriptionRaw))
-                {
-                    break;
-                }
-
-                _logger?.LogInformation("Attempt {Attempt} produced empty description, retrying...", attempt + 1);
-            }
-            catch (Exception ex)
-            {
-                lastEx = ex;
-                _logger?.LogWarning(ex, "Failed to generate room on attempt {Attempt}", attempt + 1);
+                _structuredParser.TryParse<Dictionary<string, object>>(rawStructured, out parsed);
             }
         }
+        catch (Exception ex)
+        {
+            _logger?.LogDebug(ex, "Structured parser threw for room output");
+            parsed = null;
+        }
 
+        if (parsed != null)
+        {
+            if (parsed.TryGetValue("title", out var t) && t != null) title = t.ToString() ?? string.Empty;
+            if (parsed.TryGetValue("description", out var d) && d != null) descriptionRaw = d.ToString() ?? string.Empty;
+
+            if (parsed.TryGetValue("items", out var itms) && itms != null)
+            {
+                if (itms is System.Text.Json.JsonElement jeItems && jeItems.ValueKind == System.Text.Json.JsonValueKind.Array)
+                {
+                    foreach (var el in jeItems.EnumerateArray())
+                    {
+                        if (el.ValueKind == System.Text.Json.JsonValueKind.String)
+                            items.Add(el.GetString()!);
+                        else
+                            items.Add(el.ToString());
+                    }
+                }
+            }
+
+            if (parsed.TryGetValue("exits", out var exs) && exs != null)
+            {
+                if (exs is System.Text.Json.JsonElement jeExs && jeExs.ValueKind == System.Text.Json.JsonValueKind.Object)
+                {
+                    foreach (var prop in jeExs.EnumerateObject())
+                    {
+                        exits[prop.Name] = prop.Value.GetString() ?? string.Empty;
+                    }
+                }
+            }
+        }
+        else
+        {
+            descriptionRaw = rawStructured ?? string.Empty;
+            descriptionRaw = GenerationUtils.SanitizeGeneratedText(descriptionRaw);
+        }
+
+        // If description still empty, error
         if (string.IsNullOrWhiteSpace(descriptionRaw))
         {
             var msg = "Failed to generate description for room (non-empty generation failed)";
             if (lastEx != null) msg += ": " + lastEx.Message;
-            throw new InvalidOperationException(msg, lastEx);
+
+            // Capture diagnostic raw outputs to help troubleshooting
+            try
+            {
+                var primaryRaw = string.Empty;
+                var fallbackRaw = string.Empty;
+                try { primaryRaw = _slm.GenerateRaw(primaryPrompt) ?? string.Empty; } catch (Exception e) { primaryRaw = "<generateRaw threw: " + e.Message + ">"; }
+                try { fallbackRaw = _slm.GenerateRoomDescription(primaryPrompt) ?? string.Empty; } catch (Exception e) { fallbackRaw = "<generateRoomDescription threw: " + e.Message + ">"; }
+
+                var pSnippet = primaryRaw.Length > 500 ? primaryRaw.Substring(0, 500) + "..." : primaryRaw;
+                var fSnippet = fallbackRaw.Length > 500 ? fallbackRaw.Substring(0, 500) + "..." : fallbackRaw;
+
+                _logger?.LogError("Room generation produced empty description. Primary raw (len={LenP}): {SnippetP}\nFallback raw (len={LenF}): {SnippetF}", primaryRaw.Length, pSnippet, fallbackRaw.Length, fSnippet);
+            }
+            catch (Exception logEx)
+            {
+                _logger?.LogDebug(logEx, "Failed to capture diagnostic raw outputs for room generation");
+            }
+
+            // Don't throw - use a safe default so world generation can continue and developers can inspect logs
+            _logger?.LogWarning("Room generation failed for index {Index}; using fallback description.", index + 1);
+            descriptionRaw = "A nondescript room with faded walls and a faint hum in the background. Details are unclear due to data corruption.";
+
+            // Generate a fallback title
+            if (string.IsNullOrWhiteSpace(title))
+            {
+                title = $"Room {index + 1}";
+            }
         }
 
         // If no title provided by AI, derive short title from first sentence (fallback)
@@ -208,6 +188,8 @@ Return only JSON.";
             }
 
             title = GenerateTitleFrom(descriptionRaw);
+            // Normalize whitespace for title
+            title = GenerationUtils.NormalizeWhitespace(title);
         }
 
         string cleanedDescription = GenerationUtils.SanitizeGeneratedText(descriptionRaw);
@@ -227,7 +209,8 @@ Return only JSON.";
             catch { }
         }
 
-        descriptionRaw = cleanedDescription;
+        // Normalize final description whitespace
+        descriptionRaw = GenerationUtils.NormalizeWhitespace(cleanedDescription);
 
         string visualPrompt;
         try

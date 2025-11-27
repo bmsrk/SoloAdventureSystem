@@ -55,23 +55,33 @@ namespace SoloAdventureSystem.LLM.Adapters
             return _engine.Generate(prompt, maxTokens);
         }
 
-        private bool TryStructured<T>(Func<string> genFunc, out T? parsed)
+        private bool TryStructured<T>(Func<string> genFunc, out T? parsed, int attempts = 3)
         {
             parsed = default;
-            try
+            if (attempts < 1) attempts = 1;
+
+            for (int i = 0; i < attempts; i++)
             {
-                var raw = genFunc();
-                if (string.IsNullOrWhiteSpace(raw)) return false;
-                if (_parser.TryParse<T>(raw, out var p))
+                try
                 {
-                    parsed = p;
-                    return true;
+                    var raw = genFunc();
+                    if (string.IsNullOrWhiteSpace(raw)) continue;
+                    if (_parser.TryParse<T>(raw, out var p))
+                    {
+                        parsed = p;
+                        if (i > 0) _logger?.LogDebug("Structured parse succeeded after {Attempt} attempts", i + 1);
+                        return true;
+                    }
+
+                    // If parser failed, log debug and retry
+                    _logger?.LogDebug("Structured parse attempt {Attempt} failed. Raw length={Len}", i + 1, raw.Length);
+                }
+                catch (Exception ex)
+                {
+                    _logger?.LogDebug(ex, "Structured parse attempt threw");
                 }
             }
-            catch (Exception ex)
-            {
-                _logger?.LogDebug(ex, "Structured parse attempt failed");
-            }
+
             return false;
         }
 
@@ -85,12 +95,25 @@ namespace SoloAdventureSystem.LLM.Adapters
         public string GenerateRoomDescription(string context)
         {
             EnsureInit();
-            if (TryStructured<Dictionary<string, object>>(() => GenerateRaw(context), out var parsed))
+
+            if (TryStructured<Dictionary<string, object>>(() => GenerateRaw(context, RoomDescriptionTokens), out var parsed, attempts: 3))
             {
                 if (parsed != null && parsed.TryGetValue("description", out var d) && d != null)
                     return d.ToString() ?? string.Empty;
             }
 
+            // If structured failed, retry a few times still but return empty if no structured output
+            for (int i = 0; i < 2; i++)
+            {
+                var rawTry = GenerateRaw(context, RoomDescriptionTokens);
+                if (TryStructured<Dictionary<string, object>>(() => rawTry, out parsed, attempts:1))
+                {
+                    if (parsed != null && parsed.TryGetValue("description", out var d) && d != null)
+                        return d.ToString() ?? string.Empty;
+                }
+            }
+
+            _logger?.LogWarning("Structured room generation failed after retries; returning cleaned free-form text.");
             var raw = _engine.Generate(context, RoomDescriptionTokens);
             return Clean(raw);
         }
@@ -98,11 +121,24 @@ namespace SoloAdventureSystem.LLM.Adapters
         public string GenerateNpcBio(string context)
         {
             EnsureInit();
-            if (TryStructured<Dictionary<string, object>>(() => GenerateRaw(context), out var parsed))
+
+            if (TryStructured<Dictionary<string, object>>(() => GenerateRaw(context, NpcBioTokens), out var parsed, attempts: 3))
             {
                 if (parsed != null && parsed.TryGetValue("bio", out var b) && b != null)
                     return b.ToString() ?? string.Empty;
             }
+
+            for (int i = 0; i < 2; i++)
+            {
+                var rawTry = GenerateRaw(context, NpcBioTokens);
+                if (TryStructured<Dictionary<string, object>>(() => rawTry, out parsed, attempts:1))
+                {
+                    if (parsed != null && parsed.TryGetValue("bio", out var b) && b != null)
+                        return b.ToString() ?? string.Empty;
+                }
+            }
+
+            _logger?.LogWarning("Structured NPC generation failed after retries; returning cleaned free-form text.");
             var raw = _engine.Generate(context, NpcBioTokens);
             return Clean(raw);
         }
@@ -110,11 +146,24 @@ namespace SoloAdventureSystem.LLM.Adapters
         public string GenerateFactionFlavor(string context)
         {
             EnsureInit();
-            if (TryStructured<Dictionary<string, object>>(() => GenerateRaw(context), out var parsed))
+
+            if (TryStructured<Dictionary<string, object>>(() => GenerateRaw(context, FactionLoreTokens), out var parsed, attempts: 3))
             {
                 if (parsed != null && parsed.TryGetValue("description", out var d) && d != null)
                     return d.ToString() ?? string.Empty;
             }
+
+            for (int i = 0; i < 2; i++)
+            {
+                var rawTry = GenerateRaw(context, FactionLoreTokens);
+                if (TryStructured<Dictionary<string, object>>(() => rawTry, out parsed, attempts:1))
+                {
+                    if (parsed != null && parsed.TryGetValue("description", out var d) && d != null)
+                        return d.ToString() ?? string.Empty;
+                }
+            }
+
+            _logger?.LogWarning("Structured faction generation failed after retries; returning cleaned free-form text.");
             var raw = _engine.Generate(context, FactionLoreTokens);
             return Clean(raw);
         }
@@ -125,7 +174,7 @@ namespace SoloAdventureSystem.LLM.Adapters
             var list = new List<string>();
             for (int i = 0; i < count; i++)
             {
-                if (TryStructured<Dictionary<string, object>>(() => GenerateRaw(context), out var parsed))
+                if (TryStructured<Dictionary<string, object>>(() => GenerateRaw(context, LoreEntryTokens), out var parsed, attempts: 3))
                 {
                     if (parsed != null && parsed.TryGetValue("text", out var t) && t != null)
                     {
@@ -133,6 +182,25 @@ namespace SoloAdventureSystem.LLM.Adapters
                         continue;
                     }
                 }
+
+                var success = false;
+                for (int r = 0; r < 2; r++)
+                {
+                    var rawTry = GenerateRaw(context, LoreEntryTokens);
+                    if (TryStructured<Dictionary<string, object>>(() => rawTry, out parsed, attempts:1))
+                    {
+                        if (parsed != null && parsed.TryGetValue("text", out var t) && t != null)
+                        {
+                            list.Add(t.ToString() ?? string.Empty);
+                            success = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (success) continue;
+
+                _logger?.LogWarning("Structured lore entry generation failed for entry {Index}; using cleaned fallback.", i);
                 var raw = _engine.Generate(context, LoreEntryTokens);
                 list.Add(Clean(raw));
             }
@@ -142,13 +210,27 @@ namespace SoloAdventureSystem.LLM.Adapters
         public string GenerateDialogue(string prompt)
         {
             EnsureInit();
-            if (TryStructured<List<Dictionary<string, object>>>(() => GenerateRaw(prompt), out var parsedList))
+            if (TryStructured<List<Dictionary<string, object>>>(() => GenerateRaw(prompt, DialogueTokens), out var parsedList, attempts: 3))
             {
                 if (parsedList != null)
                 {
                     return JsonSerializer.Serialize(parsedList);
                 }
             }
+
+            for (int i = 0; i < 2; i++)
+            {
+                var rawTry = GenerateRaw(prompt, DialogueTokens);
+                if (TryStructured<List<Dictionary<string, object>>>(() => rawTry, out parsedList, attempts:1))
+                {
+                    if (parsedList != null)
+                    {
+                        return JsonSerializer.Serialize(parsedList);
+                    }
+                }
+            }
+
+            _logger?.LogWarning("Structured dialogue generation failed after retries; returning cleaned free-form text.");
             var raw = _engine.Generate(prompt, DialogueTokens);
             return Clean(raw);
         }

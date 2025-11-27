@@ -12,85 +12,49 @@ namespace SoloAdventureSystem.ContentGenerator.Generation;
 public static class PromptTemplates
 {
     private const string CommonConstraints =
-        "Constraints:\n- Do NOT add any extra commentary, labels, or explanations.\n- Do NOT repeat the prompt or include instruction fragments in the output.";
+        "Constraints:\n- Do NOT add any extra commentary, labels, or explanations.\n- Do NOT repeat the prompt or include instruction fragments in the output.\n- Output must strictly follow the JSON schema in the OUTPUT SPEC section.";
 
-    private const string ReturnMarkers =
-        "Return only the text between '#TOON' and '#ENDTOON' on separate lines, with nothing else outside those markers.";
-
-    // --- System prompts (role + examples) ---
+    // --- System prompts (role + brief requirements) ---
     public static string RoomDescriptionSystem =>
-        @"You are a creative writer for interactive text-adventure content. Produce concise, vivid descriptions tailored for game content.
-
-Requirements:
-- Output exactly 3 sentences.
-- Sentence 1: Overall appearance with specific visual details.
-- Sentence 2: Key objects and their condition.
-- Sentence 3: Atmosphere — sounds, smells, or feeling.
-
-" + CommonConstraints;
+        @"You are a professional game writer for interactive text-adventure settings. Produce concise, vivid room descriptions focused on imagery and sensory detail.\n\nRequirements:\n- Provide only the data requested by the OUTPUT SPEC section.\n- Avoid examples, meta-commentary, or any additional text outside the JSON object.\n" + CommonConstraints;
 
     public static string NpcBioSystem =>
-        @"You are a creative writer for interactive characters. Produce compact biographies suitable for NPC entries.
-
-Requirements:
-- Output exactly 2 sentences.
-- Sentence 1: Role, background, and current motivation.
-- Sentence 2: A secret, quirk, or defining trait.
-
-" + CommonConstraints;
+        @"You are a professional game writer for compact NPC biographies suitable for game entries. Keep language direct and useful for gameplay.\n\nRequirements:\n- Provide only the data requested by the OUTPUT SPEC section.\n- Avoid examples, meta-commentary, or any additional text outside the JSON object.\n" + CommonConstraints;
 
     public static string FactionLoreSystem =>
-        @"You are a creative writer for factions and organizations. Produce concise faction lore suitable for game background entries.
-
-Requirements:
-- Output exactly 3 sentences.
-- Sentence 1: What they do and why (their cause).
-- Sentence 2: Where they operate and their strength.
-- Sentence 3: Their main enemy and the conflict.
-
-" + CommonConstraints;
+        @"You are a professional game writer for factions and organizations. Produce concise faction lore that can be used directly in-game.\n\nRequirements:\n- Provide only the data requested by the OUTPUT SPEC section.\n- Avoid examples, meta-commentary, or any additional text outside the JSON object.\n" + CommonConstraints;
 
     public static string WorldLoreSystem =>
-        @"You are a creative writer for world lore entries. Produce short, evocative historical or cultural notes.
+        @"You are a professional game writer for short world-lore entries. Produce brief, evocative cultural or historical notes.\n\nRequirements:\n- Provide only the data requested by the OUTPUT SPEC section.\n- Avoid examples, meta-commentary, or any additional text outside the requested output.\n" + CommonConstraints;
 
-Requirements:
-- Output 1 to 2 sentences.
-- Focus on a specific event, technology, cultural detail, or historical note that makes the world unique.
-
-" + CommonConstraints;
-
-    // --- Output specifications (explicit constraints) ---
+    // --- Output specifications (explicit schema-only constraints) ---
     public static string RoomOutputSpec =>
-        "OUTPUT SPEC: Exactly 3 sentences. Each sentence should be 10-45 words. Include at least one sensory detail (sound/smell/touch) and one concrete object or color. No lists, no markup. "
-        + ReturnMarkers;
+        "OUTPUT SPEC: Return a single JSON object exactly matching this schema: { \"title\": string (1-4 words), \"description\": string (2-4 sentences). }\n" +
+        "Do NOT include any other fields, examples, or explanation. Return ONLY the JSON object literal with those fields.";
 
     public static string NpcOutputSpec =>
-        "OUTPUT SPEC: Exactly 2 sentences. First sentence: role/background/motivation. Second: secret/quirk/defining trait. Keep length concise (12-40 words per sentence). "
-        + ReturnMarkers;
+        "OUTPUT SPEC: Return a single JSON object exactly matching this schema: { \"name\": string (short, human-readable), \"bio\": string (2 sentences). }\n" +
+        "Do NOT include any other fields, examples, or explanation. Return ONLY the JSON object literal with those fields.";
 
     public static string FactionOutputSpec =>
-        "OUTPUT SPEC: Exactly 3 sentences. Include goal, territory/strength, and main enemy/conflict. Use concrete detail and avoid vague language. "
-        + ReturnMarkers;
+        "OUTPUT SPEC: Return a single JSON object exactly matching this schema: { \"name\": string (short), \"description\": string (2-4 sentences), \"ideology\": string (single word). }\n" +
+        "Do NOT include any other fields, examples, or explanation. Return ONLY the JSON object literal with those fields.";
 
     public static string LoreOutputSpec =>
-        "OUTPUT SPEC: 1-2 sentences. Aim for a single concrete detail or event. Keep it evocative and specific. "
-        + ReturnMarkers;
+        "OUTPUT SPEC: Return ONLY 1-2 sentences of plain text (no JSON). Provide a single evocative sentence or two focusing on one concrete detail or event. Do NOT include examples or commentary.";
 
     // --- Builders: produce User prompt combined with OutputSpec for use by adapters ---
     public static string BuildRoomPrompt(string roomName, WorldGenerationOptions options, string atmosphere, int index, int total)
     {
-        // Add unique room identifier to prevent cache collisions and ensure variety
-        var uniqueId = Guid.NewGuid().ToString().Substring(0, 8);
-        var user = $@"Room Name: {roomName}
- World: {options.Description}
- Mood: {options.Flavor}
- Time: {options.TimePeriod}
- Context: {options.MainPlotPoint}
- Unique ID: {uniqueId}
+        // Sanitize user-provided fields to avoid prompt injection and excessive length
+        var roomNameSafe = SanitizeField(roomName, 80);
+        var worldDesc = SanitizeField(options.Description, 800);
+        var flavor = SanitizeField(options.Flavor, 200);
+        var time = SanitizeField(options.TimePeriod, 120);
+        var plot = SanitizeField(options.MainPlotPoint, 400);
+        var atmosphereSafe = SanitizeField(atmosphere, 120);
 
- Room {index + 1} of {total}. Make it {atmosphere.ToLower()}. 
-
- Write 3 sentences describing this room:";
+        var user = $@"Context:\nWorldName: {roomNameSafe} | WorldDescription: {worldDesc} | Mood: {flavor} | Time: {time} | Plot: {plot} | RoomIndex: {index + 1} of {total} | Atmosphere: {atmosphereSafe}\n\nProduce the requested JSON object according to the OUTPUT SPEC section. Do NOT include examples or commentary.";
 
         var combined = Combine(RoomDescriptionSystem, user, RoomOutputSpec);
         return combined;
@@ -98,16 +62,16 @@ Requirements:
 
     public static string BuildNpcPrompt(string npcName, WorldGenerationOptions options, string roomContext, string factionName)
     {
-        var user = $@"NPC Name: {npcName}
-Location: {roomContext}
-Faction: {factionName}
-World: {options.Description}
-Mood: {options.Flavor}
-Era: {options.TimePeriod}
-Society: {options.PowerStructure}
-Plot: {options.MainPlotPoint}
+        var npcNameSafe = SanitizeField(npcName, 80);
+        var roomContextSafe = SanitizeField(roomContext, 200);
+        var factionSafe = SanitizeField(factionName, 120);
+        var worldDesc = SanitizeField(options.Description, 800);
+        var flavor = SanitizeField(options.Flavor, 200);
+        var time = SanitizeField(options.TimePeriod, 120);
+        var society = SanitizeField(options.PowerStructure, 200);
+        var plot = SanitizeField(options.MainPlotPoint, 400);
 
-Write 2 sentences about {npcName}. Show their role and a defining trait:";
+        var user = $@"Context:\nNPC: {npcNameSafe} | Location: {roomContextSafe} | Faction: {factionSafe} | World: {worldDesc} | Mood: {flavor} | Era: {time} | Society: {society} | Plot: {plot}\n\nProduce the requested JSON object according to the OUTPUT SPEC section. Do NOT include examples or commentary.";
 
         var combined = Combine(NpcBioSystem, user, NpcOutputSpec);
         return combined;
@@ -115,14 +79,14 @@ Write 2 sentences about {npcName}. Show their role and a defining trait:";
 
     public static string BuildFactionPrompt(string factionName, WorldGenerationOptions options)
     {
-        var user = $@"Faction Name: {factionName}
-World: {options.Description}
-Mood: {options.Flavor}
-Era: {options.TimePeriod}
-Power Structure: {options.PowerStructure}
-Central Conflict: {options.MainPlotPoint}
+        var factionSafe = SanitizeField(factionName, 120);
+        var worldDesc = SanitizeField(options.Description, 800);
+        var flavor = SanitizeField(options.Flavor, 200);
+        var time = SanitizeField(options.TimePeriod, 120);
+        var power = SanitizeField(options.PowerStructure, 200);
+        var plot = SanitizeField(options.MainPlotPoint, 400);
 
-Write 3 sentences about {factionName}. Include their goal, territory, and enemy:";
+        var user = $@"Context:\nFaction: {factionSafe} | World: {worldDesc} | Mood: {flavor} | Era: {time} | PowerStructure: {power} | Conflict: {plot}\n\nProduce the requested JSON object according to the OUTPUT SPEC section. Do NOT include examples or commentary.";
 
         var combined = Combine(FactionLoreSystem, user, FactionOutputSpec);
         return combined;
@@ -130,13 +94,13 @@ Write 3 sentences about {factionName}. Include their goal, territory, and enemy:
 
     public static string BuildLorePrompt(string worldName, WorldGenerationOptions options, int entryNumber)
     {
-        var user = $@"World: {worldName}
-Setting: {options.Description}
-Mood: {options.Flavor}
-Era: {options.TimePeriod}
-Context: {options.MainPlotPoint}
+        var worldSafe = SanitizeField(worldName, 200);
+        var worldDesc = SanitizeField(options.Description, 800);
+        var flavor = SanitizeField(options.Flavor, 200);
+        var time = SanitizeField(options.TimePeriod, 120);
+        var plot = SanitizeField(options.MainPlotPoint, 400);
 
-Write lore entry #{entryNumber} - 1-2 sentences about an interesting detail from this world's history or culture:";
+        var user = $@"Context:\nWorld: {worldSafe} | Setting: {worldDesc} | Mood: {flavor} | Era: {time} | Context: {plot} | EntryNumber: {entryNumber}\n\nProduce the requested short lore text according to the OUTPUT SPEC section. Do NOT include examples or commentary.";
 
         var combined = Combine(WorldLoreSystem, user, LoreOutputSpec);
         return combined;
@@ -177,5 +141,37 @@ Write lore entry #{entryNumber} - 1-2 sentences about an interesting detail from
         // Some adapters support system messages separately; for adapters that don't,
         // send a single combined string with clear sections. Keep concise ordering: system, user, outputspec.
         return system + "\n\n" + user + "\n\n" + outputSpec;
+    }
+
+    // Sanitize and tighten user-supplied fields to avoid prompt injection and overly long prompts
+    private static string SanitizeField(string? input, int maxLen = 400)
+    {
+        if (string.IsNullOrWhiteSpace(input)) return string.Empty;
+        try
+        {
+            var s = input.Trim();
+            // Collapse whitespace
+            s = System.Text.RegularExpressions.Regex.Replace(s, "\\s+", " ");
+            // Remove backticks, code fences and JSON markers
+            s = System.Text.RegularExpressions.Regex.Replace(s, "```.*?```", "", System.Text.RegularExpressions.RegexOptions.Singleline);
+            s = s.Replace("`", "");
+            // Remove common instruction fragments that may leak into user text
+            s = System.Text.RegularExpressions.Regex.Replace(s, "(?i)\\b(return only|return only the json object|return only the text|output spec|output:).*", "");
+            // Strip leading/trailing punctuation
+            s = s.Trim(' ', '\n', '\r', '\t', '"', '\'', ':');
+            // Truncate to maxLen, preserving whole words where possible
+            if (s.Length > maxLen)
+            {
+                var cut = s.Substring(0, maxLen);
+                var lastSpace = cut.LastIndexOf(' ');
+                if (lastSpace > 0) cut = cut.Substring(0, lastSpace);
+                s = cut.Trim() + "...";
+            }
+            return s;
+        }
+        catch
+        {
+            return input.Substring(0, Math.Min(maxLen, input.Length));
+        }
     }
 }

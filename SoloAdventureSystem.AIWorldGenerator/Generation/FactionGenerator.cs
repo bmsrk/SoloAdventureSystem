@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Extensions.Logging;
 using SoloAdventureSystem.ContentGenerator.Adapters;
 using SoloAdventureSystem.ContentGenerator.Models;
+using System.Text.Json;
 
 namespace SoloAdventureSystem.ContentGenerator.Generation;
 
@@ -32,75 +34,93 @@ public class FactionGenerator : IContentGenerator<List<FactionModel>>
         string ideology = "Neutral";
         Exception? lastEx = null;
 
-        // Try several prompts to get a rich faction name and description
-        for (int attempt = 0; attempt < 3; attempt++)
+        // Primary prompt and alternate
+        var primaryPrompt = PromptTemplates.BuildFactionPrompt(string.Empty, context.Options);
+        var altPrompt = $@"Produce a JSON object with fields: name (short), description (2-4 sentences), ideology (single word).\nWorld: {context.Options.Name}\nTheme: {context.Options.Theme}\nPlot: {context.Options.MainPlotPoint}\nReturn only JSON.";
+
+        try
         {
+            var rawStructured = GenerationValidator.EnsureStructuredOrFallback(
+                p => _slm.GenerateRaw(p),
+                primaryPrompt,
+                new[] { altPrompt },
+                raw => {
+                    if (string.IsNullOrWhiteSpace(raw)) return false;
+                    return raw.Contains("{") && (raw.Contains("\"name\"") || raw.Contains("\"description\""));
+                },
+                () => _slm.GenerateFactionFlavor(primaryPrompt),
+                _logger);
+
+            Dictionary<string, object>? parsed = null;
             try
             {
-                string prompt;
-                if (attempt == 0)
+                if (!string.IsNullOrWhiteSpace(rawStructured))
                 {
-                    prompt = PromptTemplates.BuildFactionPrompt(string.Empty, context.Options);
-                }
-                else
-                {
-                    prompt = $@"Produce a JSON object with fields: name (short), description (2-4 sentences), ideology (single word).
-World: {context.Options.Name}
-Theme: {context.Options.Theme}
-Plot: {context.Options.MainPlotPoint}
-Return only JSON.";
-                }
-
-                // Use per-run randomness internally; do not rely on external seed
-                var seed = context.Random.Next();
-                factionDescRaw = _slm.GenerateFactionFlavor(prompt);
-
-                try
-                {
-                    Dictionary<string, object>? parsed = null;
-                    try
+                    // Try parse as a single object
+                    if (!_structuredParser.TryParse<Dictionary<string, object>>(rawStructured, out parsed))
                     {
-                        _structuredParser.TryParse<Dictionary<string, object>>(factionDescRaw, out parsed);
+                        parsed = null;
                     }
-                    catch { parsed = null; }
 
+                    // If single-object parse failed, try parsing as array and take first element
                     if (parsed == null)
                     {
-                        try
+                        if (_structuredParser.TryParse<List<Dictionary<string, object>>>(rawStructured, out var list) && list != null && list.Count > 0)
                         {
-                            List<Dictionary<string, object>>? list = null;
-                            _structuredParser.TryParse<List<Dictionary<string, object>>>(factionDescRaw, out list);
-                            if (list != null && list.Count > 0) parsed = list[0];
+                            parsed = list.First();
                         }
-                        catch { parsed = null; }
-                    }
-
-                    if (parsed != null)
-                    {
-                        if (parsed.TryGetValue("name", out var n) && n != null) factionName = n.ToString() ?? string.Empty;
-                        if (parsed.TryGetValue("description", out var d) && d != null) factionDescRaw = d.ToString() ?? factionDescRaw;
-                        if (parsed.TryGetValue("ideology", out var i) && i != null) ideology = i.ToString() ?? ideology;
                     }
                 }
-                catch (Exception ex)
-                {
-                    _logger?.LogDebug(ex, "Structured parse failed for faction output on attempt {Attempt}", attempt + 1);
-                }
-
-                if (!string.IsNullOrWhiteSpace(factionDescRaw)) break;
             }
             catch (Exception ex)
             {
-                lastEx = ex;
-                _logger?.LogWarning(ex, "Failed to generate faction on attempt {Attempt}", attempt + 1);
+                _logger?.LogDebug(ex, "Structured parse failed for faction output");
+                parsed = null;
             }
+
+            if (parsed != null)
+            {
+                factionName = GenerationUtils.CleanParsedField(ExtractValue(parsed, "name"));
+                factionDescRaw = GenerationUtils.CleanParsedField(ExtractValue(parsed, "description"), 1200);
+                ideology = GenerationUtils.CleanParsedField(ExtractValue(parsed, "ideology"), 40) ?? ideology;
+            }
+            else
+            {
+                // rawStructured may be the fallback cleaned text
+                factionDescRaw = GenerationUtils.CleanParsedField(rawStructured, 1200);
+            }
+        }
+        catch (Exception ex)
+        {
+            lastEx = ex;
+            _logger?.LogWarning(ex, "Failed to generate faction");
         }
 
         if (string.IsNullOrWhiteSpace(factionDescRaw))
         {
-            var msg = "Failed to generate faction description";
-            if (lastEx != null) msg += $": {lastEx.Message}";
-            throw new InvalidOperationException(msg);
+            // Capture diagnostic raw outputs to help troubleshooting
+            try
+            {
+                var primaryRaw = string.Empty;
+                var fallbackRaw = string.Empty;
+                try { primaryRaw = _slm.GenerateRaw(primaryPrompt) ?? string.Empty; } catch (Exception e) { primaryRaw = "<generateRaw threw: " + e.Message + ">"; }
+                try { fallbackRaw = _slm.GenerateFactionFlavor(primaryPrompt) ?? string.Empty; } catch (Exception e) { fallbackRaw = "<generateFactionFlavor threw: " + e.Message + ">"; }
+
+                var pSnippet = primaryRaw.Length > 500 ? primaryRaw.Substring(0, 500) + "..." : primaryRaw;
+                var fSnippet = fallbackRaw.Length > 500 ? fallbackRaw.Substring(0, 500) + "..." : fallbackRaw;
+
+                _logger?.LogError("Faction generation produced empty description. Primary raw (len={LenP}): {SnippetP}\nFallback raw (len={LenF}): {SnippetF}", primaryRaw.Length, pSnippet, fallbackRaw.Length, fSnippet);
+            }
+            catch (Exception logEx)
+            {
+                _logger?.LogDebug(logEx, "Failed to capture diagnostic raw outputs");
+            }
+
+            // Don't throw - return a safe default faction to keep pipeline running
+            _logger?.LogWarning("Faction generation failed; using safe default faction to continue generation pipeline.");
+            factionDescRaw = "A shadowy faction whose details are lost to rumor and time. Their true motives remain unclear.";
+            if (string.IsNullOrWhiteSpace(factionName)) factionName = "The Collective";
+            ideology = ideology ?? "Neutral";
         }
 
         if (string.IsNullOrWhiteSpace(factionName)) factionName = "The Collective";
@@ -118,5 +138,20 @@ Return only JSON.";
         _logger?.LogInformation("? Faction generated: {FactionName}", factionName);
 
         return new List<FactionModel> { faction };
+    }
+
+    private static string? ExtractValue(Dictionary<string, object> parsed, string key)
+    {
+        if (!parsed.TryGetValue(key, out var val) || val == null) return null;
+
+        if (val is JsonElement je)
+        {
+            if (je.ValueKind == JsonValueKind.String) return je.GetString();
+            return je.ToString();
+        }
+
+        if (val is string s) return s;
+
+        try { return val.ToString(); } catch { return null; }
     }
 }

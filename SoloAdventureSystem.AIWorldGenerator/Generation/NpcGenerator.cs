@@ -79,81 +79,82 @@ public class NpcGenerator : IContentGenerator<List<NpcModel>>
         string role = string.Empty;
         string trait = string.Empty;
 
-        // Try AI prompt to generate structured NPC with name and bio
-        for (int attempt = 0; attempt < 3; attempt++)
+        // Build primary prompt
+        var primaryPrompt = PromptTemplates.BuildNpcPrompt(string.Empty, context.Options, room.Title, faction.Name);
+
+        // Alternate stricter prompt
+        var altPrompt = $@"Produce a short JSON object with fields: name (short), bio (2 sentences), role (optional), trait (optional).\nContext: World={context.Options.Name}, Room={room.Title}, Faction={faction.Name}, Theme={context.Options.Theme}\nReturn only JSON.";
+
+        // Use validator to attempt structured output, fall back to cleaned npc bio
+        var rawStructured = GenerationValidator.EnsureStructuredOrFallback(
+            p => _slm.GenerateRaw(p),
+            primaryPrompt,
+            new[] { altPrompt },
+            raw => {
+                // Quick structured validator: must contain { and "name"
+                if (string.IsNullOrWhiteSpace(raw)) return false;
+                return raw.Contains("{") && raw.Contains("\"name\"");
+            },
+            () => _slm.GenerateNpcBio(primaryPrompt),
+            _logger);
+
+        // Try parse structured
+        Dictionary<string, object>? parsed = null;
+        try
         {
-            try
+            if (!string.IsNullOrWhiteSpace(rawStructured))
             {
-                string prompt;
-                if (attempt == 0)
-                {
-                    prompt = PromptTemplates.BuildNpcPrompt(string.Empty, context.Options, room.Title, faction.Name);
-                }
-                else
-                {
-                    prompt = $@"Produce a short JSON object with fields: name (short), bio (2 sentences), role (optional), trait (optional).
-Context: World={context.Options.Name}, Room={room.Title}, Faction={faction.Name}, Theme={context.Options.Theme}
-Return only JSON.";
-                }
-
-                // Request raw output and attempt structured parse locally (avoid double-cleaning)
-                var raw = _slm.GenerateRaw(prompt);
-
-                // Try structured parsing against raw output first
-                Dictionary<string, object>? parsed = null;
-                try
-                {
-                    if (!string.IsNullOrWhiteSpace(raw))
-                    {
-                        _structuredParser.TryParse<Dictionary<string, object>>(raw, out parsed);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger?.LogDebug(ex, "Structured parser threw for raw NPC output on attempt {Attempt}", attempt + 1);
-                    parsed = null;
-                }
-
-                if (parsed != null)
-                {
-                    if (parsed.TryGetValue("name", out var n) && n != null) name = n.ToString() ?? string.Empty;
-                    if (parsed.TryGetValue("bio", out var b) && b != null) bioRaw = b.ToString() ?? string.Empty;
-                    if (parsed.TryGetValue("role", out var r) && r != null) role = r.ToString() ?? string.Empty;
-                    if (parsed.TryGetValue("trait", out var t) && t != null) trait = t.ToString() ?? string.Empty;
-                }
-                else
-                {
-                    // Structured parse failed - fall back to cleaned text from adapter
-                    // Log raw output for debugging (trim large content)
-                    try
-                    {
-                        var dbg = string.IsNullOrWhiteSpace(raw) ? "(empty)" : (raw.Length > 800 ? raw.Substring(0, 800) + "..." : raw);
-                        _logger?.LogDebug("Raw generation (NPC attempt {Attempt}): {Raw}", attempt + 1, dbg);
-                    }
-                    catch { }
-
-                    // Use cleaned/legacy method to obtain bio
-                    bioRaw = _slm.GenerateNpcBio(prompt);
-
-                    // Apply improved light sanitization to cleaned text
-                    bioRaw = SanitizeGeneratedText(bioRaw);
-                }
-
-                if (!string.IsNullOrWhiteSpace(bioRaw)) break;
+                _structuredParser.TryParse<Dictionary<string, object>>(rawStructured, out parsed);
             }
-            catch (Exception ex)
-            {
-                _logger?.LogWarning(ex, "Failed to generate NPC bio on attempt {Attempt}", attempt + 1);
-            }
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogDebug(ex, "Structured parser threw for raw NPC output");
+            parsed = null;
+        }
+
+        if (parsed != null)
+        {
+            name = ExtractValue(parsed, "name") ?? string.Empty;
+            bioRaw = ExtractValue(parsed, "bio") ?? string.Empty;
+            role = ExtractValue(parsed, "role") ?? string.Empty;
+            trait = ExtractValue(parsed, "trait") ?? string.Empty;
+        }
+        else
+        {
+            // rawStructured may already be cleaned fallback (from GenerateNpcBio)
+            bioRaw = rawStructured ?? string.Empty;
+            bioRaw = GenerationUtils.SanitizeGeneratedText(bioRaw);
         }
 
         if (string.IsNullOrWhiteSpace(bioRaw))
         {
-            throw new InvalidOperationException($"Failed to generate non-empty bio for NPC index {index + 1}");
+            // Capture diagnostic raw outputs to help troubleshooting
+            try
+            {
+                var primaryRaw = string.Empty;
+                var fallbackRaw = string.Empty;
+                try { primaryRaw = _slm.GenerateRaw(primaryPrompt) ?? string.Empty; } catch (Exception e) { primaryRaw = "<generateRaw threw: " + e.Message + ">"; }
+                try { fallbackRaw = _slm.GenerateNpcBio(primaryPrompt) ?? string.Empty; } catch (Exception e) { fallbackRaw = "<generateNpcBio threw: " + e.Message + ">"; }
+
+                var pSnippet = primaryRaw.Length > 500 ? primaryRaw.Substring(0, 500) + "..." : primaryRaw;
+                var fSnippet = fallbackRaw.Length > 500 ? fallbackRaw.Substring(0, 500) + "..." : fallbackRaw;
+
+                _logger?.LogError("NPC generation produced empty bio for index {Index}. Primary raw (len={LenP}): {SnippetP}\nFallback raw (len={LenF}): {SnippetF}", index + 1, primaryRaw.Length, pSnippet, fallbackRaw.Length, fSnippet);
+            }
+            catch (Exception logEx)
+            {
+                _logger?.LogDebug(logEx, "Failed to capture diagnostic raw outputs for NPC generation");
+            }
+
+            // Use a safe default bio and name so world generation can continue
+            _logger?.LogWarning("NPC bio generation failed for index {Index}; using fallback bio.", index + 1);
+            bioRaw = "An unremarkable local who prefers to avoid attention; details lost to time.";
+            if (string.IsNullOrWhiteSpace(name)) name = $"NPC{index + 1}";
         }
 
         // Ensure bio is cleaned up for in-game display
-        bioRaw = NormalizeWhitespace(bioRaw);
+        bioRaw = GenerationUtils.NormalizeWhitespace(bioRaw);
 
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -181,92 +182,56 @@ Return only JSON.";
             Behavior = string.IsNullOrWhiteSpace(role) ? "Static" : role,
             Inventory = new List<string>()
         };
-        // Note: do not append per-NPC AI markers here; disclaimer is shown in the UI header
 
         _logger?.LogDebug("? NPC {Index} generated: {NpcName}", index + 1, name);
         return npc;
     }
 
-    // Basic sanitization to remove prompt artifacts and normalize whitespace
-    private static string SanitizeGeneratedText(string text)
-    {
-        if (string.IsNullOrWhiteSpace(text)) return string.Empty;
-
-        // Quick normalization: remove repeated prompt artifact tokens like '# #' sequences and solitary hashes
-        text = Regex.Replace(text, @"#\s*#", " ", RegexOptions.Compiled);
-        text = Regex.Replace(text, @"\s#\s", " ", RegexOptions.Compiled);
-
-        // Remove leading instruction markers like '#json', leading quote, or code fences (```json)
-        text = Regex.Replace(text, @"^\s*(?:#json\n|""|```json|```)\.*", "", RegexOptions.IgnoreCase);
-
-        // Remove common instruction fragments that may leak into output
-        var lines = text.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-        var kept = new List<string>();
-        foreach (var raw in lines)
-        {
-            var line = raw.Trim();
-            if (string.IsNullOrWhiteSpace(line)) continue;
-
-            // Skip lines that look like instructions or UI hints
-            var lower = line.ToLowerInvariant();
-            if (lower.StartsWith("could you") || lower.StartsWith("please") || lower.StartsWith("return only") || lower.StartsWith("produce") || lower.StartsWith("example"))
-                continue;
-
-            kept.Add(line);
-        }
-
-        var joined = string.Join(" ", kept);
-        var cleaned = NormalizeWhitespace(joined);
-
-        // Remove TOON markers and hashtag tokens
-        try
-        {
-            cleaned = System.Text.RegularExpressions.Regex.Replace(cleaned, "(?i)\\b#?TOON\\b", "");
-            cleaned = System.Text.RegularExpressions.Regex.Replace(cleaned, "(?i)\\b#?ENDTOON\\b", "");
-            cleaned = System.Text.RegularExpressions.Regex.Replace(cleaned, "#\\w+", "");
-            // Remove (s) plural markers like a(s) -> a
-            cleaned = System.Text.RegularExpressions.Regex.Replace(cleaned, "\\(s\\)", "");
-
-            // Dedupe repeated short sentences/fragments
-            var sentences = System.Text.RegularExpressions.Regex.Split(cleaned, "(?<=[\\.!?])\\s+");
-            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            var parts = new List<string>();
-            foreach (var s in sentences)
-            {
-                var t = s.Trim();
-                if (string.IsNullOrEmpty(t)) continue;
-                var key = System.Text.RegularExpressions.Regex.Replace(t.ToLowerInvariant(), "[\\p{P}\\s]+", " ").Trim();
-                if (!seen.Contains(key)) { parts.Add(t); seen.Add(key); }
-            }
-            if (parts.Count > 0) cleaned = string.Join(" ", parts);
-            cleaned = NormalizeWhitespace(cleaned);
-        }
-        catch { }
-
-        return cleaned;
-    }
-
-    private static string NormalizeWhitespace(string s)
-    {
-        if (string.IsNullOrEmpty(s)) return s;
-        var outStr = Regex.Replace(s, "\\s+", " ").Trim();
-        return outStr;
-    }
-
-    // Try to find a human-like name (one or two capitalized words) in the bio
+    // Try to find a human-like name (prefer two capitalized words) in the bio. Filter out single short words
+    // that look like prompt fragments (e.g., 'Can', 'Could', 'Please').
     private static string? ExtractNameFromBio(string bio)
     {
         if (string.IsNullOrWhiteSpace(bio)) return null;
 
-        // Look for patterns like 'Marcus Chen' or single capitalized name 'Marcus'
-        var nameMatch = Regex.Match(bio, "\\b([A-Z][a-z]{1,20}(?: [A-Z][a-z]{1,20})?)\\b");
+        // Remove any role markers that might have leaked
+        var cleaned = Regex.Replace(bio, @"<\|/?(user|assistant|system)\|>", "", RegexOptions.IgnoreCase);
+
+        // Try to find two-word capitalized name first
+        var twoWordMatch = Regex.Match(cleaned, @"\b([A-Z][\\p{L}'\\-]{1,20})\s+([A-Z][\\p{L}'\\-]{1,20})\b");
+        if (twoWordMatch.Success)
+        {
+            var candidate = twoWordMatch.Groups[1].Value + " " + twoWordMatch.Groups[2].Value;
+            if (candidate.Length <= 40) return candidate;
+            return candidate.Substring(0, 40).Trim();
+        }
+
+        // Fall back to single capitalized word but exclude common prompt words
+        var nameMatch = Regex.Match(cleaned, @"\b([A-Z][\\p{L}'\\-]{1,20})\b");
         if (nameMatch.Success)
         {
             var candidate = nameMatch.Groups[1].Value;
-            if (candidate.Length <= 20) return candidate;
-            return candidate.Substring(0, 20).Trim();
+            var lower = candidate.ToLowerInvariant();
+            var blacklist = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "can", "could", "please", "return", "example", "user", "assistant", "system" };
+            if (blacklist.Contains(lower)) return null;
+            if (candidate.Length <= 40) return candidate;
+            return candidate.Substring(0, 40).Trim();
         }
 
         return null;
+    }
+
+    private static string? ExtractValue(Dictionary<string, object> parsed, string key)
+    {
+        if (!parsed.TryGetValue(key, out var val) || val == null) return null;
+
+        if (val is System.Text.Json.JsonElement je)
+        {
+            if (je.ValueKind == JsonValueKind.String) return je.GetString();
+            return je.ToString();
+        }
+
+        if (val is string s) return s;
+
+        try { return val.ToString(); } catch { return null; }
     }
 }
