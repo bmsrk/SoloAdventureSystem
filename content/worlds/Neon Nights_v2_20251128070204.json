@@ -1,0 +1,345 @@
+{
+  "Meta": {
+    "GeneratedAt": "2025-11-28T07:00:21.2003716Z",
+    "Version": "v2"
+  },
+  "Skills": [
+    "Persuasion",
+    "Combat",
+    "Knowledge",
+    "Stealth",
+    "Investigation",
+    "Teaching"
+  ],
+  "World": {
+    "Name": "Neon Nights",
+    "Theme": "Cyberpunk",
+    "Tone": "Dark and gritty with neon highlights",
+    "Description": "A sprawling megacity where corporations own everything"
+  },
+  "Locations": [
+    {
+      "Id": "loc1",
+      "Name": "Plasma Market",
+      "Description": "The electronic beeping mix with the scent of fried noodles under bioluminescent panels."
+    },
+    {
+      "Id": "loc2",
+      "Name": "Net Core",
+      "Description": "Lit by flickering holographic displays, filled with hydraulic pumps cycling, and smelling of street food."
+    },
+    {
+      "Id": "loc3",
+      "Name": "Nano Den",
+      "Description": "The ventilation systems mix with the scent of machine oil under crimson emergency beacons."
+    },
+    {
+      "Id": "loc4",
+      "Name": "Pyro Nexus",
+      "Description": "Lit by cold LED strips, filled with data transfer chirping, and smelling of cleaning chemicals."
+    },
+    {
+      "Id": "loc5",
+      "Name": "Aether Complex",
+      "Description": "2. Aether Complex is a world of neon and energy. Aether Complex is a world of neon and energy. The sky is a brilliant, deep blue, and the stars are a vibrant, pulsing red. The air is thick with the scent of burning rubber, and the streets are bathed in neon light. The buildings are made of shimmering glass, and the neon signage is a constant reminder of the city\u0027s vibrant energy. 3. Aether Complex is a world of neon and magic. Aether Complex is a world of neon and magic. The sky is a brilliant, deep blue, and the stars are a vibrant, pulsing red. The air is thick with the scent of burning rubber, and the streets are bathed in neon light. The buildings are"
+    },
+    {
+      "Id": "loc6",
+      "Name": "Synth Lab",
+      "Description": "Lit by warm incandescent bulbs, filled with cooling fans spinning, and smelling of burnt circuitry."
+    }
+  ],
+  "Factions": [
+    {
+      "Id": "fac1",
+      "Name": "Dark Assembly",
+      "Description": "3. Write a short story set in a dystopian future where humans are forced to live in underground bunkers due to a global economic collapse. In the story, describe the bunker life, the challenges faced by the characters, and the consequences of their survival."
+    },
+    {
+      "Id": "fac2",
+      "Name": "Crystal Circle",
+      "Description": ""
+    },
+    {
+      "Id": "fac3",
+      "Name": "Azure Cartel",
+      "Description": "Use descriptive words and phrases to create an immersive and memorable experience for the reader."
+    }
+  ],
+  "Npcs": [
+    {
+      "Id": "npc1",
+      "Name": "Kenji Chen",
+      "PersonalityTraits": [
+        "pragmatic",
+        "guarded"
+      ],
+      "RelationToPlayer": "ally",
+      "Trust": 9,
+      "Secrets": [],
+      "KnowledgeAreas": [
+        "local_history"
+      ]
+    },
+    {
+      "Id": "npc2",
+      "Name": "Elena Yamamoto",
+      "PersonalityTraits": [
+        "curious",
+        "talkative"
+      ],
+      "RelationToPlayer": "neutral",
+      "Trust": 1,
+      "Secrets": [
+        "sec2"
+      ],
+      "KnowledgeAreas": []
+    },
+    {
+      "Id": "npc3",
+      "Name": "Natasha Volkov",
+      "PersonalityTraits": [
+        "guarded",
+        "suspicious"
+      ],
+      "RelationToPlayer": "rival",
+      "Trust": 4,
+      "Secrets": [],
+      "KnowledgeAreas": [
+        "local_history"
+      ]
+    },
+    {
+      "Id": "npc4",
+      "Name": "Sarah \u0027Wraith\u0027 Santos",
+      "PersonalityTraits": [
+        "talkative",
+        "helpful"
+      ],
+      "RelationToPlayer": "ally",
+      "Trust": 7,
+      "Secrets": [
+        "sec4"
+      ],
+      "KnowledgeAreas": []
+    },
+    {
+      "Id": "npc5",
+      "Name": "Hiroshi \u0027Bolt\u0027 Petrov",
+      "PersonalityTraits": [
+        "suspicious",
+        "pragmatic"
+      ],
+      "RelationToPlayer": "neutral",
+      "Trust": 10,
+      "Secrets": [],
+      "KnowledgeAreas": [
+        "local_history"
+      ]
+    },
+    {
+      "Id": "npc6",
+      "Name": "Raj \u0027Nova\u0027 Martinez",
+      "PersonalityTraits": [
+        "helpful",
+        "curious"
+      ],
+      "RelationToPlayer": "rival",
+      "Trust": 2,
+      "Secrets": [
+        "sec1"
+      ],
+      "KnowledgeAreas": []
+    }
+  ],
+  "Scenes": [
+    {
+      "Id": "scene1",
+      "Description": "",
+      "Actions": [
+        {
+          "Type": "educational_check",
+          "Skill": "Teaching",
+          "SuccessOutcome": {
+            "Text": "",
+            "ReputationChange": 1,
+            "TrustChange": 1,
+            "UnlockSecrets": [],
+            "NextSceneId": ""
+          },
+          "FailureOutcome": {
+            "Text": "",
+            "ReputationChange": -1,
+            "TrustChange": -1,
+            "UnlockSecrets": [],
+            "NextSceneId": ""
+          },
+          "Difficulty": 7
+        },
+        {
+          "Type": "social_check",
+          "Skill": "Persuasion",
+          "SuccessOutcome": {
+            "Text": "",
+            "ReputationChange": 1,
+            "TrustChange": 1,
+            "UnlockSecrets": [
+              "sec2"
+            ],
+            "NextSceneId": ""
+          },
+          "FailureOutcome": {
+            "Text": "",
+            "ReputationChange": -1,
+            "TrustChange": -1,
+            "UnlockSecrets": [],
+            "NextSceneId": ""
+          },
+          "Difficulty": 8
+        }
+      ],
+      "SecretsAndTwists": []
+    },
+    {
+      "Id": "scene2",
+      "Description": "",
+      "Actions": [
+        {
+          "Type": "social_check",
+          "Skill": "Persuasion",
+          "SuccessOutcome": {
+            "Text": "",
+            "ReputationChange": 1,
+            "TrustChange": 1,
+            "UnlockSecrets": [
+              "sec2"
+            ],
+            "NextSceneId": ""
+          },
+          "FailureOutcome": {
+            "Text": "The skill failed to persuade Elena Yamamoto.",
+            "ReputationChange": -1,
+            "TrustChange": -1,
+            "UnlockSecrets": [],
+            "NextSceneId": ""
+          },
+          "Difficulty": 8
+        },
+        {
+          "Type": "social_check",
+          "Skill": "Combat",
+          "SuccessOutcome": {
+            "Text": "",
+            "ReputationChange": 1,
+            "TrustChange": 1,
+            "UnlockSecrets": [],
+            "NextSceneId": ""
+          },
+          "FailureOutcome": {
+            "Text": "",
+            "ReputationChange": -1,
+            "TrustChange": -1,
+            "UnlockSecrets": [],
+            "NextSceneId": ""
+          },
+          "Difficulty": 9
+        }
+      ],
+      "SecretsAndTwists": [
+        "sec2"
+      ]
+    },
+    {
+      "Id": "scene3",
+      "Description": "Use third-person narrative.",
+      "Actions": [
+        {
+          "Type": "social_check",
+          "Skill": "Combat",
+          "SuccessOutcome": {
+            "Text": "",
+            "ReputationChange": 1,
+            "TrustChange": 1,
+            "UnlockSecrets": [],
+            "NextSceneId": ""
+          },
+          "FailureOutcome": {
+            "Text": "Use appropriate action verbs to describe the failure and the consequences of it. Na...\nFemale NPC Wanderer: \u0022I need to find shelter for the night\u0022\nA female NPC, wanderer, approaches the group. She has been lost and wandering for days. She is tired and thirsty. The group notices that she has a small backpack. The group decides to accompany her. She speaks with them in a low voice, \u0022...\nNPC Wanderer: \u0022I\u0027m lost, please help me find a place to sleep tonight.\u0022\nThe group listens to the wanderer. They all have different reasons for being lost. They all have different goals",
+            "ReputationChange": -1,
+            "TrustChange": -1,
+            "UnlockSecrets": [],
+            "NextSceneId": ""
+          },
+          "Difficulty": 9
+        },
+        {
+          "Type": "social_check",
+          "Skill": "Knowledge",
+          "SuccessOutcome": {
+            "Text": "",
+            "ReputationChange": 1,
+            "TrustChange": 1,
+            "UnlockSecrets": [],
+            "NextSceneId": ""
+          },
+          "FailureOutcome": {
+            "Text": "",
+            "ReputationChange": -1,
+            "TrustChange": -1,
+            "UnlockSecrets": [],
+            "NextSceneId": ""
+          },
+          "Difficulty": 5
+        }
+      ],
+      "SecretsAndTwists": []
+    }
+  ],
+  "Secrets": [
+    {
+      "Id": "sec1",
+      "Text": "."
+    },
+    {
+      "Id": "sec2",
+      "Text": ".\nThis is a placeholder, which means that it has no meaning or context."
+    },
+    {
+      "Id": "sec3",
+      "Text": "812685"
+    },
+    {
+      "Id": "sec4",
+      "Text": ",730,265"
+    },
+    {
+      "Id": "sec5",
+      "Text": "8545\nThe clues must be hidden in the game\u0027s universe.\nYou can use any number of words, phrases, or phrases to create a secret or clue. You must use a minimum of 1 word and a maximum of 4 words.\nThe clues should be in the style of a secret message or a cipher. You can use any type of cipher, such as the Caesar cipher, the Vigenere cipher, or a combination of them.\nThe clues must be easily decipherable by the right person. You can choose any method for deciphering the clues, such as using a dictionary, solving a cryptogram, or simply looking up"
+    }
+  ],
+  "Endings": [
+    {
+      "Name": "Expose Conspiracy",
+      "Conditions": {
+        "ReputationMin": 3,
+        "RequiredAllies": [
+          "npc1",
+          "npc4"
+        ],
+        "SecretsRequired": [
+          "sec1"
+        ]
+      },
+      "Text": "You reveal the ledger and topple the corrupt directors, becoming a folk hero."
+    },
+    {
+      "Name": "Cover Up",
+      "Conditions": {
+        "ReputationMin": -10,
+        "RequiredAllies": [],
+        "SecretsRequired": []
+      },
+      "Text": "You keep the secret and prosper quietly in the shadows."
+    }
+  ]
+}

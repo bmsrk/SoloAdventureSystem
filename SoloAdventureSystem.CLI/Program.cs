@@ -52,7 +52,7 @@ var presets = new Dictionary<string, WorldGenerationOptions>
 // If headless requested, run a single generation and exit
 if (args is not null && args.Length > 0 && Array.Exists(args, a => a == "--headless"))
 {
-    Console.WriteLine("Headless generation mode starting...");
+    Console.WriteLine("Headless V2 generation mode starting...");
     var preset = presets["Neon Nights"];
     var options = new WorldGenerationOptions
     {
@@ -68,7 +68,37 @@ if (args is not null && args.Length > 0 && Array.Exists(args, a => a == "--headl
 
     try
     {
-        // Initialize model/downloader and adapter
+        // Detect GPU availability and update aiSettings before initializing adapters
+        try
+        {
+            Console.WriteLine("Detecting GPU availability...");
+            var psi = new ProcessStartInfo
+            {
+                FileName = "nvidia-smi",
+                Arguments = "-L",
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            using var p = Process.Start(psi);
+            if (p != null)
+            {
+                var output = p.StandardOutput.ReadToEnd();
+                var err = p.StandardError.ReadToEnd();
+                p.WaitForExit(2000);
+                var hasGpu = p.ExitCode == 0 && !string.IsNullOrWhiteSpace(output);
+                aiSettings.UseGPU = hasGpu;
+                Console.WriteLine(hasGpu ? "GPU detected - will attempt to use GPU backend." : "No GPU detected - falling back to CPU.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"GPU detection failed: {ex.Message}. Defaulting to configured backend ({(aiSettings.UseGPU ? "GPU" : "CPU")}).");
+        }
+
+        // Ensure model available and create SLM adapter for V2 generator
         var sfLogger = loggerFactory.CreateLogger("SLMAdapterFactory");
         sfLogger.LogInformation("Ensuring model available: {ModelKey}", aiSettings.LLamaModelKey);
         var downloader = new SoloAdventureSystem.ContentGenerator.EmbeddedModel.GGUFModelDownloader(loggerFactory.CreateLogger<SoloAdventureSystem.ContentGenerator.EmbeddedModel.GGUFModelDownloader>());
@@ -83,28 +113,35 @@ if (args is not null && args.Length > 0 && Array.Exists(args, a => a == "--headl
         }
 
         var headlessSlmAdapter = SLMAdapterFactory.Create(provider);
-        sfLogger.LogInformation("SLM adapter created (headless)");
+        // Initialize adapter (blocking) so model is loaded before generation
+        try
+        {
+            headlessSlmAdapter.InitializeAsync(progress).Wait();
+            sfLogger.LogInformation("SLM adapter initialized (headless)");
+        }
+        catch (Exception initEx)
+        {
+            sfLogger.LogWarning(initEx, "SLM adapter initialization failed or is unnecessary: {Message}", initEx.Message);
+        }
 
-        var imageAdapter = new SimpleImageAdapter();
-        var headlessWorldGen = new WorldGenerator(
-            new FactionGenerator(headlessSlmAdapter, loggerFactory.CreateLogger<FactionGenerator>()),
-            new RoomGenerator(headlessSlmAdapter, imageAdapter, loggerFactory.CreateLogger<RoomGenerator>()),
-            new RoomConnector(loggerFactory.CreateLogger<RoomConnector>()),
-            new NpcGenerator(headlessSlmAdapter, loggerFactory.CreateLogger<NpcGenerator>()),
-            loggerFactory.CreateLogger<WorldGenerator>());
+        // Use V2 generator which uses the LLM adapter
+        var skills = new List<string> { "Persuasion", "Combat", "Knowledge", "Stealth", "Investigation", "Teaching" };
+        var v2Gen = new WorldGeneratorV2(headlessSlmAdapter, loggerFactory.CreateLogger<WorldGeneratorV2>());
+        var locations = Math.Max(3, options.Regions);
+        var npcs = Math.Max(3, options.Regions);
 
-        Console.WriteLine("Starting generation...");
-        var result = headlessWorldGen.Generate(options);
+        var worldV2 = v2Gen.Generate(options, skills, locations, npcs);
+
         var outDir = Path.Combine("content", "worlds");
         Directory.CreateDirectory(outDir);
-        var outPath = Path.Combine(outDir, $"{options.Name}_{DateTime.UtcNow:yyyyMMddHHmmss}.json");
-        File.WriteAllText(outPath, JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true }));
-        Console.WriteLine($"Generation completed. Saved: {outPath}");
+        var outPath = Path.Combine(outDir, $"{options.Name}_v2_{DateTime.UtcNow:yyyyMMddHHmmss}.json");
+        File.WriteAllText(outPath, JsonSerializer.Serialize(worldV2, new JsonSerializerOptions { WriteIndented = true }));
+        Console.WriteLine($"V2 Generation completed. Saved: {outPath}");
         return;
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Headless generation failed: {ex}");
+        Console.WriteLine($"Headless V2 generation failed: {ex}");
         return;
     }
 }

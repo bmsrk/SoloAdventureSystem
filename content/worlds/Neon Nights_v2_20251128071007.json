@@ -1,0 +1,352 @@
+{
+  "Meta": {
+    "GeneratedAt": "2025-11-28T07:09:36.4637507Z",
+    "Version": "v2",
+    "Deterministic": false
+  },
+  "Skills": [
+    "Persuasion",
+    "Combat",
+    "Knowledge",
+    "Stealth",
+    "Investigation",
+    "Teaching"
+  ],
+  "World": {
+    "Name": "Neon Nights",
+    "Theme": "Cyberpunk",
+    "Tone": "Dark and gritty with neon highlights",
+    "Description": "A sprawling megacity where corporations own everything"
+  },
+  "Locations": [
+    {
+      "Id": "loc1",
+      "Name": "Shadow Center",
+      "Description": "The electronic beeping mix with the scent of fried noodles under bioluminescent panels."
+    },
+    {
+      "Id": "loc2",
+      "Name": "Chrome Nexus",
+      "Description": "Lit by warm incandescent bulbs, filled with surveillance drones buzzing, and smelling of coffee brewing."
+    },
+    {
+      "Id": "loc3",
+      "Name": "Neural Vault",
+      "Description": "The Neural Vault is a neon-lit underground vault hidden deep within the heart of Neon Nights. The walls are adorned with neon signs and neon lights, casting a surreal and eerie glow. The entrance to the vault is a rusted metal door, with a brass plate engraved with an old-fashioned lock. Once inside, the air is thick with the smell of decay and the sound of heavy footsteps echoing through the dimly lit corridors. The vault is divided into four sections, each with its own unique atmosphere. The first section is dimly lit, with a faint glow of neon light emanating from a hidden source. This section is home to the most secure and valuable items in the vault, including rare and powerful artifacts. The second"
+    },
+    {
+      "Id": "loc4",
+      "Name": "Plasma Sector",
+      "Description": "The distant traffic mix with the scent of sterilization agents under shadowy corners with occasional glints."
+    },
+    {
+      "Id": "loc5",
+      "Name": "Cryo Lounge",
+      "Description": "Lit by cold LED strips, filled with cooling fans spinning, and smelling of burnt circuitry."
+    },
+    {
+      "Id": "loc6",
+      "Name": "Grid Haven",
+      "Description": "A place of the future, where technology has conquered the world. The name of the place is Grid Haven, and it is located on the edge of a vast, neon-lit wasteland. The terrain is rocky and barren, with towering skyscrapers and vast, interconnected networks of tunnels and subways. The buildings are all glass and steel, with a futuristic design that is both sleek and sinister. The sky is a bright, neon blue, and the sun is a constant source of light. The people of Grid Haven live in a world of constant change and flux. The streets are alive with energy, and the air is thick with the scent of electricity. The sounds of the city are a constant blur of noise, including the hum of machines and the chatter of computers."
+    }
+  ],
+  "Factions": [
+    {
+      "Id": "fac1",
+      "Name": "Steel Accord",
+      "Description": "The faction should be 150 words or less and should include at least three examples of neon puns or antonyms."
+    },
+    {
+      "Id": "fac2",
+      "Name": "Crystal Circle",
+      "Description": ""
+    },
+    {
+      "Id": "fac3",
+      "Name": "Silver Sisterhood",
+      "Description": ""
+    }
+  ],
+  "Npcs": [
+    {
+      "Id": "npc1",
+      "Name": "Ivan \u0027Wire\u0027 Cohen",
+      "PersonalityTraits": [
+        "pragmatic",
+        "talkative"
+      ],
+      "RelationToPlayer": "neutral",
+      "Trust": 5,
+      "Secrets": [
+        "sec5"
+      ],
+      "KnowledgeAreas": [
+        "local_history"
+      ]
+    },
+    {
+      "Id": "npc2",
+      "Name": "Carmen Brown",
+      "PersonalityTraits": [
+        "guarded",
+        "suspicious"
+      ],
+      "RelationToPlayer": "ally",
+      "Trust": 10,
+      "Secrets": [
+        "sec2"
+      ],
+      "KnowledgeAreas": [
+        "local_history"
+      ]
+    },
+    {
+      "Id": "npc3",
+      "Name": "Mei Volkov",
+      "PersonalityTraits": [
+        "pragmatic",
+        "guarded"
+      ],
+      "RelationToPlayer": "rival",
+      "Trust": 0,
+      "Secrets": [],
+      "KnowledgeAreas": []
+    },
+    {
+      "Id": "npc4",
+      "Name": "Priya Tanaka",
+      "PersonalityTraits": [
+        "suspicious",
+        "guarded"
+      ],
+      "RelationToPlayer": "neutral",
+      "Trust": 7,
+      "Secrets": [
+        "sec4"
+      ],
+      "KnowledgeAreas": []
+    },
+    {
+      "Id": "npc5",
+      "Name": "Hassan \u0027Chrome\u0027 Volkov",
+      "PersonalityTraits": [
+        "talkative",
+        "curious"
+      ],
+      "RelationToPlayer": "rival",
+      "Trust": 8,
+      "Secrets": [
+        "sec3"
+      ],
+      "KnowledgeAreas": [
+        "local_history"
+      ]
+    },
+    {
+      "Id": "npc6",
+      "Name": "Elena Novak",
+      "PersonalityTraits": [
+        "pragmatic",
+        "talkative"
+      ],
+      "RelationToPlayer": "ally",
+      "Trust": 10,
+      "Secrets": [],
+      "KnowledgeAreas": []
+    }
+  ],
+  "Scenes": [
+    {
+      "Id": "scene1",
+      "Description": "",
+      "Actions": [
+        {
+          "Type": "social_check",
+          "Skill": "Combat",
+          "SuccessOutcome": {
+            "Text": "Use past tense. Use active voice.",
+            "ReputationChange": 1,
+            "TrustChange": 1,
+            "UnlockSecrets": [],
+            "NextSceneId": ""
+          },
+          "FailureOutcome": {
+            "Text": "Use descriptive language to convey the impact of the failure. Use descriptive language to convey the impact of the failure. 1. The combat training program, which I had been attending with great enthusiasm, failed me. I had been preparing for months, and yet, I failed in the most crucial battle. I was outnumbered, outgunned, and outmatched. I had no weapons, and my skills were rusty. I was defeated, and my confidence was shattered. 2. The grueling training sessions had left me weak and vulnerable. My body had been strengthened, but my mind had not been prepared for such a grueling battle. The NPC had been well",
+            "ReputationChange": -1,
+            "TrustChange": -1,
+            "UnlockSecrets": [],
+            "NextSceneId": ""
+          },
+          "Difficulty": 8
+        },
+        {
+          "Type": "social_check",
+          "Skill": "Combat",
+          "SuccessOutcome": {
+            "Text": "",
+            "ReputationChange": 1,
+            "TrustChange": 1,
+            "UnlockSecrets": [
+              "sec3"
+            ],
+            "NextSceneId": ""
+          },
+          "FailureOutcome": {
+            "Text": "",
+            "ReputationChange": -1,
+            "TrustChange": -1,
+            "UnlockSecrets": [],
+            "NextSceneId": ""
+          },
+          "Difficulty": 6
+        }
+      ],
+      "SecretsAndTwists": [
+        "sec4"
+      ]
+    },
+    {
+      "Id": "scene2",
+      "Description": "",
+      "Actions": [
+        {
+          "Type": "social_check",
+          "Skill": "Persuasion",
+          "SuccessOutcome": {
+            "Text": "",
+            "ReputationChange": 1,
+            "TrustChange": 1,
+            "UnlockSecrets": [
+              "sec3"
+            ],
+            "NextSceneId": ""
+          },
+          "FailureOutcome": {
+            "Text": "",
+            "ReputationChange": -1,
+            "TrustChange": -1,
+            "UnlockSecrets": [],
+            "NextSceneId": ""
+          },
+          "Difficulty": 8
+        },
+        {
+          "Type": "social_check",
+          "Skill": "Knowledge",
+          "SuccessOutcome": {
+            "Text": "",
+            "ReputationChange": 1,
+            "TrustChange": 1,
+            "UnlockSecrets": [
+              "sec5"
+            ],
+            "NextSceneId": ""
+          },
+          "FailureOutcome": {
+            "Text": "Use descriptive language and include details about the situation that led to the failure. The failure outcome should be clear, concise, and realistic.",
+            "ReputationChange": -1,
+            "TrustChange": -1,
+            "UnlockSecrets": [],
+            "NextSceneId": ""
+          },
+          "Difficulty": 9
+        }
+      ],
+      "SecretsAndTwists": [
+        "sec5"
+      ]
+    },
+    {
+      "Id": "scene3",
+      "Description": "",
+      "Actions": [
+        {
+          "Type": "social_check",
+          "Skill": "Stealth",
+          "SuccessOutcome": {
+            "Text": "",
+            "ReputationChange": 1,
+            "TrustChange": 1,
+            "UnlockSecrets": [],
+            "NextSceneId": ""
+          },
+          "FailureOutcome": {
+            "Text": "",
+            "ReputationChange": -1,
+            "TrustChange": -1,
+            "UnlockSecrets": [],
+            "NextSceneId": ""
+          },
+          "Difficulty": 9
+        },
+        {
+          "Type": "social_check",
+          "Skill": "Stealth",
+          "SuccessOutcome": {
+            "Text": "",
+            "ReputationChange": 1,
+            "TrustChange": 1,
+            "UnlockSecrets": [],
+            "NextSceneId": ""
+          },
+          "FailureOutcome": {
+            "Text": "(Maximum 100 words).",
+            "ReputationChange": -1,
+            "TrustChange": -1,
+            "UnlockSecrets": [],
+            "NextSceneId": ""
+          },
+          "Difficulty": 5
+        }
+      ],
+      "SecretsAndTwists": []
+    }
+  ],
+  "Secrets": [
+    {
+      "Id": "sec1",
+      "Text": "2.03.19."
+    },
+    {
+      "Id": "sec2",
+      "Text": ".\nThe Secret of Neon Nights - The story of Neon Nights, a young detective who must solve a case involving a mysterious killer who is killing people in the neon nights of the city. The killer is using a specific brand of neon, a secret ingredient that only a few people know about. The killer is also a former partner of Neon Nights.\nThe Secret of Neon Nights - The story of Neon Nights, a young detective who must solve a case involving a mysterious killer who is killing people in the neon nights of the city. The killer is using a specific brand of neon, a secret ingredient that"
+    },
+    {
+      "Id": "sec3",
+      "Text": ".2.3.1.\n\u003C|assistant|\u003E\n1. A glittering neon sign in the shape of a heart, illuminated by a soft glow, attracts one\u0027s eye.\n2. As one walks through the neon streets, a flashing neon sign catches the attention, inviting one to enter the mysterious night.\n3. The neon sign beckons, urging one to step forward and take a closer look.\n4. A neon-lit path leads one deeper into the heart of the neon city, a world of vibrant colors and glittering lights.\n5. As one explores further, one discovers"
+    },
+    {
+      "Id": "sec4",
+      "Text": ".\nThe Neon Nihts was a hidden world, a place of secrets and intrigue. It was said to be ruled by a dark force, a force that only those with true strength could stand against. Those who entered the Neon Nihts were doomed to face their darkest fears, and only the most resolute of souls could survive.\nThe Neon Nihts was a place of twisted beauty. The buildings were made of shimmering glass, the streets twisted with dark energy, and the people were...different. They walked with a purpose, a purpose that was only known to those who had lived here for a long time. They had seen the darkness within themselves,"
+    },
+    {
+      "Id": "sec5",
+      "Text": "592.\nThe new year has begun, and I have a secret to share with you. A secret that will make you laugh and make you wonder.\nAs the year ends, I have a confession to make. It\u0027s a small secret, but it\u0027s a secret that will make you feel a little better.\nIt\u0027s not a secret that you know, but I want you to know it anyway. I want to share this secret with you.\nI hope this is not a secret that you have already discovered. I hope this is the first time you\u0027ve heard it.\nThis is not a secret that you should share with anyone. It\u0027s a secret that I share with you. I"
+    }
+  ],
+  "Endings": [
+    {
+      "Name": "Expose Conspiracy",
+      "Conditions": {
+        "ReputationMin": 3,
+        "RequiredAllies": [
+          "npc2",
+          "npc6"
+        ],
+        "SecretsRequired": [
+          "sec1"
+        ]
+      },
+      "Text": "You reveal the ledger and topple the corrupt directors, becoming a folk hero."
+    },
+    {
+      "Name": "Cover Up",
+      "Conditions": {
+        "ReputationMin": -10,
+        "RequiredAllies": [],
+        "SecretsRequired": []
+      },
+      "Text": "You keep the secret and prosper quietly in the shadows."
+    }
+  ]
+}

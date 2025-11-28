@@ -64,7 +64,7 @@ namespace SoloAdventureSystem.LLM.Adapters
                         _logger?.LogWarning("CUDA_VISIBLE_DEVICES={CudaEnv}", Environment.GetEnvironmentVariable("CUDA_VISIBLE_DEVICES") ?? "(null)");
                         var path = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
                         if (path.Length > 200)
-                            path = path.Substring(0, 200) + "...";
+                            path = string.Concat(path.AsSpan(0, 200), "...");
                         _logger?.LogWarning("PATH (prefix): {PathPrefix}", path);
                     }
                     catch { /* best-effort */ }
