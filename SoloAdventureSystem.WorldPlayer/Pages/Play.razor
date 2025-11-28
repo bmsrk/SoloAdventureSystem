@@ -1,0 +1,77 @@
+@page "/play"
+@using SoloAdventureSystem.ContentGenerator.Models
+@using SoloAdventureSystem.ContentGenerator.Generation
+@inject ILocalSLMAdapter Slm
+
+<h3>Play WorldV2</h3>
+<div class="mb-2">
+    <label>World name</label>
+    <input class="form-control" @bind="WorldName" />
+</div>
+<div class="mb-2">
+    <label>Theme</label>
+    <input class="form-control" @bind="Theme" />
+</div>
+<div class="mb-2">
+    <button class="btn btn-primary" @onclick="GenerateWorld">Generate (LLM)</button>
+    <button class="btn btn-secondary" @onclick="LoadSample">Load Sample</button>
+</div>
+
+@if (World != null)
+{
+    <div class="card">
+        <div class="card-body">
+            <h4>@World.World.Name</h4>
+            <p>@World.World.Description</p>
+            <h5>Locations</h5>
+            <ul>
+                @foreach (var loc in World.Locations)
+                {
+                    <li><b>@loc.Name</b>: @loc.Description</li>
+                }
+            </ul>
+            <h5>NPCs</h5>
+            <ul>
+                @foreach (var npc in World.Npcs)
+                {
+                    <li>@npc.Name (@npc.RelationToPlayer) - Trust: @npc.Trust</li>
+                }
+            </ul>
+            <h5>Scenes</h5>
+            <ul>
+                @foreach (var scene in World.Scenes)
+                {
+                    <li>@scene.Id: @scene.Description</li>
+                }
+            </ul>
+        </div>
+    </div>
+}
+
+@code{
+    private WorldV2? World;
+    private string WorldName { get; set; } = "Neon Nights";
+    private string Theme { get; set; } = "Cyberpunk";
+
+    private async Task GenerateWorld()
+    {
+        var options = new WorldGenerationOptions { Name = WorldName, Theme = Theme, Flavor = "", Description = "" };
+        // create a temporary generator using the injected Slm adapter
+        var skills = new List<string> { "Persuasion", "Combat", "Knowledge", "Stealth", "Investigation", "Teaching" };
+        var gen = new WorldGeneratorV2(Slm);
+        World = gen.Generate(options, skills);
+        StateHasChanged();
+    }
+
+    private void LoadSample()
+    {
+        // Load previously generated file from disk if available
+        var path = Path.Combine("content", "worlds");
+        var file = Directory.Exists(path) ? Directory.GetFiles(path, "*_v2_*.json").OrderByDescending(f => f).FirstOrDefault() : null;
+        if (file != null)
+        {
+            var txt = File.ReadAllText(file);
+            World = System.Text.Json.JsonSerializer.Deserialize<WorldV2>(txt);
+        }
+    }
+}
